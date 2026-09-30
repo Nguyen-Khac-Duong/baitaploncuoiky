@@ -1,0 +1,15 @@
+<div class="layout-wrapper">
+  <!-- Sidebar Component -->
+  <app-sidebar [thuGon]="sidebarThuGon"></app-sidebar>
+
+  <!-- Main Area -->
+  <div class="main-container">
+    <!-- Header Component -->
+    <app-header (toggleSidebar)="onToggleSidebar()"></app-header>
+
+    <!-- Routed Main Content -->
+    <main class="page-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

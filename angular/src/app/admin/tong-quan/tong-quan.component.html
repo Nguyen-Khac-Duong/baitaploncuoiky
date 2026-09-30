@@ -1,0 +1,142 @@
+<div class="dashboard-page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">📊 Tổng Quan Kinh Doanh</h1>
+      <p class="page-subtitle">Theo dõi các chỉ số quan trọng, đơn hàng và tình trạng kho hàng</p>
+    </div>
+  </div>
+
+  @if (thongKe$ | async; as thongKe) {
+    <!-- 4 KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card blue">
+        <div class="kpi-icon">📦</div>
+        <div class="kpi-content">
+          <span class="kpi-label">Tổng sản phẩm</span>
+          <span class="kpi-value">{{ thongKe.tongSanPham }}</span>
+          <span class="kpi-hint">Đang có trong kho</span>
+        </div>
+      </div>
+
+      <div class="kpi-card green">
+        <div class="kpi-icon">🛒</div>
+        <div class="kpi-content">
+          <span class="kpi-label">Tổng đơn hàng</span>
+          <span class="kpi-value">{{ thongKe.tongDonHang }}</span>
+          <span class="kpi-hint">Tất cả giao dịch</span>
+        </div>
+      </div>
+
+      <div class="kpi-card purple">
+        <div class="kpi-icon">💰</div>
+        <div class="kpi-content">
+          <span class="kpi-label">Tổng doanh thu</span>
+          <span class="kpi-value highlight">{{ formatTien(thongKe.tongDoanhThu) }}</span>
+          <span class="kpi-hint">Đã & đang giao dịch</span>
+        </div>
+      </div>
+
+      <div class="kpi-card red">
+        <div class="kpi-icon">⚠️</div>
+        <div class="kpi-content">
+          <span class="kpi-label">Sản phẩm hết hàng</span>
+          <span class="kpi-value danger">{{ thongKe.sanPhamHetHang }}</span>
+          <span class="kpi-hint">Cần nhập thêm</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="dashboard-grid">
+    <!-- Đơn hàng mới -->
+    <div class="content-card">
+      <div class="card-header">
+        <div class="header-left">
+          <h2>Đơn Hàng Gần Đây</h2>
+          @if (donHangMoi$ | async; as danhSach) {
+            <span class="count-badge">{{ danhSach.length }} đơn</span>
+          }
+        </div>
+        <a routerLink="/admin/don-hang" class="view-all-link">Xem tất cả →</a>
+      </div>
+      <!-- Header bảng cố định -->
+      <table class="data-table fixed-header-table">
+        <thead>
+          <tr>
+            <th style="width: 15%;">Mã đơn</th>
+            <th style="width: 25%;">Khách hàng</th>
+            <th style="width: 22%;">Tổng tiền</th>
+            <th style="width: 18%;">Trạng thái</th>
+            <th style="width: 20%;">Thời gian</th>
+          </tr>
+        </thead>
+      </table>
+
+      <!-- Chỉ cuộn phần danh sách bên dưới -->
+      <div class="table-container scrollable-area">
+        @if (donHangMoi$ | async; as danhSach) {
+          @if (danhSach.length > 0) {
+            <table class="data-table body-table">
+              <tbody>
+                @for (dh of danhSach; track dh.id) {
+                  <tr>
+                    <td style="width: 15%;" class="font-bold">{{ dh.maDon }}</td>
+                    <td style="width: 25%;">
+                      <div>{{ dh.tenKhachHang }}</div>
+                      <small class="text-muted">{{ dh.soDienThoai }}</small>
+                    </td>
+                    <td style="width: 22%;" class="font-bold text-primary">{{ formatTien(dh.tongTien) }}</td>
+                    <td style="width: 18%;">
+                      <span class="badge" [class]="'badge-' + dh.trangThai">
+                        {{ layTenTrangThai(dh.trangThai) }}
+                      </span>
+                    </td>
+                    <td style="width: 20%;" class="text-muted">{{ dh.ngayTao }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          } @else {
+            <div class="empty-state">Chưa có đơn hàng nào.</div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Tình trạng tồn kho -->
+    <div class="content-card">
+      <div class="card-header">
+        <div class="header-left">
+          <h2>Cảnh Báo Tồn Kho</h2>
+          @if (sanPhamHetHang$ | async; as danhSachSp) {
+            <span class="count-badge danger">{{ danhSachSp.length }} SP</span>
+          }
+        </div>
+        <a routerLink="/admin/san-pham" class="view-all-link">Quản lý kho →</a>
+      </div>
+      <div class="table-container scrollable-area">
+        @if (sanPhamHetHang$ | async; as danhSachSp) {
+          <div class="stock-list">
+            @for (sp of danhSachSp; track sp.id) {
+              <div class="stock-item">
+                <div class="stock-info">
+                  <div class="stock-name">{{ sp.ten }}</div>
+                  <div class="stock-meta">{{ sp.danhMuc }} • {{ formatTien(sp.gia) }}</div>
+                </div>
+                <div class="stock-badge">
+                  @if (sp.soLuongTon === 0) {
+                    <span class="badge badge-out">Hết hàng (0)</span>
+                  } @else if (sp.soLuongTon <= 10) {
+                    <span class="badge badge-low">Sắp hết ({{ sp.soLuongTon }})</span>
+                  } @else {
+                    <span class="badge badge-good">Còn {{ sp.soLuongTon }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,262 @@
+<!-- Floating Chat Launcher Button -->
+<div class="chat-launcher-wrapper">
+  <button 
+    class="chat-launcher-btn" 
+    (click)="toggleChat()" 
+    [class.active]="isOpen()"
+    title="Trợ lý AI tư vấn bán hàng ShopTech"
+    aria-label="Mở khung chat trợ lý AI"
+  >
+    @if (!isOpen()) {
+      <div class="launcher-icon">
+        <span class="bot-emoji">🤖</span>
+        <span class="pulse-ring"></span>
+        <span class="status-dot"></span>
+      </div>
+      <span class="launcher-text">Hỏi AI Tư Vấn</span>
+    } @else {
+      <span class="close-icon">✕</span>
+    }
+  </button>
+</div>
+
+<!-- Floating Chat Widget Window -->
+@if (isOpen()) {
+  <div class="chat-window" [class.open]="isOpen()">
+    <!-- Header -->
+    <header class="chat-header">
+      <div class="header-left">
+        <div class="header-avatar">
+          <span>✨</span>
+        </div>
+        <div class="header-info">
+          <h3 class="header-title">Trợ lý AI ShopTech</h3>
+          <div class="header-status">
+            <span class="online-indicator"></span>
+            <span class="model-badge">Gemini AI • Trực tuyến</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button 
+          class="btn-header-action" 
+          (click)="openApiKeyModal()" 
+          title="Cấu hình Gemini API Key"
+          [class.has-key]="!!currentApiKey()"
+        >
+          ⚙️
+        </button>
+        <button 
+          class="btn-header-action btn-close" 
+          (click)="toggleChat()" 
+          title="Thu nhỏ khung chat"
+        >
+          ─
+        </button>
+      </div>
+    </header>
+
+    <!-- API Key Notice Banner (Nếu chưa có Key) -->
+    @if (!currentApiKey()) {
+      <div class="api-key-banner">
+        <div class="banner-content">
+          <span class="banner-icon">🔑</span>
+          <div class="banner-text">
+            <strong>Chưa cấu hình API Key:</strong> Để chat cùng Gemini 2.5 Flash, vui lòng nhập API Key từ Google AI Studio.
+          </div>
+        </div>
+        <button class="btn-banner-action" (click)="openApiKeyModal()">Nhập Key</button>
+      </div>
+    }
+
+    <!-- Messages Container -->
+    <div class="chat-messages" #scrollContainer>
+      @for (msg of messages(); track $index) {
+        <div class="message-wrapper" [class.user]="msg.role === 'user'" [class.model]="msg.role === 'model'">
+          <div class="message-avatar">
+            @if (msg.role === 'user') {
+              <span>👤</span>
+            } @else {
+              <span>🤖</span>
+            }
+          </div>
+
+          <div class="message-bubble-group">
+            <div class="message-sender">
+              {{ msg.role === 'user' ? 'Quý khách' : 'Trợ lý ShopTech' }}
+            </div>
+            <div class="message-bubble">
+              <div class="message-text">{{ msg.text }}</div>
+            </div>
+
+            <!-- Thẻ mặt hàng trực quan đính kèm -->
+            @if (msg.sanPhamGoiY && msg.sanPhamGoiY.length > 0) {
+              <div class="product-cards-container">
+                @for (sp of msg.sanPhamGoiY; track sp.id) {
+                  <div class="product-chat-card">
+                    <div class="card-img-box">
+                      <img [src]="sp.hinhAnh" [alt]="sp.ten" class="card-thumb" />
+                      <span class="card-badge-dm">{{ sp.danhMuc }}</span>
+                    </div>
+
+                    <div class="card-content">
+                      <div class="card-item-title">{{ sp.ten }}</div>
+                      
+                      <div class="card-specs-list">
+                        <span class="spec-pill">🏷️ {{ sp.maSp }}</span>
+                        @if (sp.soLuongTon > 0) {
+                          <span class="spec-pill stock-avail">📦 Còn {{ sp.soLuongTon }} sp</span>
+                        } @else {
+                          <span class="spec-pill stock-empty">Tạm hết hàng</span>
+                        }
+                      </div>
+
+                      <div class="card-action-row">
+                        <div class="card-price-val">
+                          {{ sp.gia | number }} đ
+                        </div>
+
+                        <button 
+                          type="button"
+                          class="btn-cart-fast" 
+                          (click)="themVaoGioHang(sp, $event)"
+                          [disabled]="sp.soLuongTon <= 0"
+                          [title]="sp.soLuongTon > 0 ? 'Thêm vào giỏ hàng ngay' : 'Tạm hết hàng'"
+                        >
+                          @if (sp.soLuongTon > 0) {
+                            <span>🛒 Thêm vào giỏ</span>
+                          } @else {
+                            <span>Hết hàng</span>
+                          }
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            <div class="message-time">
+              {{ msg.timestamp | date:'HH:mm' }}
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Loading Typing Indicator -->
+      @if (isLoading()) {
+        <div class="message-wrapper model">
+          <div class="message-avatar">
+            <span>🤖</span>
+          </div>
+          <div class="message-bubble-group">
+            <div class="message-sender">Trợ lý ShopTech</div>
+            <div class="message-bubble typing-bubble">
+              <div class="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <span class="typing-text">Gemini đang phân tích và soạn câu trả lời...</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Quick Suggestions -->
+    @if (messages().length <= 3 && !isLoading()) {
+      <div class="quick-suggestions">
+        <div class="suggestions-label">💡 Gợi ý câu hỏi nhanh:</div>
+        <div class="suggestions-list">
+          @for (item of quickSuggestions(); track item) {
+            <button class="suggestion-chip" (click)="askSuggestion(item)">
+              {{ item }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Footer Input Bar -->
+    <footer class="chat-footer">
+      <div class="input-wrapper">
+        <textarea
+          class="chat-input"
+          [ngModel]="inputMessage()"
+          (ngModelChange)="inputMessage.set($event)"
+          (keydown)="onKeyDown($event)"
+          placeholder="Hỏi về giá, cấu hình, so sánh thiết bị..."
+          rows="1"
+          [disabled]="isLoading()"
+        ></textarea>
+
+        <button 
+          class="btn-send" 
+          (click)="sendMessage()" 
+          [disabled]="!inputMessage().trim() || isLoading()"
+          title="Gửi tin nhắn (Enter)"
+        >
+          @if (isLoading()) {
+            <span class="send-spinner"></span>
+          } @else {
+            <span class="send-icon">➤</span>
+          }
+        </button>
+      </div>
+      <div class="footer-note">
+        Dữ liệu tư vấn chuẩn xác từ hệ thống kho hàng ShopTech
+      </div>
+    </footer>
+  </div>
+}
+
+<!-- API Key Configuration Modal -->
+@if (showApiKeyModal()) {
+  <div class="modal-backdrop" (click)="closeApiKeyModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🔑</span> Cấu hình Google Gemini API Key
+        </div>
+        <button class="modal-close-btn" (click)="closeApiKeyModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-desc">
+          Để ứng dụng có thể gọi trực tiếp mô hình <strong>gemini-2.5-flash</strong> từ trình duyệt, bạn cần cấp API Key từ <strong>Google AI Studio</strong>.
+        </p>
+
+        <div class="form-field">
+          <label for="apiKeyInput">Gemini API Key:</label>
+          <input 
+            id="apiKeyInput"
+            type="password" 
+            class="input-key"
+            [ngModel]="tempApiKey()"
+            (ngModelChange)="tempApiKey.set($event)"
+            placeholder="AIzaSy..." 
+          />
+        </div>
+
+        <div class="key-help-box">
+          <div class="help-title">📌 Cách lấy API Key miễn phí:</div>
+          <ol>
+            <li>Truy cập <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio (Get API key)</a>.</li>
+            <li>Đăng nhập tài khoản Google và nhấn <strong>Create API key</strong>.</li>
+            <li>Sao chép khóa và dán vào ô bên trên.</li>
+          </ol>
+          <div class="help-note">
+            🛡️ <em>Khóa được lưu bảo mật trong LocalStorage trình duyệt của bạn, không gửi về bất kỳ máy chủ trung gian nào.</em>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeApiKeyModal()">Hủy</button>
+        <button class="btn-save" (click)="saveApiKey()">Lưu Khóa API</button>
+      </div>
+    </div>
+  </div>
+}

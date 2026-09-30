@@ -1,0 +1,36 @@
+<aside class="sidebar" [class.collapsed]="thuGon">
+  <div class="brand">
+    <span class="brand-icon">🛍️</span>
+    @if (!thuGon) {
+      <span class="brand-name">Admin Portal</span>
+    }
+  </div>
+
+  <nav class="nav-menu">
+    @for (item of menuItems; track item.route) {
+      <a 
+        [routerLink]="item.route" 
+        routerLinkActive="active" 
+        class="nav-link"
+        [title]="item.label"
+      >
+        <span class="nav-icon">{{ item.icon }}</span>
+        @if (!thuGon) {
+          <span class="nav-text">{{ item.label }}</span>
+        }
+      </a>
+    }
+  </nav>
+
+  <div class="sidebar-footer">
+    <button type="button" class="btn-sidebar-logout" (click)="dangXuat()" title="Đăng Xuất Khỏi Quản Trị">
+      <span class="nav-icon">🚪</span>
+      @if (!thuGon) {
+        <span class="nav-text">Đăng Xuất</span>
+      }
+    </button>
+    @if (!thuGon) {
+      <div class="version-tag">Phiên bản v2.0 Enterprise</div>
+    }
+  </div>
+</aside>

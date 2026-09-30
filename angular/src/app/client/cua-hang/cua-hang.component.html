@@ -1,0 +1,85 @@
+<div class="store-page">
+  <!-- Hero Banner -->
+  <div class="hero-banner">
+    <div class="hero-content">
+      <h1>🚀 Khám Phá Công Nghệ Đỉnh Cao</h1>
+      <p>Sản phẩm chính hãng, bảo hành toàn quốc, giao hàng nhanh chóng trong 2h.</p>
+    </div>
+  </div>
+
+  <!-- Search & Filter Controls -->
+  <div class="store-filter-bar">
+    <div class="search-input-wrap">
+      <span class="icon">🔍</span>
+      <input 
+        type="text" 
+        [ngModel]="tuKhoaSearch()"
+        (ngModelChange)="onSearchChange($event)"
+        placeholder="Tìm kiếm điện thoại, laptop, phụ kiện..." 
+      />
+    </div>
+
+    <div class="category-tabs">
+      @for (dm of danhMucList; track dm) {
+        <button 
+          class="tab-btn" 
+          [class.active]="danhMucDuocChon() === (dm === 'Tất cả' ? 'all' : dm)"
+          (click)="chonDanhMuc(dm)"
+        >
+          {{ dm }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Product Grid Content -->
+  @if (danhSachSanPhamHienThi().length > 0) {
+    <div class="product-grid animate-fade-in">
+      @for (sp of danhSachSanPhamHienThi(); track sp.id) {
+        <div class="product-card">
+          <div class="image-container">
+            <img [src]="sp.hinhAnh || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400'" [alt]="sp.ten" loading="lazy" />
+            <span class="category-tag">{{ sp.danhMuc }}</span>
+            @if (sp.soLuongTon === 0) {
+              <span class="out-of-stock-overlay">Hết Hàng</span>
+            }
+          </div>
+
+          <div class="card-details">
+            <h3 class="name">{{ sp.ten }}</h3>
+            <p class="description">{{ sp.moTa || 'Sản phẩm công nghệ hiện đại chất lượng cao.' }}</p>
+            
+            <div class="stock-info">
+              @if (sp.soLuongTon > 0) {
+                <span class="in-stock">🟢 Còn lại: {{ sp.soLuongTon }}</span>
+              } @else {
+                <span class="out-stock">🔴 Tạm hết hàng</span>
+              }
+            </div>
+
+            <div class="card-footer">
+              <span class="price">{{ formatTien(sp.gia) }}</span>
+              <button 
+                class="btn-add-cart" 
+                [disabled]="sp.soLuongTon === 0"
+                (click)="themVaoGio(sp)"
+              >
+                🛒 Thêm Giỏ
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <!-- Empty State -->
+    <div class="empty-state-card animate-fade-in">
+      <div class="empty-illustration">🔍</div>
+      <h3>Không tìm thấy sản phẩm nào!</h3>
+      <p>Thử tìm kiếm với từ khóa khác hoặc xóa bộ lọc danh mục.</p>
+      <button class="btn-clear-filter" (click)="tuKhoaSearch.set(''); danhMucDuocChon.set('all')">
+        🔄 Đặt Lại Bộ Lọc
+      </button>
+    </div>
+  }
+</div>

@@ -1,0 +1,168 @@
+<div class="order-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">🛒 Quản Lý Đơn Hàng</h1>
+      <p class="page-subtitle">Theo dõi quy trình tiếp nhận, giao vận và cập nhật trạng thái đơn hàng</p>
+    </div>
+  </div>
+
+  <!-- Search & Filter Bar -->
+  <div class="toolbar-card">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input 
+        type="text" 
+        [formControl]="searchControl" 
+        placeholder="Tìm kiếm theo mã đơn, khách hàng hoặc SĐT..." 
+      />
+    </div>
+
+    <div class="filter-box">
+      <label>Trạng thái:</label>
+      <select [formControl]="statusFilterControl">
+        @for (tt of danhSachTrangThai; track tt.key) {
+          <option [value]="tt.key">{{ tt.label }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- Orders Table -->
+  <div class="content-card">
+    <!-- Header bảng cố định bên ngoài vùng cuộn -->
+    <table class="data-table fixed-header-table">
+      <thead>
+        <tr>
+          <th style="width: 10%;">Mã Đơn</th>
+          <th style="width: 17%;">Khách Hàng</th>
+          <th style="width: 18%;">Địa Chỉ Nhận</th>
+          <th style="width: 13%;">Tổng Tiền</th>
+          <th style="width: 12%;">Trạng Thái</th>
+          <th style="width: 12%;">Thời Gian</th>
+          <th style="width: 18%;" class="text-center">Chuyển Trạng Thái</th>
+        </tr>
+      </thead>
+    </table>
+
+    <!-- Chỉ cuộn danh sách hàng đơn hàng bên dưới -->
+    <div class="table-container">
+      @if (donHangHienThi$ | async; as danhSach) {
+        @if (danhSach.length > 0) {
+          <table class="data-table body-table">
+            <tbody>
+              @for (dh of danhSach; track dh.id) {
+                <tr>
+                  <td style="width: 10%;"><span class="order-badge">{{ dh.maDon }}</span></td>
+                  <td style="width: 17%;">
+                    <div class="customer-name">{{ dh.tenKhachHang }}</div>
+                    <small class="customer-phone">{{ dh.soDienThoai }}</small>
+                  </td>
+                  <td style="width: 18%;">
+                    <span class="address-text" [title]="dh.diaChi">{{ dh.diaChi }}</span>
+                  </td>
+                  <td style="width: 13%;" class="font-bold text-primary">{{ formatTien(dh.tongTien) }}</td>
+                  <td style="width: 12%;">
+                    <span class="badge" [class]="'badge-' + dh.trangThai">
+                      {{ layTenTrangThai(dh.trangThai) }}
+                    </span>
+                  </td>
+                  <td style="width: 12%;" class="text-muted">{{ dh.ngayTao }}</td>
+                  <td style="width: 18%;" class="text-center">
+                    <div class="actions-cell">
+                      <select 
+                        class="status-select" 
+                        [value]="dh.trangThai" 
+                        (change)="doiTrangThai(dh, $any($event.target).value)"
+                      >
+                        <option value="cho_xu_ly">Chờ xử lý</option>
+                        <option value="dang_giao">Đang giao</option>
+                        <option value="hoan_thanh">Hoàn thành</option>
+                        <option value="da_huy">Hủy đơn</option>
+                      </select>
+
+                      <button class="btn-icon" title="Xem chi tiết" (click)="xemChiTiet(dh)">
+                        👁️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <div class="empty-state">
+            <p>Không tìm thấy đơn hàng nào phù hợp.</p>
+          </div>
+        }
+      }
+    </div>
+  </div>
+
+  <!-- Modal Chi Tiết Đơn Hàng -->
+  @if (hienModalChiTiet && donHangChiTiet) {
+    <div class="modal-backdrop" (click)="dongModalChiTiet()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>📦 Chi Tiết Đơn Hàng #{{ donHangChiTiet.maDon }}</h3>
+          <button class="btn-close" (click)="dongModalChiTiet()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="order-info-box">
+            <div class="info-row">
+              <span class="info-label">Khách hàng:</span>
+              <span class="info-val">{{ donHangChiTiet.tenKhachHang }} ({{ donHangChiTiet.soDienThoai }})</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Địa chỉ giao:</span>
+              <span class="info-val">{{ donHangChiTiet.diaChi }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Thời gian đặt:</span>
+              <span class="info-val">{{ donHangChiTiet.ngayTao }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Trạng thái hiện tại:</span>
+              <span class="badge" [class]="'badge-' + donHangChiTiet.trangThai">
+                {{ layTenTrangThai(donHangChiTiet.trangThai) }}
+              </span>
+            </div>
+          </div>
+
+          <h4>Sản Phẩm Đã Đặt:</h4>
+          <table class="detail-table">
+            <thead>
+              <tr>
+                <th>Tên SP</th>
+                <th>Số Lượng</th>
+                <th>Đơn Giá</th>
+                <th class="text-right">Thành Tiền</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of donHangChiTiet.chiTiet; track item.sanPhamId) {
+                <tr>
+                  <td>{{ item.tenSanPham }}</td>
+                  <td>{{ item.soLuong }}</td>
+                  <td>{{ formatTien(item.donGia) }}</td>
+                  <td class="text-right font-bold">{{ formatTien(item.thanhTien) }}</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" class="text-right font-bold">Tổng Thanh Toán:</td>
+                <td class="text-right font-bold text-primary">{{ formatTien(donHangChiTiet.tongTien) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="dongModalChiTiet()">Đóng</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,217 @@
+<div class="auth-page-container">
+  <div class="auth-card">
+    <!-- Header Branding -->
+    <div class="auth-header">
+      <div class="brand-badge">🛍️ ShopTech</div>
+      <h2>{{ tabHienTai === 'dang-nhap' ? 'Đăng Nhập Hệ Thống' : 'Đăng Ký Tài Khoản Người Mua' }}</h2>
+      <p class="subtitle">
+        {{ tabHienTai === 'dang-nhap' 
+          ? 'Đăng nhập Người Mua (Cửa hàng) hoặc Người Bán (Quản trị)' 
+          : 'Dành riêng cho khách mua hàng tạo tài khoản (Shop chỉ có duy nhất 1 tài khoản Quản trị dành cho chủ shop)' }}
+      </p>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="auth-tabs">
+      <button 
+        type="button" 
+        class="tab-btn" 
+        [class.active]="tabHienTai === 'dang-nhap'"
+        (click)="doiTab('dang-nhap')"
+      >
+        🔐 Đăng Nhập
+      </button>
+      <button 
+        type="button" 
+        class="tab-btn" 
+        [class.active]="tabHienTai === 'dang-ky'"
+        (click)="doiTab('dang-ky')"
+      >
+        📝 Đăng Ký Mua Hàng
+      </button>
+    </div>
+
+    @if (loiDangNhap) {
+      <div class="error-alert">
+        {{ thongBaoLoiDangNhap || 'Thông tin không chính xác. Vui lòng kiểm tra lại!' }}
+      </div>
+    }
+
+    <!-- TAB 1: FORM ĐĂNG NHẬP -->
+    @if (tabHienTai === 'dang-nhap') {
+      <!-- Quick Account Selectors -->
+      <div class="mock-accounts-card">
+        <span class="mock-title">⚡ Chọn nhanh tài khoản mẫu:</span>
+        <div class="account-buttons">
+          <button type="button" class="btn-mock admin" (click)="chonTaiKhoanMau('admin@gmail.com', '123456')">
+            <div class="mock-info">
+              <strong>💼 Người Bán (Admin duy nhất)</strong>
+              <small>admin@gmail.com / 123456</small>
+            </div>
+            <span class="role-tag admin">Chủ Shop</span>
+          </button>
+          <button type="button" class="btn-mock user" (click)="chonTaiKhoanMau('khachhang@gmail.com', '123456')">
+            <div class="mock-info">
+              <strong>🛍️ Người Mua (Khách Hàng)</strong>
+              <small>khachhang@gmail.com / 123456</small>
+            </div>
+            <span class="role-tag buyer">Mua sắm</span>
+          </button>
+        </div>
+      </div>
+
+      <form [formGroup]="formDangNhap" (ngSubmit)="xuLyDangNhap()">
+        <div class="form-group">
+          <label for="login-email">Email đăng nhập:</label>
+          <input 
+            id="login-email" 
+            type="email" 
+            formControlName="email" 
+            placeholder="Ví dụ: admin@gmail.com..." 
+          />
+          @if (emailControl?.touched && emailControl?.invalid) {
+            <span class="error-msg">
+              @if (emailControl?.hasError('required')) { Email là bắt buộc. }
+              @else if (emailControl?.hasError('email')) { Email không đúng định dạng. }
+            </span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="login-password">Mật khẩu:</label>
+          <input 
+            id="login-password" 
+            type="password" 
+            formControlName="matKhau" 
+            placeholder="Nhập mật khẩu..." 
+          />
+          @if (matKhauControl?.touched && matKhauControl?.invalid) {
+            <span class="error-msg">
+              @if (matKhauControl?.hasError('required')) { Mật khẩu là bắt buộc. }
+              @else if (matKhauControl?.hasError('minlength')) { Mật khẩu phải từ 6 ký tự. }
+            </span>
+          }
+        </div>
+
+        <button type="submit" [disabled]="formDangNhap.invalid" class="btn-submit">
+          Đăng Nhập Ngay
+        </button>
+
+        <div class="tab-switch-link">
+          <span>Chưa có tài khoản?</span>
+          <button type="button" class="btn-link" (click)="doiTab('dang-ky')">Đăng ký tài khoản mới ngay</button>
+        </div>
+      </form>
+    }
+
+    <!-- TAB 2: FORM ĐĂNG KÝ -->
+    @if (tabHienTai === 'dang-ky') {
+      <form [formGroup]="formDangKy" (ngSubmit)="xuLyDangKy()">
+        <!-- Giới thiệu đăng ký khách mua hàng -->
+        <div class="buyer-register-banner">
+          <span class="banner-icon">🛍️</span>
+          <div class="banner-text">
+            <strong>Đăng Ký Tài Khoản Khách Hàng (Người Mua)</strong>
+            <small>Lưu địa chỉ giao hàng, theo dõi lịch sử đơn hàng và nhận tư vấn AI</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-hoten">Họ và tên đầy đủ:</label>
+          <input 
+            id="reg-hoten" 
+            type="text" 
+            formControlName="hoTen" 
+            placeholder="Ví dụ: Nguyễn Văn An..." 
+          />
+          @if (dkControls['hoTen']?.touched && dkControls['hoTen']?.invalid) {
+            <span class="error-msg">Vui lòng nhập họ và tên hợp lệ.</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="reg-email">Email:</label>
+          <input 
+            id="reg-email" 
+            type="email" 
+            formControlName="email" 
+            placeholder="Ví dụ: an.nguyen@gmail.com..." 
+          />
+          @if (dkControls['email']?.touched && dkControls['email']?.invalid) {
+            <span class="error-msg">Email không hợp lệ.</span>
+          }
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="reg-phone">Số điện thoại:</label>
+            <input 
+              id="reg-phone" 
+              type="tel" 
+              formControlName="soDienThoai" 
+              placeholder="0912345678" 
+            />
+            @if (dkControls['soDienThoai']?.touched && dkControls['soDienThoai']?.invalid) {
+              <span class="error-msg">Số điện thoại gồm 9-11 chữ số.</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="reg-address">Địa chỉ:</label>
+            <input 
+              id="reg-address" 
+              type="text" 
+              formControlName="diaChi" 
+              placeholder="Hà Nội, TP.HCM..." 
+            />
+            @if (dkControls['diaChi']?.touched && dkControls['diaChi']?.invalid) {
+              <span class="error-msg">Vui lòng nhập địa chỉ.</span>
+            }
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="reg-password">Mật khẩu:</label>
+            <input 
+              id="reg-password" 
+              type="password" 
+              formControlName="matKhau" 
+              placeholder="Từ 6 ký tự..." 
+            />
+            @if (dkControls['matKhau']?.touched && dkControls['matKhau']?.invalid) {
+              <span class="error-msg">Mật khẩu tối thiểu 6 ký tự.</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="reg-confirm">Xác nhận mật khẩu:</label>
+            <input 
+              id="reg-confirm" 
+              type="password" 
+              formControlName="xacNhanMatKhau" 
+              placeholder="Nhập lại mật khẩu..." 
+            />
+            @if (dkControls['xacNhanMatKhau']?.touched && dkControls['xacNhanMatKhau']?.hasError('khongKhop')) {
+              <span class="error-msg">Mật khẩu xác nhận không khớp!</span>
+            }
+          </div>
+        </div>
+
+        <button type="submit" [disabled]="formDangKy.invalid" class="btn-submit">
+          Tạo Tài Khoản Khách Hàng & Mua Sắm Ngay
+        </button>
+
+        <div class="tab-switch-link">
+          <span>Đã có tài khoản?</span>
+          <button type="button" class="btn-link" (click)="doiTab('dang-nhap')">Quay lại đăng nhập</button>
+        </div>
+      </form>
+    }
+
+    <!-- Bottom return to shop -->
+    <div class="back-to-store">
+      <a routerLink="/cua-hang">← Trở về xem Cửa Hàng (Không cần đăng nhập)</a>
+    </div>
+  </div>
+</div>

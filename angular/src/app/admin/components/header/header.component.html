@@ -1,0 +1,113 @@
+<header class="topbar">
+  <!-- Left Side: Toggle button & Dynamic Title -->
+  <div class="topbar-left">
+    <button class="btn-toggle-sidebar" (click)="toggleSidebar.emit()" title="Thu gọn / Mở rộng Menu">
+      <span class="icon">☰</span>
+    </button>
+    <div class="page-indicator">
+      <span class="route-title">{{ tieuDeTrangHienTai }}</span>
+    </div>
+  </div>
+
+  <!-- Right Side Actions -->
+  <div class="topbar-right">
+    <!-- Nút chuyển đổi Sáng / Tối -->
+    <button 
+      class="btn-action btn-theme" 
+      (click)="giaoDienService.chuyenDoiGiaoDien()"
+      [title]="giaoDienService.cheDoToi() ? 'Chuyển sang giao diện Sáng' : 'Chuyển sang giao diện Tối'"
+    >
+      <span class="action-icon">{{ giaoDienService.cheDoToi() ? '☀️' : '🌙' }}</span>
+      <span class="action-label">{{ giaoDienService.cheDoToi() ? 'Sáng' : 'Tối' }}</span>
+    </button>
+
+    <!-- Chuông Thông Báo với Popup Dropdown -->
+    <div class="notify-wrapper">
+      <button class="btn-action btn-notify" (click)="toggleDropdownThongBao($event)" title="Thông báo hệ thống">
+        <span class="action-icon">🔔</span>
+        @if (soThongBaoChuaDoc > 0) {
+          <span class="notify-badge">{{ soThongBaoChuaDoc }}</span>
+        }
+      </button>
+
+      @if (hienThongBao) {
+        <div class="dropdown-menu notify-dropdown" (click)="$event.stopPropagation()">
+          <div class="dropdown-header">
+            <h4>Thông Báo</h4>
+            @if (soThongBaoChuaDoc > 0) {
+              <button class="btn-text" (click)="danhDauDaDocTatCa()">Đánh dấu đã đọc</button>
+            }
+          </div>
+
+          <div class="notify-list">
+            @for (item of thongBaoList; track item.id) {
+              <div class="notify-item" [class.unread]="!item.daDoc">
+                <div class="notify-icon-type">
+                  @if (item.loai === 'don_hang') {
+                    🛒
+                  } @else if (item.loai === 'kho') {
+                    ⚠️
+                  } @else {
+                    🔔
+                  }
+                </div>
+                <div class="notify-info">
+                  <div class="notify-title">{{ item.tieuDe }}</div>
+                  <div class="notify-desc">{{ item.noiDung }}</div>
+                  <div class="notify-time">{{ item.thoiGian }}</div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- User Profile Dropdown -->
+    <div class="user-wrapper">
+      <button class="user-profile-btn" (click)="toggleDropdownUser($event)">
+        <div class="user-avatar">{{ xacThucService.currentUser()?.avatar || 'AD' }}</div>
+        <div class="user-meta">
+          <span class="user-name">{{ xacThucService.currentUser()?.hoTen || 'Quản Trị Viên' }}</span>
+          <span class="user-status"><span class="status-dot"></span> Người Bán</span>
+        </div>
+        <span class="chevron-icon">▾</span>
+      </button>
+
+      @if (hienUserMenu) {
+        <div class="dropdown-menu user-dropdown" (click)="$event.stopPropagation()">
+          <div class="user-header">
+            <div class="user-avatar large">{{ xacThucService.currentUser()?.avatar || 'AD' }}</div>
+            <div class="user-header-info">
+              <span class="name">{{ xacThucService.currentUser()?.hoTen || 'Quản Trị Viên' }}</span>
+              <span class="email">{{ xacThucService.currentUser()?.email || 'admin@gmail.com' }}</span>
+            </div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <div class="user-menu-list">
+            <div class="menu-item-info">
+              <span>Phân quyền:</span>
+              <strong class="role-badge">Người Bán (Admin)</strong>
+            </div>
+            <div class="dropdown-divider"></div>
+            <button type="button" class="menu-item-action logout" (click)="dangXuat()">
+              <span>🚪</span>
+              <span>Đăng Xuất</span>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Nút Đăng Xuất Trực Tiếp (1-Click) -->
+    <button 
+      type="button" 
+      class="btn-action btn-logout-direct" 
+      (click)="dangXuat()" 
+      title="Đăng xuất khỏi hệ thống Quản Trị"
+    >
+      <span class="action-icon">🚪</span>
+      <span class="action-label">Đăng Xuất</span>
+    </button>
+  </div>
+</header>

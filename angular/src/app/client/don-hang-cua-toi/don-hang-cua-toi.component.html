@@ -1,0 +1,144 @@
+<div class="my-orders-page">
+  <!-- 1. TRƯỜNG HỢP CHƯA ĐĂNG NHẬP -->
+  @if (!xacThucService.daDangNhap()) {
+    <div class="auth-gate-card">
+      <div class="gate-icon">🔒</div>
+      <h2>Yêu Cầu Đăng Nhập</h2>
+      <p class="gate-desc">
+        Khu vực <strong>"Đơn Hàng Của Tôi"</strong> dành riêng cho khách hàng có tài khoản để theo dõi lịch sử và tiến độ giao hàng.
+      </p>
+      <div class="gate-actions">
+        <a routerLink="/dang-nhap" [queryParams]="{ tab: 'dang-nhap', returnUrl: '/don-hang-cua-toi' }" class="btn btn-primary">
+          🔐 Đăng Nhập Ngay
+        </a>
+        <a routerLink="/dang-nhap" [queryParams]="{ tab: 'dang-ky', returnUrl: '/don-hang-cua-toi' }" class="btn btn-secondary">
+          📝 Đăng Ký Tài Khoản Khách Hàng
+        </a>
+      </div>
+    </div>
+  } @else {
+    <!-- 2. TRƯỜNG HỢP ĐÃ ĐĂNG NHẬP -->
+    <div class="page-header">
+      <div class="header-titles">
+        <h1 class="page-title">📦 Đơn Hàng Của Tôi</h1>
+        <p class="page-subtitle">
+          Khách hàng: <strong>{{ xacThucService.currentUser()?.hoTen }}</strong> • SĐT: <strong>{{ xacThucService.currentUser()?.soDienThoai }}</strong>
+        </p>
+      </div>
+
+      <!-- Thanh Lọc & Tìm Kiếm Trong Đơn Hàng Của Mình -->
+      <div class="search-filter-card">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input 
+            type="text" 
+            [(ngModel)]="tuKhoaTraCuu" 
+            (input)="traCuu()"
+            placeholder="Lọc theo Mã đơn (#DH...) hoặc tên sản phẩm..." 
+            class="filter-input"
+          />
+          @if (tuKhoaTraCuu) {
+            <button type="button" class="btn-clear-search" (click)="xoaTraCuu()" title="Xóa bộ lọc">✕</button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Danh Sách Đơn Hàng Của Tài Khoản -->
+    @if (donHangList$ | async; as danhSach) {
+      @if (danhSach.length > 0) {
+        <div class="orders-summary-bar">
+          <span>Hiển thị <strong>{{ danhSach.length }}</strong> đơn hàng {{ tuKhoaTraCuu ? 'khớp bộ lọc' : 'của bạn' }}</span>
+        </div>
+
+        <div class="orders-list">
+          @for (dh of danhSach; track dh.id) {
+            <div class="order-card">
+              <!-- Header Đơn Hàng -->
+              <div class="order-header">
+                <div class="order-id-group">
+                  <span class="label">Mã đơn:</span>
+                  <span class="order-id">#{{ dh.maDon }}</span>
+                  <span class="order-date">• Ngày đặt: {{ dh.ngayTao }}</span>
+                </div>
+                <div class="order-status-badge">
+                  <span class="badge" [class]="'badge-' + dh.trangThai">
+                    {{ layTenTrangThai(dh.trangThai) }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Thanh Trạng Thái Tiến Trình Trực Quan -->
+              <div class="order-timeline-bar">
+                <div class="timeline-step" [class.completed]="true">
+                  <div class="step-dot">✓</div>
+                  <span class="step-label">Đã đặt hàng</span>
+                </div>
+                <div class="timeline-line" [class.active]="dh.trangThai !== 'da_huy'"></div>
+
+                <div class="timeline-step" [class.completed]="dh.trangThai === 'dang_giao' || dh.trangThai === 'hoan_thanh'" [class.active]="dh.trangThai === 'cho_xu_ly'">
+                  <div class="step-dot">{{ (dh.trangThai === 'dang_giao' || dh.trangThai === 'hoan_thanh') ? '✓' : '2' }}</div>
+                  <span class="step-label">Xác nhận</span>
+                </div>
+                <div class="timeline-line" [class.active]="dh.trangThai === 'dang_giao' || dh.trangThai === 'hoan_thanh'"></div>
+
+                <div class="timeline-step" [class.completed]="dh.trangThai === 'hoan_thanh'" [class.active]="dh.trangThai === 'dang_giao'">
+                  <div class="step-dot">{{ dh.trangThai === 'hoan_thanh' ? '✓' : '3' }}</div>
+                  <span class="step-label">Đang giao</span>
+                </div>
+                <div class="timeline-line" [class.active]="dh.trangThai === 'hoan_thanh'"></div>
+
+                <div class="timeline-step" [class.completed]="dh.trangThai === 'hoan_thanh'">
+                  <div class="step-dot">{{ dh.trangThai === 'hoan_thanh' ? '✓' : '4' }}</div>
+                  <span class="step-label">{{ dh.trangThai === 'da_huy' ? 'Đã hủy' : 'Hoàn thành' }}</span>
+                </div>
+              </div>
+
+              <!-- Danh Sách Món Đã Đặt -->
+              <div class="order-items">
+                @for (item of dh.chiTiet; track item.sanPhamId) {
+                  <div class="order-item-row">
+                    <img [src]="item.hinhAnh || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=80'" [alt]="item.tenSanPham" />
+                    <div class="item-info">
+                      <span class="item-name">{{ item.tenSanPham }}</span>
+                      <span class="item-qty">Số lượng: x{{ item.soLuong }}</span>
+                    </div>
+                    <span class="item-price">{{ formatTien(item.thanhTien) }}</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Footer: Thông Tin Nhận Hàng & Tổng Tiền -->
+              <div class="order-footer">
+                <div class="delivery-address">
+                  <span>📍 Người nhận: <strong>{{ dh.tenKhachHang }}</strong> ({{ dh.soDienThoai }})</span>
+                  <span class="addr-detail">Địa chỉ: {{ dh.diaChi }}</span>
+                  @if (dh.ghiChu) {
+                    <span class="order-note">Ghi chú: "{{ dh.ghiChu }}"</span>
+                  }
+                </div>
+                <div class="order-total">
+                  <span class="total-label">Tổng thanh toán:</span>
+                  <span class="total-val">{{ formatTien(dh.tongTien) }}</span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-orders-card">
+          <div class="empty-icon">📭</div>
+          @if (tuKhoaTraCuu) {
+            <h2>Không tìm thấy đơn hàng</h2>
+            <p>Không có đơn hàng nào khớp với từ khóa "<strong>{{ tuKhoaTraCuu }}</strong>".</p>
+            <button class="btn btn-secondary" (click)="xoaTraCuu()">Xem tất cả đơn</button>
+          } @else {
+            <h2>Bạn chưa có đơn hàng nào</h2>
+            <p>Đăng nhập thành công! Hãy khám phá hàng trăm sản phẩm công nghệ ưu đãi đang chờ bạn.</p>
+            <a routerLink="/cua-hang" class="btn btn-primary">🛍️ Khám Phá Cửa Hàng Ngay</a>
+          }
+        </div>
+      }
+    }
+  }
+</div>

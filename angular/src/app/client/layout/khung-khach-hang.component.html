@@ -1,0 +1,74 @@
+<div class="user-layout">
+  <!-- Top Navigation Bar -->
+  <header class="store-header">
+    <div class="header-content">
+      <!-- Logo -->
+      <a routerLink="/cua-hang" class="logo">
+        <span class="logo-icon">🛍️</span>
+        <div class="logo-text">
+          <span class="brand">ShopTech</span>
+          <span class="tagline">Trải nghiệm mua sắm công nghệ</span>
+        </div>
+      </a>
+
+      <!-- Navigation Links -->
+      <nav class="nav-links">
+        <a routerLink="/cua-hang" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item">
+          <span>🏠 Cửa Hàng</span>
+        </a>
+        <a routerLink="/gio-hang" routerLinkActive="active" class="nav-item cart-link">
+          <span>🛒 Giỏ Hàng</span>
+          @if (duLieuService.tongSoLuongGioHang() > 0) {
+            <span class="cart-badge">{{ duLieuService.tongSoLuongGioHang() }}</span>
+          }
+        </a>
+        <a routerLink="/don-hang-cua-toi" routerLinkActive="active" class="nav-item">
+          <span>📦 Đơn Hàng Của Tôi</span>
+        </a>
+      </nav>
+
+      <!-- Right Actions: Theme Toggle & User Info -->
+      <div class="header-actions">
+        <!-- Theme Toggle -->
+        <button 
+          class="btn-theme" 
+          (click)="giaoDienService.chuyenDoiGiaoDien()"
+          [title]="giaoDienService.cheDoToi() ? 'Chuyển sang giao diện Sáng' : 'Chuyển sang giao diện Tối'"
+        >
+          {{ giaoDienService.cheDoToi() ? '☀️' : '🌙' }}
+        </button>
+
+        @if (xacThucService.currentUser(); as user) {
+          <div class="user-info">
+            <div class="user-avatar">{{ user.avatar || 'KH' }}</div>
+            <div class="user-details">
+              <span class="user-name">{{ user.hoTen }}</span>
+              <span class="user-role">{{ user.vaiTro === 'admin' ? 'Tài khoản Quản Trị' : 'Khách Hàng' }}</span>
+            </div>
+            <button class="btn-logout" (click)="dangXuat()" title="Đăng xuất">🚪 Đăng xuất</button>
+          </div>
+        } @else {
+          <div class="auth-buttons">
+            <a routerLink="/dang-nhap" [queryParams]="{ tab: 'dang-nhap' }" class="btn-login">Đăng Nhập</a>
+            <a routerLink="/dang-nhap" [queryParams]="{ tab: 'dang-ky' }" class="btn-register">Đăng Ký</a>
+          </div>
+        }
+      </div>
+    </div>
+  </header>
+
+  <!-- Store Main View -->
+  <main class="store-main">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Store Footer -->
+  <footer class="store-footer">
+    <div class="footer-content">
+      <p>© 2026 ShopTech Store. Hệ thống mua sắm và quản trị bán hàng liên thông tự động.</p>
+    </div>
+  </footer>
+
+  <!-- Trợ lý AI Tư vấn bán hàng Gemini 2.5 Flash -->
+  <app-chat-bot></app-chat-bot>
+</div>

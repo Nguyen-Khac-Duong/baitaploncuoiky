@@ -1,0 +1,210 @@
+<div class="cart-page">
+  <div class="page-header">
+    <h1 class="page-title">🛒 Giỏ Hàng Của Bạn</h1>
+  </div>
+
+  @if (datHangThanhCongDonHang) {
+    <div class="success-card">
+      <div class="success-icon">🎉</div>
+      <h2>Đặt Hàng Thành Công!</h2>
+      <p>Mã đơn hàng của bạn là <strong>#{{ datHangThanhCongDonHang }}</strong></p>
+      <p class="desc">Hệ thống Admin đã tiếp nhận đơn hàng của bạn và tiến hành đóng gói vận chuyển.</p>
+      <div class="success-actions">
+        <a routerLink="/don-hang-cua-toi" class="btn btn-primary">
+          📦 Vào Xem Đơn Hàng Của Tôi
+        </a>
+        <a routerLink="/cua-hang" class="btn btn-secondary">Tiếp Tục Mua Sắm</a>
+      </div>
+    </div>
+  } @else {
+    @if (duLieuService.gioHang().length > 0) {
+      <div class="cart-layout">
+        <!-- Danh sách món hàng -->
+        <div class="cart-items-card">
+          <table class="cart-table">
+            <thead>
+              <tr>
+                <th>Sản Phẩm</th>
+                <th>Đơn Giá</th>
+                <th>Số Lượng</th>
+                <th>Thành Tiền</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of duLieuService.gioHang(); track item.sanPham.id) {
+                <tr>
+                  <td>
+                    <div class="product-info-col">
+                      <img [src]="item.sanPham.hinhAnh || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=100'" [alt]="item.sanPham.ten" />
+                      <div>
+                        <div class="p-name">{{ item.sanPham.ten }}</div>
+                        <small class="p-category">{{ item.sanPham.danhMuc }}</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="font-bold">{{ formatTien(item.sanPham.gia) }}</td>
+                  <td>
+                    <div class="quantity-controller">
+                      <button class="qty-btn" (click)="giamSoLuong(item.sanPham.id, item.soLuong)">-</button>
+                      <span class="qty-val">{{ item.soLuong }}</span>
+                      <button 
+                        class="qty-btn" 
+                        [disabled]="item.soLuong >= item.sanPham.soLuongTon"
+                        (click)="tangSoLuong(item.sanPham.id, item.soLuong, item.sanPham.soLuongTon)"
+                      >+</button>
+                    </div>
+                  </td>
+                  <td class="font-bold text-primary">{{ formatTien(item.sanPham.gia * item.soLuong) }}</td>
+                  <td>
+                    <button class="btn-remove" (click)="xoaMon(item.sanPham.id)" title="Xóa món này">✕</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Checkout Card & Auth Gate -->
+        <div class="checkout-card">
+          <h3>Thông Tin Giao Hàng & Đặt Hàng</h3>
+
+          @if (!xacThucService.daDangNhap()) {
+            <!-- TRƯỜNG HỢP CHƯA ĐĂNG NHẬP: KHÓA FORM VÀ BẮT BUỘC ĐĂNG NHẬP / ĐĂNG KÝ -->
+            <div class="auth-gate-box">
+              <div class="gate-icon-circle">🔒</div>
+              <h4 class="gate-title">Cần Đăng Nhập Để Đặt Hàng</h4>
+              <p class="gate-desc">
+                Để đảm bảo tính xác thực của người mua, lưu địa chỉ giao nhận và theo dõi tiến trình đơn hàng tại mục <strong>"Đơn Hàng Của Tôi"</strong>, bạn cần đăng nhập tài khoản Khách Hàng.
+              </p>
+              
+              <div class="gate-actions">
+                <a 
+                  routerLink="/dang-nhap" 
+                  [queryParams]="{ tab: 'dang-nhap', returnUrl: '/gio-hang' }" 
+                  class="btn-gate-action btn-gate-login"
+                >
+                  🔐 Đăng Nhập Để Đặt Hàng
+                </a>
+                <a 
+                  routerLink="/dang-nhap" 
+                  [queryParams]="{ tab: 'dang-ky', returnUrl: '/gio-hang' }" 
+                  class="btn-gate-action btn-gate-register"
+                >
+                  📝 Đăng Ký Tài Khoản Khách Hàng
+                </a>
+              </div>
+
+              <div class="gate-hint">
+                <span>💡 Sau khi đăng nhập, hệ thống sẽ tự động điền sẵn Họ tên, SĐT, Địa chỉ của bạn để hoàn tất đặt hàng chỉ với 1 cú click!</span>
+              </div>
+            </div>
+
+            <!-- Tóm tắt chi phí giỏ hàng -->
+            <div class="order-summary-box">
+              <div class="summary-row">
+                <span>Số lượng món:</span>
+                <strong>{{ duLieuService.tongSoLuongGioHang() }} món</strong>
+              </div>
+              <div class="summary-row">
+                <span>Phí vận chuyển:</span>
+                <span class="text-free">Miễn phí giao hàng</span>
+              </div>
+              <div class="summary-row total">
+                <span>Tổng thanh toán:</span>
+                <span class="total-amount">{{ formatTien(duLieuService.tongTienGioHang()) }}</span>
+              </div>
+            </div>
+
+            <a 
+              routerLink="/dang-nhap" 
+              [queryParams]="{ tab: 'dang-nhap', returnUrl: '/gio-hang' }" 
+              class="btn-checkout disabled-look"
+            >
+              🔒 Vui Lòng Đăng Nhập Để Đặt Hàng
+            </a>
+          } @else {
+            <!-- TRƯỜNG HỢP ĐÃ ĐĂNG NHẬP: TỰ ĐỘNG LẤY SẴN THÔNG TIN TÀI KHOẢN -->
+            @if (xacThucService.currentUser(); as user) {
+              <div class="user-autofill-banner">
+                <div class="autofill-header">
+                  <span class="badge-buyer">🛍️ Tài Khoản Mua Hàng</span>
+                  <span class="badge-check">✓ Đã lấy sẵn thông tin</span>
+                </div>
+                <div class="user-meta-info">
+                  <strong>{{ user.hoTen }}</strong>
+                  <span>• {{ user.email }}</span>
+                </div>
+                <small class="autofill-hint">Thông tin giao nhận được tự động điền từ tài khoản. Bạn có thể điều chỉnh địa chỉ nếu muốn nhận ở nơi khác.</small>
+              </div>
+            }
+
+            <form [formGroup]="formDatHang" (ngSubmit)="tienHanhDatHang()">
+              <div class="form-group">
+                <label>Họ và tên người nhận *</label>
+                <input type="text" formControlName="tenKhachHang" placeholder="Nhập họ tên..." />
+                @if (formDatHang.get('tenKhachHang')?.touched && formDatHang.get('tenKhachHang')?.invalid) {
+                  <span class="error-msg">Họ tên là bắt buộc.</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label>Số điện thoại nhận hàng *</label>
+                <input type="tel" formControlName="soDienThoai" placeholder="VD: 0988776655" />
+                @if (formDatHang.get('soDienThoai')?.touched && formDatHang.get('soDienThoai')?.invalid) {
+                  <span class="error-msg">Số điện thoại không hợp lệ (9 - 11 số).</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label>Địa chỉ nhận hàng *</label>
+                <textarea rows="2" formControlName="diaChi" placeholder="Nhập số nhà, tên đường, phường/xã, quận/huyện..."></textarea>
+                @if (formDatHang.get('diaChi')?.touched && formDatHang.get('diaChi')?.invalid) {
+                  <span class="error-msg">Địa chỉ nhận hàng là bắt buộc.</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label>Ghi chú đơn hàng (nếu có)</label>
+                <input type="text" formControlName="ghiChu" placeholder="VD: Giao trong giờ hành chính, gọi trước khi giao..." />
+              </div>
+
+              <div class="order-summary-box">
+                <div class="summary-row">
+                  <span>Số lượng món:</span>
+                  <strong>{{ duLieuService.tongSoLuongGioHang() }} món</strong>
+                </div>
+                <div class="summary-row">
+                  <span>Phí vận chuyển:</span>
+                  <span class="text-free">Miễn phí giao hàng</span>
+                </div>
+                <div class="summary-row total">
+                  <span>Tổng thanh toán:</span>
+                  <span class="total-amount">{{ formatTien(duLieuService.tongTienGioHang()) }}</span>
+                </div>
+              </div>
+
+              <button type="submit" class="btn-checkout" [disabled]="formDatHang.invalid">
+                🚀 Xác Nhận Đặt Hàng
+              </button>
+            </form>
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="empty-cart-card animate-fade-in">
+        <div class="empty-icon-wrap">
+          <div class="empty-bubble">🛍️</div>
+          <span class="empty-emoji">🛒</span>
+        </div>
+        <h2>Giỏ hàng của bạn đang trống!</h2>
+        <p class="empty-desc">Chưa có sản phẩm nào được chọn. Hãy khám phá ngay hàng trăm sản phẩm công nghệ ưu đãi hấp dẫn đang chờ bạn.</p>
+        <div class="empty-actions">
+          <a routerLink="/cua-hang" class="btn-shop-now">
+            <span>✨ Khám Phá Cửa Hàng Ngay</span>
+          </a>
+        </div>
+      </div>
+    }
+  }
+</div>
