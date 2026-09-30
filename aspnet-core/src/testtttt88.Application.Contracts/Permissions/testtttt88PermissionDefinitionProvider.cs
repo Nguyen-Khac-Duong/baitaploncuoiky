@@ -8,9 +8,12 @@ public class testtttt88PermissionDefinitionProvider : PermissionDefinitionProvid
 {
     public override void Define(IPermissionDefinitionContext context)
     {
-        var myGroup = context.AddGroup(testtttt88Permissions.GroupName);
-        //Define your own permissions here. Example:
-        //myGroup.AddPermission(testtttt88Permissions.MyPermission1, L("Permission:MyPermission1"));
+        var myGroup = context.AddGroup(testtttt88Permissions.GroupName, L("Permission:testtttt88"));
+
+        var sanPhamPermission = myGroup.AddPermission(testtttt88Permissions.SanPhams.Default, L("Permission:SanPhams"));
+        sanPhamPermission.AddChild(testtttt88Permissions.SanPhams.Create, L("Permission:SanPhams.Create"));
+        sanPhamPermission.AddChild(testtttt88Permissions.SanPhams.Edit, L("Permission:SanPhams.Edit"));
+        sanPhamPermission.AddChild(testtttt88Permissions.SanPhams.Delete, L("Permission:SanPhams.Delete"));
     }
 
     private static LocalizableString L(string name)

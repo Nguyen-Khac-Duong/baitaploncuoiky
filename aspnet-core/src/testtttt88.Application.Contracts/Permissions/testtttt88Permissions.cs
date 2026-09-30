@@ -4,6 +4,12 @@ public static class testtttt88Permissions
 {
     public const string GroupName = "testtttt88";
 
-    //Add your own permission names. Example:
-    //public const string MyPermission1 = GroupName + ".MyPermission1";
+    // Quản lý quyền cho SanPham
+    public static class SanPhams
+    {
+        public const string Default = GroupName + ".SanPhams";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
 }

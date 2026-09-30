@@ -1,6 +1,6 @@
 # BÁO CÁO TIẾN ĐỘ BÀI TẬP LỚN - KỶ NGUYÊN VIBE CODING
-**Họ và tên sinh viên:** Nguyễn Khắc Dương 
-**Mã sinh viên:** 74DCTT22184   
+**Họ và tên sinh viên:** Nguyễn Khắc Dương  
+**Mã sinh viên:** 74DCTT22184  
 **Lớp:** 74DCTT27  
 **Giảng viên hướng dẫn:** Thầy Tô Hải Thiên (`thienth@utt.edu.vn`)  
 **Ngày báo cáo:** 04/10/2026 (Theo yêu cầu: file `README_4_11`)  

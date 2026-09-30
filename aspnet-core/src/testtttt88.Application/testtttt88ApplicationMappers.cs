@@ -15,4 +15,3 @@ public partial class testtttt88ApplicationMappers
     public partial DonHangDto Map(DonHang entity);
     public partial ChiTietDonHangDto Map(ChiTietDonHang entity);
 }
-
