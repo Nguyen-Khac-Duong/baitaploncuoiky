@@ -1,10 +1,10 @@
 # BÁO CÁO TIẾN ĐỘ BÀI TẬP LỚN - KỶ NGUYÊN VIBE CODING
-**Họ và tên sinh viên:** *(Điền họ tên của bạn)*  
-**Mã sinh viên:** *(Điền MSV của bạn)*  
-**Lớp:** *(Điền tên lớp)*  
+**Họ và tên sinh viên:** Nguyễn Khắc Dương 
+**Mã sinh viên:** 74DCTT22184   
+**Lớp:** 74DCTT27  
 **Giảng viên hướng dẫn:** Thầy Tô Hải Thiên (`thienth@utt.edu.vn`)  
 **Ngày báo cáo:** 04/10/2026 (Theo yêu cầu: file `README_4_11`)  
-**Repository (Public):** *(Điền link GitHub của bạn)*  
+**Repository (Public):** https://github.com/Nguyen-Khac-Duong/baitaploncuoiky.git  
 
 ---
 
