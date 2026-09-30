@@ -2,173 +2,124 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using testtttt88.Permissions;
 using testtttt88.SanPhams;
-using Volo.Abp.Application.Services;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Guids;
 
 namespace testtttt88.DonHangs;
 
-public class DonHangAppService : ApplicationService, IDonHangAppService
+/// <summary>
+/// Application Service quản lý Đơn Hàng theo chuẩn DDD của công ty
+/// </summary>
+public class DonHangAppService : testtttt88AppService, IDonHangAppService
 {
     private readonly IRepository<DonHang, Guid> _donHangRepository;
     private readonly IRepository<SanPham, Guid> _sanPhamRepository;
-    private readonly IGuidGenerator _guidGenerator;
+    private readonly DonHangManager _donHangManager;
 
     public DonHangAppService(
         IRepository<DonHang, Guid> donHangRepository,
         IRepository<SanPham, Guid> sanPhamRepository,
-        IGuidGenerator guidGenerator)
+        DonHangManager donHangManager)
     {
         _donHangRepository = donHangRepository;
         _sanPhamRepository = sanPhamRepository;
-        _guidGenerator = guidGenerator;
+        _donHangManager = donHangManager;
     }
 
+    /// <summary>
+    /// Lấy danh sách toàn bộ đơn hàng kèm chi tiết sản phẩm (Eager Loading WithDetailsAsync)
+    /// </summary>
     public async Task<List<DonHangDto>> GetListAsync()
     {
         var query = await _donHangRepository.WithDetailsAsync(x => x.ChiTiet);
         var orders = await AsyncExecuter.ToListAsync(query.OrderByDescending(x => x.CreationTime));
-        return orders.Select(MapToDto).ToList();
+        return orders.Select(x => ObjectMapper.Map<DonHang, DonHangDto>(x)).ToList();
     }
 
+    /// <summary>
+    /// Lấy chi tiết đơn hàng theo Id
+    /// </summary>
     public async Task<DonHangDto> GetAsync(Guid id)
     {
         var query = await _donHangRepository.WithDetailsAsync(x => x.ChiTiet);
         var order = await AsyncExecuter.FirstOrDefaultAsync(query.Where(x => x.Id == id));
         if (order == null)
         {
-            throw new Volo.Abp.UserFriendlyException("Không tìm thấy đơn hàng!");
+            throw new EntityNotFoundException(typeof(DonHang), id);
         }
 
-        return MapToDto(order);
+        return ObjectMapper.Map<DonHang, DonHangDto>(order);
     }
 
+    /// <summary>
+    /// Lấy danh sách đơn hàng của khách hàng đang đăng nhập
+    /// </summary>
     public async Task<List<DonHangDto>> GetByNguoiDungAsync(string nguoiDungId)
     {
         var query = await _donHangRepository.WithDetailsAsync(x => x.ChiTiet);
         var orders = await AsyncExecuter.ToListAsync(
             query.Where(x => x.NguoiDungId == nguoiDungId).OrderByDescending(x => x.CreationTime)
         );
-        return orders.Select(MapToDto).ToList();
+        return orders.Select(x => ObjectMapper.Map<DonHang, DonHangDto>(x)).ToList();
     }
 
+    /// <summary>
+    /// Tạo đơn hàng mới: Ủy thác toàn bộ nghiệp vụ kiểm tra & trừ kho cho DonHangManager
+    /// </summary>
     public async Task<DonHangDto> CreateAsync(CreateDonHangDto input)
     {
-        if (input.ChiTiet == null || input.ChiTiet.Count == 0)
-        {
-            throw new Volo.Abp.UserFriendlyException("Đơn hàng phải có ít nhất một sản phẩm!");
-        }
+        var items = input.ChiTiet.Select(x => (
+            x.SanPhamId,
+            x.TenSanPham,
+            x.SoLuong,
+            x.DonGia,
+            x.HinhAnh
+        )).ToList();
 
-        var maDon = "DH" + new Random().Next(1000, 9999);
-        var tongTien = input.ChiTiet.Sum(c => c.ThanhTien > 0 ? c.ThanhTien : c.DonGia * c.SoLuong);
-
-        var donHang = new DonHang(
-            _guidGenerator.Create(),
-            maDon,
-            input.TenKhachHang,
-            input.SoDienThoai,
-            input.DiaChi,
-            tongTien,
-            input.NguoiDungId,
-            input.GhiChu,
-            "cho_xu_ly"
+        var createdOrder = await _donHangManager.CreateOrderAsync(
+            tenKhachHang: input.TenKhachHang,
+            soDienThoai: input.SoDienThoai,
+            diaChi: input.DiaChi,
+            chiTietItems: items,
+            nguoiDungId: input.NguoiDungId,
+            ghiChu: input.GhiChu
         );
 
-        foreach (var item in input.ChiTiet)
-        {
-            var chiTiet = new ChiTietDonHang(
-                _guidGenerator.Create(),
-                donHang.Id,
-                item.SanPhamId,
-                item.TenSanPham,
-                item.SoLuong,
-                item.DonGia,
-                item.ThanhTien > 0 ? item.ThanhTien : item.DonGia * item.SoLuong,
-                item.HinhAnh
-            );
-            donHang.ChiTiet.Add(chiTiet);
-
-            // Giảm tồn kho sản phẩm trong database
-            if (item.SanPhamId != Guid.Empty)
-            {
-                var sanPham = await _sanPhamRepository.FindAsync(item.SanPhamId);
-                if (sanPham != null)
-                {
-                    sanPham.SoLuongTon = Math.Max(0, sanPham.SoLuongTon - item.SoLuong);
-                    await _sanPhamRepository.UpdateAsync(sanPham);
-                }
-            }
-        }
-
-        await _donHangRepository.InsertAsync(donHang, autoSave: true);
-        return MapToDto(donHang);
+        return ObjectMapper.Map<DonHang, DonHangDto>(createdOrder);
     }
 
+    /// <summary>
+    /// Cập nhật trạng thái đơn hàng (Duyệt đơn, Đang giao, Đã hủy)
+    /// </summary>
+    [Authorize(testtttt88Permissions.DonHangs.EditStatus)]
     public async Task<DonHangDto> DoiTrangThaiAsync(Guid id, DoiTrangThaiDonHangDto input)
     {
-        var query = await _donHangRepository.WithDetailsAsync(x => x.ChiTiet);
-        var order = await AsyncExecuter.FirstOrDefaultAsync(query.Where(x => x.Id == id));
-        if (order == null)
-        {
-            throw new Volo.Abp.UserFriendlyException("Không tìm thấy đơn hàng!");
-        }
-
-        order.TrangThai = input.TrangThai;
-        await _donHangRepository.UpdateAsync(order, autoSave: true);
-        return MapToDto(order);
+        var updatedOrder = await _donHangManager.ChangeStatusAsync(id, input.TrangThai);
+        return ObjectMapper.Map<DonHang, DonHangDto>(updatedOrder);
     }
 
+    /// <summary>
+    /// Thống kê Dashboard
+    /// </summary>
     public async Task<ThongKeDashboardDto> GetThongKeDashboardAsync()
     {
-        var spQuery = await _sanPhamRepository.GetQueryableAsync();
-        var tongSanPham = await AsyncExecuter.CountAsync(spQuery);
-        var sanPhamHetHang = await AsyncExecuter.CountAsync(spQuery.Where(sp => sp.SoLuongTon <= 0));
+        var totalOrders = await _donHangRepository.GetCountAsync();
+        var totalProducts = await _sanPhamRepository.GetCountAsync();
+        var outOfStockCount = await _sanPhamRepository.CountAsync(x => x.SoLuongTon <= 0);
 
-        var dhQuery = await _donHangRepository.GetQueryableAsync();
-        var tongDonHang = await AsyncExecuter.CountAsync(dhQuery);
-        var ordersCompleted = dhQuery.Where(dh => dh.TrangThai == "hoan_thanh" || dh.TrangThai == "dang_giao");
-        var ordersList = await AsyncExecuter.ToListAsync(ordersCompleted);
-        var tongDoanhThu = ordersList.Sum(dh => dh.TongTien);
+        var queryOrders = await _donHangRepository.GetQueryableAsync();
+        var completedOrders = queryOrders.Where(x => x.TrangThai == "hoan_thanh" || x.TrangThai == "da_giao");
+        var totalRevenue = await AsyncExecuter.SumAsync(completedOrders, x => x.TongTien);
 
         return new ThongKeDashboardDto
         {
-            TongSanPham = tongSanPham,
-            TongDonHang = tongDonHang,
-            TongDoanhThu = tongDoanhThu,
-            SanPhamHetHang = sanPhamHetHang
-        };
-    }
-
-    private static DonHangDto MapToDto(DonHang entity)
-    {
-        return new DonHangDto
-        {
-            Id = entity.Id,
-            MaDon = entity.MaDon,
-            NguoiDungId = entity.NguoiDungId,
-            TenKhachHang = entity.TenKhachHang,
-            SoDienThoai = entity.SoDienThoai,
-            DiaChi = entity.DiaChi,
-            GhiChu = entity.GhiChu,
-            TongTien = entity.TongTien,
-            TrangThai = entity.TrangThai,
-            NgayTao = entity.NgayTao,
-            CreationTime = entity.CreationTime,
-            CreatorId = entity.CreatorId,
-            LastModificationTime = entity.LastModificationTime,
-            LastModifierId = entity.LastModifierId,
-            ChiTiet = entity.ChiTiet?.Select(c => new ChiTietDonHangDto
-            {
-                Id = c.Id,
-                DonHangId = c.DonHangId,
-                SanPhamId = c.SanPhamId,
-                TenSanPham = c.TenSanPham,
-                SoLuong = c.SoLuong,
-                DonGia = c.DonGia,
-                ThanhTien = c.ThanhTien,
-                HinhAnh = c.HinhAnh
-            }).ToList() ?? new List<ChiTietDonHangDto>()
+            TongDonHang = (int)totalOrders,
+            TongSanPham = (int)totalProducts,
+            SanPhamHetHang = (int)outOfStockCount,
+            TongDoanhThu = totalRevenue
         };
     }
 }

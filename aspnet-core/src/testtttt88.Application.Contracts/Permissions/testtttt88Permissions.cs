@@ -12,4 +12,13 @@ public static class testtttt88Permissions
         public const string Edit = Default + ".Edit";
         public const string Delete = Default + ".Delete";
     }
+
+    // Quản lý quyền cho DonHang
+    public static class DonHangs
+    {
+        public const string Default = GroupName + ".DonHangs";
+        public const string Create = Default + ".Create";
+        public const string EditStatus = Default + ".EditStatus";
+        public const string Delete = Default + ".Delete";
+    }
 }
