@@ -1,0 +1,35 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/testtttt88.Application.Contracts/testtttt88.Application.Contracts.csproj" />
+    <Project Path="src/testtttt88.Application/testtttt88.Application.csproj" />
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <Project Path="src/testtttt88.DbMigrator/testtttt88.DbMigrator.csproj" />
+    <Project Path="src/testtttt88.Domain.Shared/testtttt88.Domain.Shared.csproj" />
+    <Project Path="src/testtttt88.Domain/testtttt88.Domain.csproj" />
+    <Project Path="src/testtttt88.EntityFrameworkCore/testtttt88.EntityFrameworkCore.csproj" />
+    <Project Path="src/testtttt88.HttpApi.Client/testtttt88.HttpApi.Client.csproj" />
+    
+    <Project Path="src/testtttt88.HttpApi.Host/testtttt88.HttpApi.Host.csproj" />
+    <Project Path="src/testtttt88.HttpApi/testtttt88.HttpApi.csproj" />
+    
+    
+    
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/testtttt88.Application.Tests/testtttt88.Application.Tests.csproj" />
+    <Project Path="test/testtttt88.Domain.Tests/testtttt88.Domain.Tests.csproj" />
+    <Project Path="test/testtttt88.EntityFrameworkCore.Tests/testtttt88.EntityFrameworkCore.Tests.csproj" />
+    <Project Path="test/testtttt88.HttpApi.Client.ConsoleTestApp/testtttt88.HttpApi.Client.ConsoleTestApp.csproj" />
+    
+    <Project Path="test/testtttt88.TestBase/testtttt88.TestBase.csproj" />
+    
+  </Folder>
+</Solution>
