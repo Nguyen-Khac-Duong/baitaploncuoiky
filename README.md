@@ -10,8 +10,8 @@
 
 * 🎯 **Đợt 1 (Ngày 04/10/2026):** Đã hoàn thành toàn diện kiến trúc nền tảng, các phân hệ Khách hàng, Quản trị và Trợ lý Gemini AI.  
   👉 **Xem báo cáo chi tiết đợt 1 tại:** [**README_4_11.md**](README_4_11.md)
-* ⏳ **Đợt 2 (Ngày 11/10/2026):** Tích hợp cổng thanh toán trực tuyến, email thông báo và đánh giá sản phẩm.  
-  👉 *Sẽ cập nhật tại `README_11_11.md`*
+* 🎯 **Đợt 2 (Ngày 11/10/2026):** Báo cáo ý hiểu hệ thống, kỹ năng kiểm soát mã nguồn, toàn bộ 8 luồng sự kiện, kỹ năng Graphify, Log, Diff, tiêu chí Leader và kiểm thử nâng cao theo phản hồi của Thầy Tô Hải Thiên.  
+  👉 **Xem báo cáo chi tiết đợt 2 tại:** [**README_11_11.md**](README_11_11.md)
 
 ---
 
@@ -85,7 +85,8 @@ testtttt88/
 │       ├── testtttt88.EntityFrameworkCore/   # DbContext, Cấu hình Entity, Audit Logs
 │       └── testtttt88.HttpApi.Host/          # Web API Host, Swagger UI, Cấu hình Auth
 ├── README.md                                 # Tài liệu tổng quan dự án (Trang chủ Repository)
-└── README_4_11.md                            # Báo cáo tiến độ chi tiết Đợt 1 (04/10/2026)
+├── README_4_11.md                            # Báo cáo tiến độ chi tiết Đợt 1 (04/10/2026)
+└── README_11_11.md                           # Báo cáo ý hiểu hệ thống & kiểm soát code Đợt 2 (11/10/2026)
 ```
 
 ---
