@@ -18,15 +18,17 @@
   .header-titles {
     .page-title {
       margin: 0;
-      font-size: 1.5rem;
-      font-weight: 700;
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
       color: var(--text-primary);
       display: flex;
       align-items: center;
       gap: 0.5rem;
 
       .title-icon {
-        color: #1890ff;
+        color: #3b82f6;
+        filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
       }
     }
 
@@ -39,9 +41,12 @@
 }
 
 .filter-card {
-  border-radius: 12px;
+  border-radius: 1rem;
   background: var(--bg-card);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-card-shadow);
 
   .filter-wrapper {
     display: flex;
@@ -55,7 +60,7 @@
       min-width: 280px;
 
       nz-input-group {
-        border-radius: 8px;
+        border-radius: 0.625rem;
       }
     }
 
@@ -79,9 +84,12 @@
 }
 
 .table-card {
-  border-radius: 12px;
+  border-radius: 1rem;
   background: var(--bg-card);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-card-shadow);
   overflow: hidden;
 
   .order-tag {

@@ -18,15 +18,17 @@
   .header-titles {
     .page-title {
       margin: 0;
-      font-size: 1.5rem;
-      font-weight: 700;
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
       color: var(--text-primary);
       display: flex;
       align-items: center;
       gap: 0.5rem;
 
       .title-icon {
-        color: #1890ff;
+        color: #3b82f6;
+        filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
       }
     }
 
@@ -38,16 +40,30 @@
   }
 
   .btn-create {
-    border-radius: 8px;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(24, 144, 255, 0.25);
+    border-radius: 9999px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #2563eb, #6366f1) !important;
+    border: none !important;
+    color: white !important;
+    padding: 0.55rem 1.35rem;
+    height: auto;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(37, 99, 235, 0.45);
+    }
   }
 }
 
 .filter-card {
-  border-radius: 12px;
+  border-radius: 1rem;
   background: var(--bg-card);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-card-shadow);
 
   .filter-wrapper {
     display: flex;
@@ -61,7 +77,7 @@
       min-width: 280px;
 
       nz-input-group {
-        border-radius: 8px;
+        border-radius: 0.625rem;
       }
     }
 
@@ -85,9 +101,12 @@
 }
 
 .table-card {
-  border-radius: 12px;
+  border-radius: 1rem;
   background: var(--bg-card);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-card-shadow);
   overflow: hidden;
 
   .sku-tag {
