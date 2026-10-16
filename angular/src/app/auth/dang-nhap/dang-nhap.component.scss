@@ -27,12 +27,12 @@
       display: inline-block;
       font-size: 0.8125rem;
       font-weight: 700;
-      background: #eff6ff;
-      color: #2563eb;
+      background: rgba(37, 99, 235, 0.12);
+      color: #3b82f6;
       padding: 0.25rem 0.75rem;
       border-radius: 9999px;
       margin-bottom: 0.5rem;
-      border: 1px solid #bfdbfe;
+      border: 1px solid rgba(59, 130, 246, 0.25);
     }
 
     h2 {
@@ -326,3 +326,32 @@
     }
   }
 }
+
+:host-context([data-theme='dark']) {
+  .buyer-register-banner {
+    background: rgba(37, 99, 235, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+    .banner-text {
+      strong { color: #93c5fd; }
+      small { color: #bfdbfe; }
+    }
+  }
+
+  .error-alert {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+  }
+
+  .mock-accounts-card .btn-mock {
+    .role-tag.admin {
+      background: rgba(109, 40, 217, 0.25);
+      color: #c4b5fd;
+    }
+    .role-tag.buyer {
+      background: rgba(21, 128, 61, 0.25);
+      color: #86efac;
+    }
+  }
+}
+

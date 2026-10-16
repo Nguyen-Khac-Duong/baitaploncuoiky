@@ -15,57 +15,68 @@
     <button 
       class="btn-action btn-theme" 
       (click)="giaoDienService.chuyenDoiGiaoDien()"
-      [title]="giaoDienService.cheDoToi() ? 'Chuyển sang giao diện Sáng' : 'Chuyển sang giao diện Tối'"
+      [title]="giaoDienService.cheDoToi() ? 'Đang ở chế độ Tối (Nhấp để đổi sang Sáng)' : 'Đang ở chế độ Sáng (Nhấp để đổi sang Tối)'"
     >
-      <span class="action-icon">{{ giaoDienService.cheDoToi() ? '☀️' : '🌙' }}</span>
-      <span class="action-label">{{ giaoDienService.cheDoToi() ? 'Sáng' : 'Tối' }}</span>
+      <span class="action-icon">{{ giaoDienService.cheDoToi() ? '🌙' : '☀️' }}</span>
+      <span class="action-label">{{ giaoDienService.cheDoToi() ? 'Chế độ Tối' : 'Chế độ Sáng' }}</span>
     </button>
 
-    <!-- Chuông Thông Báo với Popup Dropdown -->
-    <div class="notify-wrapper">
-      <button class="btn-action btn-notify" (click)="toggleDropdownThongBao($event)" title="Thông báo hệ thống">
+    <!-- Chuông Thông Báo với nz-dropdown -->
+    <button 
+      class="btn-action btn-notify" 
+      nz-dropdown 
+      [nzDropdownMenu]="notifyDropdown" 
+      nzTrigger="click" 
+      nzPlacement="bottomRight"
+      title="Thông báo hệ thống"
+      type="button"
+    >
+      <nz-badge [nzCount]="soThongBaoChuaDoc" [nzOverflowCount]="99">
         <span class="action-icon">🔔</span>
-        @if (soThongBaoChuaDoc > 0) {
-          <span class="notify-badge">{{ soThongBaoChuaDoc }}</span>
-        }
-      </button>
+      </nz-badge>
+    </button>
 
-      @if (hienThongBao) {
-        <div class="dropdown-menu notify-dropdown" (click)="$event.stopPropagation()">
-          <div class="dropdown-header">
-            <h4>Thông Báo</h4>
-            @if (soThongBaoChuaDoc > 0) {
-              <button class="btn-text" (click)="danhDauDaDocTatCa()">Đánh dấu đã đọc</button>
-            }
-          </div>
-
-          <div class="notify-list">
-            @for (item of thongBaoList; track item.id) {
-              <div class="notify-item" [class.unread]="!item.daDoc">
-                <div class="notify-icon-type">
-                  @if (item.loai === 'don_hang') {
-                    🛒
-                  } @else if (item.loai === 'kho') {
-                    ⚠️
-                  } @else {
-                    🔔
-                  }
-                </div>
-                <div class="notify-info">
-                  <div class="notify-title">{{ item.tieuDe }}</div>
-                  <div class="notify-desc">{{ item.noiDung }}</div>
-                  <div class="notify-time">{{ item.thoiGian }}</div>
-                </div>
-              </div>
-            }
-          </div>
+    <nz-dropdown-menu #notifyDropdown="nzDropdownMenu">
+      <div class="notify-dropdown-container">
+        <div class="dropdown-header">
+          <h4>Thông Báo</h4>
+          @if (soThongBaoChuaDoc > 0) {
+            <button class="btn-text" (click)="danhDauDaDocTatCa()">Đánh dấu đã đọc</button>
+          }
         </div>
-      }
-    </div>
 
-    <!-- User Profile Dropdown -->
-    <div class="user-wrapper">
-      <button class="user-profile-btn" (click)="toggleDropdownUser($event)">
+        <div class="notify-list">
+          @for (item of thongBaoList; track item.id) {
+            <div class="notify-item" [class.unread]="!item.daDoc">
+              <div class="notify-icon-type">
+                @if (item.loai === 'don_hang') {
+                  🛒
+                } @else if (item.loai === 'kho') {
+                  ⚠️
+                } @else {
+                  🔔
+                }
+              </div>
+              <div class="notify-info">
+                <div class="notify-title">{{ item.tieuDe }}</div>
+                <div class="notify-desc">{{ item.noiDung }}</div>
+                <div class="notify-time">{{ item.thoiGian }}</div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </nz-dropdown-menu>
+
+    <!-- User Profile nz-dropdown -->
+    <div 
+      class="user-wrapper" 
+      nz-dropdown 
+      [nzDropdownMenu]="userDropdown" 
+      nzTrigger="click"
+      nzPlacement="bottomRight"
+    >
+      <button class="user-profile-btn" type="button">
         <div class="user-avatar">{{ xacThucService.currentUser()?.avatar || 'AD' }}</div>
         <div class="user-meta">
           <span class="user-name">{{ xacThucService.currentUser()?.hoTen || 'Quản Trị Viên' }}</span>
@@ -73,31 +84,31 @@
         </div>
         <span class="chevron-icon">▾</span>
       </button>
+    </div>
 
-      @if (hienUserMenu) {
-        <div class="dropdown-menu user-dropdown" (click)="$event.stopPropagation()">
-          <div class="user-header">
-            <div class="user-avatar large">{{ xacThucService.currentUser()?.avatar || 'AD' }}</div>
-            <div class="user-header-info">
-              <span class="name">{{ xacThucService.currentUser()?.hoTen || 'Quản Trị Viên' }}</span>
-              <span class="email">{{ xacThucService.currentUser()?.email || 'admin@gmail.com' }}</span>
-            </div>
-          </div>
-          <div class="dropdown-divider"></div>
-          <div class="user-menu-list">
-            <div class="menu-item-info">
-              <span>Phân quyền:</span>
-              <strong class="role-badge">Người Bán (Admin)</strong>
-            </div>
-            <div class="dropdown-divider"></div>
-            <button type="button" class="menu-item-action logout" (click)="dangXuat()">
-              <span>🚪</span>
-              <span>Đăng Xuất</span>
-            </button>
+    <nz-dropdown-menu #userDropdown="nzDropdownMenu">
+      <div class="user-dropdown-container">
+        <div class="user-header">
+          <div class="user-avatar large">{{ xacThucService.currentUser()?.avatar || 'AD' }}</div>
+          <div class="user-header-info">
+            <span class="name">{{ xacThucService.currentUser()?.hoTen || 'Quản Trị Viên' }}</span>
+            <span class="email">{{ xacThucService.currentUser()?.email || 'admin@gmail.com' }}</span>
           </div>
         </div>
-      }
-    </div>
+        <div class="dropdown-divider"></div>
+        <div class="user-menu-list">
+          <div class="menu-item-info">
+            <span>Phân quyền:</span>
+            <span class="role-badge">Người Bán (Admin)</span>
+          </div>
+          <div class="dropdown-divider"></div>
+          <button type="button" class="menu-item-action logout" (click)="dangXuat()">
+            <span>🚪</span>
+            <span>Đăng Xuất</span>
+          </button>
+        </div>
+      </div>
+    </nz-dropdown-menu>
 
     <!-- Nút Đăng Xuất Trực Tiếp (1-Click) -->
     <button 

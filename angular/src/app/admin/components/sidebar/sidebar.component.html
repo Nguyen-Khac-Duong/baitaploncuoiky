@@ -1,36 +1,39 @@
 <aside class="sidebar" [class.collapsed]="thuGon">
   <div class="brand">
-    <span class="brand-icon">🛍️</span>
+    <span nz-icon nzType="shop" nzTheme="outline" class="brand-icon"></span>
     @if (!thuGon) {
-      <span class="brand-name">Admin Portal</span>
+      <div class="brand-text">
+        <span class="brand-name">ShopTech</span>
+        <span class="brand-tag">Enterprise Admin</span>
+      </div>
     }
   </div>
 
-  <nav class="nav-menu">
+  <ul nz-menu nzMode="inline" [nzInlineCollapsed]="thuGon" class="ant-admin-menu">
     @for (item of menuItems; track item.route) {
-      <a 
-        [routerLink]="item.route" 
-        routerLinkActive="active" 
-        class="nav-link"
-        [title]="item.label"
+      <li 
+        nz-menu-item 
+        [routerLink]="item.route"
+        routerLinkActive="ant-menu-item-selected"
+        nz-tooltip
+        [nzTooltipTitle]="thuGon ? item.label : null"
+        nzTooltipPlacement="right"
       >
-        <span class="nav-icon">{{ item.icon }}</span>
-        @if (!thuGon) {
-          <span class="nav-text">{{ item.label }}</span>
-        }
-      </a>
+        <span nz-icon [nzType]="item.icon" nzTheme="outline"></span>
+        <span>{{ item.label }}</span>
+      </li>
     }
-  </nav>
+  </ul>
 
   <div class="sidebar-footer">
-    <button type="button" class="btn-sidebar-logout" (click)="dangXuat()" title="Đăng Xuất Khỏi Quản Trị">
-      <span class="nav-icon">🚪</span>
+    <button type="button" class="btn-sidebar-logout" (click)="dangXuat()" [title]="thuGon ? 'Đăng Xuất' : ''">
+      <span nz-icon nzType="logout" nzTheme="outline" class="logout-icon"></span>
       @if (!thuGon) {
         <span class="nav-text">Đăng Xuất</span>
       }
     </button>
     @if (!thuGon) {
-      <div class="version-tag">Phiên bản v2.0 Enterprise</div>
+      <div class="version-tag">ShopTech Portal v2.0</div>
     }
   </div>
 </aside>

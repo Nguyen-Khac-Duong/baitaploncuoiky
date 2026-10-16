@@ -80,15 +80,11 @@ export class XacThucService {
     this.danhSachTaiKhoan.push(nguoiDungMoi);
     this.luuDanhSachTaiKhoan();
 
-    // 4. Tự động đăng nhập
-    this.currentUser.set(nguoiDungMoi);
-    if (this.isBrowser()) {
-      localStorage.setItem(STORAGE_USER, JSON.stringify(nguoiDungMoi));
-    }
-
+    // Lưu ý: Không tự động đăng nhập ngay theo quy chuẩn Spec RM-001; 
+    // Người dùng được chuyển về tab Đăng nhập để xác nhận lại mật khẩu.
     return {
       thanhCong: true,
-      thongBao: `Đăng ký tài khoản thành công! Chào mừng ${nguoiDungMoi.hoTen}`,
+      thongBao: `Đăng ký tài khoản thành công! Vui lòng nhập mật khẩu để đăng nhập.`,
       user: nguoiDungMoi
     };
   }

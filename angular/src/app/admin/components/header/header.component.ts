@@ -1,12 +1,21 @@
-import { Component, inject, Output, EventEmitter, OnInit, HostListener } from '@angular/core';
+import { Component, inject, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd } from '@angular/router';
-import { filter, map } from 'rxjs/operators';
-import { Observable } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { GiaoDienService } from '../../../he-thong/dich-vu/giao-dien.service';
 import { XacThucService } from '../../../he-thong/dich-vu/xac-thuc.service';
 import { DuLieuService } from '../../../he-thong/dich-vu/du-lieu.service';
 import { ThongBaoService } from '../../../he-thong/dich-vu/thong-bao.service';
+
+// NG-ZORRO Modules
+import { NzDropDownModule } from 'ng-zorro-antd/dropdown';
+import { NzBadgeModule } from 'ng-zorro-antd/badge';
+import { NzAvatarModule } from 'ng-zorro-antd/avatar';
+import { NzIconModule } from 'ng-zorro-antd/icon';
+import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
+import { NzDividerModule } from 'ng-zorro-antd/divider';
+import { NzTagModule } from 'ng-zorro-antd/tag';
 
 export interface ThongBaoItem {
   id: string;
@@ -20,7 +29,17 @@ export interface ThongBaoItem {
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    NzDropDownModule,
+    NzBadgeModule,
+    NzAvatarModule,
+    NzIconModule,
+    NzButtonModule,
+    NzTooltipModule,
+    NzDividerModule,
+    NzTagModule
+  ],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss'
 })
@@ -33,41 +52,12 @@ export class HeaderComponent implements OnInit {
 
   @Output() readonly toggleSidebar = new EventEmitter<void>();
 
-  // State menu Dropdown
-  hienThongBao: boolean = false;
-  hienUserMenu: boolean = false;
-  tieuDeTrangHienTai: string = 'Tổng Quan Hệ Thống';
-
-  // Thông báo Real-time
+  tieuDeTrangHienTai: string = '📊 Bảng Điều Khiển Tổng Quan';
   thongBaoList: ThongBaoItem[] = [];
 
   ngOnInit(): void {
     this.theoDoiRoute();
     this.khoiTaoThongBao();
-  }
-
-  // Tự động đóng dropdown khi click ra ngoài
-  @HostListener('document:click', ['$event'])
-  onClickOutside(event: MouseEvent): void {
-    const target = event.target as HTMLElement;
-    if (!target.closest('.notify-wrapper')) {
-      this.hienThongBao = false;
-    }
-    if (!target.closest('.user-wrapper')) {
-      this.hienUserMenu = false;
-    }
-  }
-
-  toggleDropdownThongBao(event: MouseEvent): void {
-    event.stopPropagation();
-    this.hienThongBao = !this.hienThongBao;
-    this.hienUserMenu = false;
-  }
-
-  toggleDropdownUser(event: MouseEvent): void {
-    event.stopPropagation();
-    this.hienUserMenu = !this.hienUserMenu;
-    this.hienThongBao = false;
   }
 
   get soThongBaoChuaDoc(): number {
@@ -79,27 +69,31 @@ export class HeaderComponent implements OnInit {
   }
 
   dangXuat(): void {
-    this.hienUserMenu = false;
-    this.hienThongBao = false;
     this.xacThucService.dangXuat();
     this.thongBaoService.thongTin('Đã đăng xuất khỏi tài khoản Quản trị thành công.', 'Đăng xuất');
     this.router.navigate(['/dang-nhap']);
   }
 
   private theoDoiRoute(): void {
-    const mapTieuDe: Record<string, string> = {
-      '/tong-quan': '📊 Bảng Điều Khiển Tổng Quan',
-      '/san-pham': '📦 Quản Lý Danh Mục Sản Phẩm',
-      '/don-hang': '🛒 Quản Lý Tiến Trình Đơn Hàng'
-    };
-
-    this.tieuDeTrangHienTai = mapTieuDe[this.router.url] || 'Hệ Thống Quản Trị Bán Hàng';
+    this.capNhatTieuDe(this.router.url);
 
     this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
       .subscribe((e: any) => {
-        this.tieuDeTrangHienTai = mapTieuDe[e.urlAfterRedirects] || 'Hệ Thống Quản Trị Bán Hàng';
+        this.capNhatTieuDe(e.urlAfterRedirects || e.url);
       });
+  }
+
+  private capNhatTieuDe(url: string): void {
+    if (url.includes('san-pham')) {
+      this.tieuDeTrangHienTai = '📦 Quản Lý Danh Mục Sản Phẩm';
+    } else if (url.includes('don-hang')) {
+      this.tieuDeTrangHienTai = '🛒 Quản Lý Tiến Trình Đơn Hàng';
+    } else if (url.includes('tong-quan')) {
+      this.tieuDeTrangHienTai = '📊 Bảng Điều Khiển Tổng Quan';
+    } else {
+      this.tieuDeTrangHienTai = '📊 Bảng Điều Khiển Tổng Quan';
+    }
   }
 
   private khoiTaoThongBao(): void {

@@ -2,20 +2,55 @@ import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { Observable, Subject, combineLatest } from 'rxjs';
-import { map, startWith, takeUntil, debounceTime } from 'rxjs/operators';
+import { map, startWith, debounceTime } from 'rxjs/operators';
 import { DuLieuService } from '../../he-thong/dich-vu/du-lieu.service';
 import { SanPham } from '../../shared/mo-hinh/du-lieu.model';
+
+// NG-ZORRO Modules
+import { NzTableModule } from 'ng-zorro-antd/table';
+import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzInputModule } from 'ng-zorro-antd/input';
+import { NzSelectModule } from 'ng-zorro-antd/select';
+import { NzModalModule } from 'ng-zorro-antd/modal';
+import { NzFormModule } from 'ng-zorro-antd/form';
+import { NzTagModule } from 'ng-zorro-antd/tag';
+import { NzBadgeModule } from 'ng-zorro-antd/badge';
+import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
+import { NzIconModule } from 'ng-zorro-antd/icon';
+import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
+import { NzCardModule } from 'ng-zorro-antd/card';
+import { NzSpaceModule } from 'ng-zorro-antd/space';
+import { NzEmptyModule } from 'ng-zorro-antd/empty';
+import { NzMessageService } from 'ng-zorro-antd/message';
 
 @Component({
   selector: 'app-san-pham',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    NzTableModule,
+    NzButtonModule,
+    NzInputModule,
+    NzSelectModule,
+    NzModalModule,
+    NzFormModule,
+    NzTagModule,
+    NzBadgeModule,
+    NzPopconfirmModule,
+    NzIconModule,
+    NzTooltipModule,
+    NzCardModule,
+    NzSpaceModule,
+    NzEmptyModule,
+  ],
   templateUrl: './san-pham.component.html',
   styleUrl: './san-pham.component.scss'
 })
 export class SanPhamComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly duLieuService = inject(DuLieuService);
+  private readonly msg = inject(NzMessageService);
   private readonly destroy$ = new Subject<void>();
 
   // Form & Search
@@ -33,6 +68,10 @@ export class SanPhamComponent implements OnInit, OnDestroy {
   // Stream danh sách sản phẩm sau lọc/tìm kiếm
   sanPhamHienThi$!: Observable<SanPham[]>;
   danhMucList: string[] = ['Tất cả', 'Điện thoại', 'Laptop', 'Phụ kiện', 'Âm thanh', 'Màn hình'];
+
+  // Sắp xếp
+  compareGia = (a: SanPham, b: SanPham): number => a.gia - b.gia;
+  compareTon = (a: SanPham, b: SanPham): number => a.soLuongTon - b.soLuongTon;
 
   ngOnInit(): void {
     this.khoiTaoForm();
@@ -116,7 +155,12 @@ export class SanPhamComponent implements OnInit, OnDestroy {
 
   luuSanPham(): void {
     if (this.formSanPham.invalid) {
-      this.formSanPham.markAllAsTouched();
+      Object.values(this.formSanPham.controls).forEach(control => {
+        if (control.invalid) {
+          control.markAsDirty();
+          control.updateValueAndValidity({ onlySelf: true });
+        }
+      });
       return;
     }
 
@@ -124,6 +168,7 @@ export class SanPhamComponent implements OnInit, OnDestroy {
 
     if (this.dangChinhSua && this.sanPhamIdDangSua) {
       this.duLieuService.capNhatThongTinSanPham(this.sanPhamIdDangSua, giaTri);
+      this.msg.success(`Đã cập nhật sản phẩm "${giaTri.ten}" thành công!`);
     } else {
       this.duLieuService.themSanPham({
         maSp: giaTri.maSp,
@@ -133,20 +178,23 @@ export class SanPhamComponent implements OnInit, OnDestroy {
         danhMuc: giaTri.danhMuc,
         moTa: giaTri.moTa
       });
+      this.msg.success(`Đã tạo mới sản phẩm "${giaTri.ten}" thành công!`);
     }
 
     this.dongModal();
   }
 
-  // === CONFIRM DELETE MODAL ===
+  // === DELETE HANDLERS ===
   yeuCauXoa(sp: SanPham): void {
     this.sanPhamDangXoa = sp;
     this.hienModalXacNhanXoa = true;
   }
 
-  xacNhanXoa(): void {
-    if (this.sanPhamDangXoa) {
-      this.duLieuService.xoaSanPham(this.sanPhamDangXoa.id);
+  xacNhanXoa(sp?: SanPham): void {
+    const spXoa = sp || this.sanPhamDangXoa;
+    if (spXoa) {
+      this.duLieuService.xoaSanPham(spXoa.id);
+      this.msg.success(`Đã xóa sản phẩm "${spXoa.ten}" (${spXoa.maSp})!`);
       this.sanPhamDangXoa = null;
       this.hienModalXacNhanXoa = false;
     }
@@ -159,5 +207,16 @@ export class SanPhamComponent implements OnInit, OnDestroy {
 
   formatTien(gia: number): string {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(gia);
+  }
+
+  getDanhMucColor(danhMuc: string): string {
+    switch (danhMuc) {
+      case 'Điện thoại': return 'blue';
+      case 'Laptop': return 'purple';
+      case 'Phụ kiện': return 'cyan';
+      case 'Âm thanh': return 'orange';
+      case 'Màn hình': return 'magenta';
+      default: return 'geekblue';
+    }
   }
 }

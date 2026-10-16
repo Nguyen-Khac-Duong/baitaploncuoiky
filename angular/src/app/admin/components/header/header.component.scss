@@ -173,24 +173,18 @@
   }
 }
 
-/* Dropdown Menus - Override Bootstrap display: none */
-.dropdown-menu,
-.notify-dropdown,
-.user-dropdown {
-  display: block !important;
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
+/* Dropdown Containers inside nz-dropdown-menu */
+.notify-dropdown-container,
+.user-dropdown-container {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 0.75rem;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
   overflow: hidden;
-  animation: dropFade 0.2s ease-out;
   z-index: 1000;
 }
 
-.notify-dropdown {
+.notify-dropdown-container {
   width: 320px;
 
   .dropdown-header {
@@ -270,7 +264,7 @@
   }
 }
 
-.user-dropdown {
+.user-dropdown-container {
   width: 240px;
 
   .user-header {

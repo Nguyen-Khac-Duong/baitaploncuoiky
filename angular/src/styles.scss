@@ -94,3 +94,228 @@
   color: #f87171 !important;
 }
 
+html, body {
+  background-color: var(--bg-app) !important;
+  color: var(--text-primary) !important;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* ==================== ANT DESIGN (NG-ZORRO) THEME ADAPTATION ==================== */
+[data-theme='dark'] {
+  /* Ant Table Dark Mode */
+  .ant-table {
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+  }
+  .ant-table-thead > tr > th {
+    background: var(--bg-table-header) !important;
+    color: var(--text-secondary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    font-weight: 600;
+  }
+  .ant-table-tbody > tr > td {
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid var(--border-light) !important;
+  }
+  .ant-table-tbody > tr.ant-table-row:hover > td,
+  .ant-table-tbody > tr:hover > td {
+    background: var(--bg-table-hover) !important;
+  }
+  .ant-table-placeholder {
+    background: var(--bg-card) !important;
+    color: var(--text-muted) !important;
+  }
+  .ant-empty-description {
+    color: var(--text-muted) !important;
+  }
+
+  /* Ant Card Dark Mode */
+  .ant-card {
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+  }
+  .ant-card-head {
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+  }
+  .ant-card-head-title {
+    color: var(--text-primary) !important;
+  }
+  .ant-statistic-title {
+    color: var(--text-secondary) !important;
+  }
+
+  /* Ant Input Dark Mode */
+  .ant-input {
+    background-color: var(--bg-input) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+  }
+  .ant-input-affix-wrapper {
+    background-color: var(--bg-input) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+
+    .ant-input {
+      background-color: transparent !important;
+    }
+  }
+  .ant-input::placeholder,
+  input::placeholder {
+    color: var(--text-muted) !important;
+  }
+
+  /* Ant Select Dark Mode */
+  .ant-select:not(.ant-select-customize-input) .ant-select-selector {
+    background-color: var(--bg-input) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+  }
+  .ant-select-selection-item {
+    color: var(--text-primary) !important;
+  }
+  .ant-select-arrow {
+    color: var(--text-muted) !important;
+  }
+  .ant-select-dropdown {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+  }
+  .ant-select-item {
+    color: var(--text-primary) !important;
+  }
+  .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+    background-color: rgba(24, 144, 255, 0.25) !important;
+    color: #1890ff !important;
+    font-weight: 600;
+  }
+  .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+    background-color: var(--bg-card-hover) !important;
+  }
+
+  /* Ant Modal Dark Mode */
+  .ant-modal-content {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+  }
+  .ant-modal-header {
+    background-color: var(--bg-card) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+  }
+  .ant-modal-title {
+    color: var(--text-primary) !important;
+  }
+  .ant-modal-close {
+    color: var(--text-muted) !important;
+  }
+  .ant-modal-footer {
+    background-color: var(--bg-table-header) !important;
+    border-top: 1px solid var(--border-color) !important;
+  }
+
+  /* Ant Descriptions Dark Mode */
+  .ant-descriptions-bordered .ant-descriptions-item-label {
+    background-color: var(--bg-table-header) !important;
+    color: var(--text-secondary) !important;
+    border-color: var(--border-color) !important;
+  }
+  .ant-descriptions-bordered .ant-descriptions-item-content {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+  }
+  .ant-descriptions-row, .ant-descriptions-view {
+    border-color: var(--border-color) !important;
+  }
+
+  /* Ant Pagination Dark Mode */
+  .ant-pagination-item {
+    background: var(--bg-input) !important;
+    border-color: var(--border-color) !important;
+    a {
+      color: var(--text-primary) !important;
+    }
+  }
+  .ant-pagination-item-active {
+    border-color: #1890ff !important;
+    a {
+      color: #1890ff !important;
+    }
+  }
+  .ant-pagination-prev .ant-pagination-item-link,
+  .ant-pagination-next .ant-pagination-item-link {
+    background: var(--bg-input) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+  .ant-pagination-disabled .ant-pagination-item-link {
+    color: var(--text-muted) !important;
+    opacity: 0.5;
+  }
+  .ant-pagination-options-size-changer.ant-select {
+    color: var(--text-primary) !important;
+  }
+
+  /* Ant Popconfirm / Popover Dark Mode */
+  .ant-popover-inner {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+  }
+  .ant-popover-message, .ant-popover-message-title {
+    color: var(--text-primary) !important;
+  }
+  .ant-popover-arrow-content {
+    background-color: var(--bg-card) !important;
+  }
+
+  /* Ant Form Labels Dark Mode */
+  .ant-form-item-label > label {
+    color: var(--text-secondary) !important;
+  }
+
+  /* Ant Tabs Dark Mode */
+  .ant-tabs-tab {
+    color: var(--text-secondary) !important;
+  }
+  .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+    color: #1890ff !important;
+    font-weight: 600;
+  }
+  .ant-tabs-ink-bar {
+    background: #1890ff !important;
+  }
+  .ant-tabs-nav::before {
+    border-bottom: 1px solid var(--border-color) !important;
+  }
+
+  /* Ant Dropdown Menu Dark Mode */
+  .ant-dropdown-menu {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+  }
+  .ant-dropdown-menu-item {
+    color: var(--text-primary) !important;
+    &:hover {
+      background-color: var(--bg-card-hover) !important;
+    }
+  }
+  .ant-dropdown-menu-item-divider {
+    background-color: var(--border-color) !important;
+  }
+
+  /* Ant Message Notice Dark Mode */
+  .ant-message-notice-content {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  }
+}
+

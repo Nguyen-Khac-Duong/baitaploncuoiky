@@ -37,9 +37,11 @@ export class GiaoDienService {
       const root = document.documentElement;
       if (isDark) {
         root.setAttribute('data-theme', 'dark');
+        document.body?.setAttribute('data-theme', 'dark');
         localStorage.setItem(STORAGE_THEME, 'toi');
       } else {
         root.removeAttribute('data-theme');
+        document.body?.removeAttribute('data-theme');
         localStorage.setItem(STORAGE_THEME, 'sang');
       }
     }

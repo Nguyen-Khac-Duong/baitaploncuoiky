@@ -33,9 +33,9 @@
         <button 
           class="btn-theme" 
           (click)="giaoDienService.chuyenDoiGiaoDien()"
-          [title]="giaoDienService.cheDoToi() ? 'Chuyển sang giao diện Sáng' : 'Chuyển sang giao diện Tối'"
+          [title]="giaoDienService.cheDoToi() ? 'Đang ở chế độ Tối (Nhấp để chuyển sang Sáng)' : 'Đang ở chế độ Sáng (Nhấp để chuyển sang Tối)'"
         >
-          {{ giaoDienService.cheDoToi() ? '☀️' : '🌙' }}
+          {{ giaoDienService.cheDoToi() ? '🌙' : '☀️' }}
         </button>
 
         @if (xacThucService.currentUser(); as user) {

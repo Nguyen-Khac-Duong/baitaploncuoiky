@@ -33,6 +33,7 @@
     "@angular/router": "~22.0.1",
     "@google/genai": "^2.24.0",
     "bootstrap-icons": "~1.8.0",
+    "ng-zorro-antd": "^21.3.3",
     "rxjs": "~7.8.0",
     "tslib": "^2.0.0",
     "zone.js": "~0.15.0"
@@ -53,6 +54,7 @@
     "@typescript-eslint/parser": "7.16.0",
     "eslint": "^8.0.0",
     "jsdom": "^27.1.0",
+    "less": "^4.2.0",
     "typescript": "~6.0.3",
     "vitest": "^4.0.0"
   }

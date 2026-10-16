@@ -1,142 +1,194 @@
 <div class="dashboard-page">
   <div class="page-header">
-    <div>
-      <h1 class="page-title">📊 Tổng Quan Kinh Doanh</h1>
+    <div class="header-titles">
+      <h1 class="page-title">
+        <span nz-icon nzType="dashboard" nzTheme="outline" class="title-icon"></span>
+        Tổng Quan Kinh Doanh
+      </h1>
       <p class="page-subtitle">Theo dõi các chỉ số quan trọng, đơn hàng và tình trạng kho hàng</p>
     </div>
   </div>
 
   @if (thongKe$ | async; as thongKe) {
-    <!-- 4 KPI Cards -->
-    <div class="kpi-grid">
-      <div class="kpi-card blue">
-        <div class="kpi-icon">📦</div>
-        <div class="kpi-content">
-          <span class="kpi-label">Tổng sản phẩm</span>
-          <span class="kpi-value">{{ thongKe.tongSanPham }}</span>
-          <span class="kpi-hint">Đang có trong kho</span>
-        </div>
+    <!-- 4 KPI Cards using Ant Design Grid & Statistics -->
+    <div nz-row [nzGutter]="[16, 16]" class="kpi-row">
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+        <nz-card [nzBordered]="false" class="kpi-card card-blue">
+          <nz-statistic
+            [nzValue]="thongKe.tongSanPham"
+            [nzTitle]="'Tổng Sản Phẩm'"
+            [nzPrefix]="iconProduct"
+            [nzValueStyle]="{ color: '#1890ff', fontWeight: '700' }"
+          ></nz-statistic>
+          <ng-template #iconProduct>
+            <span nz-icon nzType="appstore" nzTheme="outline" class="kpi-icon"></span>
+          </ng-template>
+          <div class="kpi-extra">Đang quản lý trong kho</div>
+        </nz-card>
       </div>
 
-      <div class="kpi-card green">
-        <div class="kpi-icon">🛒</div>
-        <div class="kpi-content">
-          <span class="kpi-label">Tổng đơn hàng</span>
-          <span class="kpi-value">{{ thongKe.tongDonHang }}</span>
-          <span class="kpi-hint">Tất cả giao dịch</span>
-        </div>
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+        <nz-card [nzBordered]="false" class="kpi-card card-green">
+          <nz-statistic
+            [nzValue]="thongKe.tongDonHang"
+            [nzTitle]="'Tổng Đơn Hàng'"
+            [nzPrefix]="iconOrder"
+            [nzValueStyle]="{ color: '#52c41a', fontWeight: '700' }"
+          ></nz-statistic>
+          <ng-template #iconOrder>
+            <span nz-icon nzType="shopping-cart" nzTheme="outline" class="kpi-icon"></span>
+          </ng-template>
+          <div class="kpi-extra">Toàn bộ giao dịch hệ thống</div>
+        </nz-card>
       </div>
 
-      <div class="kpi-card purple">
-        <div class="kpi-icon">💰</div>
-        <div class="kpi-content">
-          <span class="kpi-label">Tổng doanh thu</span>
-          <span class="kpi-value highlight">{{ formatTien(thongKe.tongDoanhThu) }}</span>
-          <span class="kpi-hint">Đã & đang giao dịch</span>
-        </div>
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+        <nz-card [nzBordered]="false" class="kpi-card card-purple">
+          <nz-statistic
+            [nzValue]="formatTien(thongKe.tongDoanhThu)"
+            [nzTitle]="'Tổng Doanh Thu'"
+            [nzPrefix]="iconRevenue"
+            [nzValueStyle]="{ color: '#722ed1', fontWeight: '700' }"
+          ></nz-statistic>
+          <ng-template #iconRevenue>
+            <span nz-icon nzType="dollar" nzTheme="outline" class="kpi-icon"></span>
+          </ng-template>
+          <div class="kpi-extra">Giá trị đơn hàng tích lũy</div>
+        </nz-card>
       </div>
 
-      <div class="kpi-card red">
-        <div class="kpi-icon">⚠️</div>
-        <div class="kpi-content">
-          <span class="kpi-label">Sản phẩm hết hàng</span>
-          <span class="kpi-value danger">{{ thongKe.sanPhamHetHang }}</span>
-          <span class="kpi-hint">Cần nhập thêm</span>
-        </div>
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+        <nz-card [nzBordered]="false" class="kpi-card card-red">
+          <nz-statistic
+            [nzValue]="thongKe.sanPhamHetHang"
+            [nzTitle]="'Sản Phẩm Hết Hàng'"
+            [nzPrefix]="iconAlert"
+            [nzValueStyle]="{ color: '#ff4d4f', fontWeight: '700' }"
+          ></nz-statistic>
+          <ng-template #iconAlert>
+            <span nz-icon nzType="alert" nzTheme="outline" class="kpi-icon"></span>
+          </ng-template>
+          <div class="kpi-extra">Cần bổ sung nhập kho</div>
+        </nz-card>
       </div>
     </div>
   }
 
-  <div class="dashboard-grid">
-    <!-- Đơn hàng mới -->
-    <div class="content-card">
-      <div class="card-header">
-        <div class="header-left">
-          <h2>Đơn Hàng Gần Đây</h2>
-          @if (donHangMoi$ | async; as danhSach) {
-            <span class="count-badge">{{ danhSach.length }} đơn</span>
-          }
-        </div>
-        <a routerLink="/admin/don-hang" class="view-all-link">Xem tất cả →</a>
-      </div>
-      <!-- Header bảng cố định -->
-      <table class="data-table fixed-header-table">
-        <thead>
-          <tr>
-            <th style="width: 15%;">Mã đơn</th>
-            <th style="width: 25%;">Khách hàng</th>
-            <th style="width: 22%;">Tổng tiền</th>
-            <th style="width: 18%;">Trạng thái</th>
-            <th style="width: 20%;">Thời gian</th>
-          </tr>
-        </thead>
-      </table>
+  <div nz-row [nzGutter]="[20, 20]" class="content-row">
+    <!-- Đơn hàng gần đây -->
+    <div nz-col [nzXs]="24" [nzLg]="15">
+      <nz-card 
+        [nzBordered]="false" 
+        [nzTitle]="orderHeaderTitle" 
+        [nzExtra]="orderHeaderExtra" 
+        class="dashboard-card"
+      >
+        <ng-template #orderHeaderTitle>
+          <div class="card-title-box">
+            <span nz-icon nzType="shopping" nzTheme="outline" style="color: #1890ff;"></span>
+            <span>Đơn Hàng Gần Đây</span>
+            @if (donHangMoi$ | async; as danhSach) {
+              <nz-badge [nzCount]="danhSach.length" [nzStyle]="{ backgroundColor: '#1890ff' }"></nz-badge>
+            }
+          </div>
+        </ng-template>
 
-      <!-- Chỉ cuộn phần danh sách bên dưới -->
-      <div class="table-container scrollable-area">
+        <ng-template #orderHeaderExtra>
+          <a routerLink="/admin/don-hang" nz-button nzType="link">
+            Xem tất cả <span nz-icon nzType="arrow-right"></span>
+          </a>
+        </ng-template>
+
         @if (donHangMoi$ | async; as danhSach) {
-          @if (danhSach.length > 0) {
-            <table class="data-table body-table">
-              <tbody>
-                @for (dh of danhSach; track dh.id) {
-                  <tr>
-                    <td style="width: 15%;" class="font-bold">{{ dh.maDon }}</td>
-                    <td style="width: 25%;">
-                      <div>{{ dh.tenKhachHang }}</div>
-                      <small class="text-muted">{{ dh.soDienThoai }}</small>
-                    </td>
-                    <td style="width: 22%;" class="font-bold text-primary">{{ formatTien(dh.tongTien) }}</td>
-                    <td style="width: 18%;">
-                      <span class="badge" [class]="'badge-' + dh.trangThai">
-                        {{ layTenTrangThai(dh.trangThai) }}
-                      </span>
-                    </td>
-                    <td style="width: 20%;" class="text-muted">{{ dh.ngayTao }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          } @else {
-            <div class="empty-state">Chưa có đơn hàng nào.</div>
-          }
+          <nz-table 
+            #recentOrders 
+            [nzData]="danhSach" 
+            [nzShowPagination]="false" 
+            nzSize="middle"
+            class="dashboard-table"
+          >
+            <thead>
+              <tr>
+                <th nzWidth="120px">Mã đơn</th>
+                <th>Khách hàng</th>
+                <th nzWidth="140px">Tổng tiền</th>
+                <th nzWidth="130px">Trạng thái</th>
+                <th nzWidth="110px">Thời gian</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (dh of recentOrders.data.slice(0, 6); track dh.id) {
+                <tr>
+                  <td>
+                    <span class="sku-tag">{{ dh.maDon }}</span>
+                  </td>
+                  <td>
+                    <div style="font-weight: 600; color: var(--text-primary);">{{ dh.tenKhachHang }}</div>
+                    <small class="text-muted">{{ dh.soDienThoai }}</small>
+                  </td>
+                  <td class="price-cell">{{ formatTien(dh.tongTien) }}</td>
+                  <td>
+                    <nz-tag [nzColor]="getTrangThaiColor(dh.trangThai)">
+                      {{ layTenTrangThai(dh.trangThai) }}
+                    </nz-tag>
+                  </td>
+                  <td class="text-muted">{{ dh.ngayTao }}</td>
+                </tr>
+              }
+            </tbody>
+          </nz-table>
         }
-      </div>
+      </nz-card>
     </div>
 
-    <!-- Tình trạng tồn kho -->
-    <div class="content-card">
-      <div class="card-header">
-        <div class="header-left">
-          <h2>Cảnh Báo Tồn Kho</h2>
-          @if (sanPhamHetHang$ | async; as danhSachSp) {
-            <span class="count-badge danger">{{ danhSachSp.length }} SP</span>
-          }
-        </div>
-        <a routerLink="/admin/san-pham" class="view-all-link">Quản lý kho →</a>
-      </div>
-      <div class="table-container scrollable-area">
+    <!-- Cảnh báo tồn kho -->
+    <div nz-col [nzXs]="24" [nzLg]="9">
+      <nz-card 
+        [nzBordered]="false" 
+        [nzTitle]="stockHeaderTitle" 
+        [nzExtra]="stockHeaderExtra" 
+        class="dashboard-card"
+      >
+        <ng-template #stockHeaderTitle>
+          <div class="card-title-box">
+            <span nz-icon nzType="warning" nzTheme="outline" style="color: #faad14;"></span>
+            <span>Tồn Kho Cần Lưu Ý</span>
+          </div>
+        </ng-template>
+
+        <ng-template #stockHeaderExtra>
+          <a routerLink="/admin/san-pham" nz-button nzType="link">
+            Quản lý kho <span nz-icon nzType="arrow-right"></span>
+          </a>
+        </ng-template>
+
         @if (sanPhamHetHang$ | async; as danhSachSp) {
-          <div class="stock-list">
-            @for (sp of danhSachSp; track sp.id) {
-              <div class="stock-item">
-                <div class="stock-info">
-                  <div class="stock-name">{{ sp.ten }}</div>
-                  <div class="stock-meta">{{ sp.danhMuc }} • {{ formatTien(sp.gia) }}</div>
+          <div class="stock-list-container">
+            @for (sp of danhSachSp.slice(0, 7); track sp.id) {
+              <div class="stock-item-row">
+                <div class="stock-item-info">
+                  <div class="stock-item-name">{{ sp.ten }}</div>
+                  <div class="stock-item-sub">
+                    <span class="sku-tag">{{ sp.maSp }}</span>
+                    <span>{{ sp.danhMuc }}</span>
+                    <span>•</span>
+                    <span class="price-cell">{{ formatTien(sp.gia) }}</span>
+                  </div>
                 </div>
-                <div class="stock-badge">
+                <div class="stock-item-badge">
                   @if (sp.soLuongTon === 0) {
-                    <span class="badge badge-out">Hết hàng (0)</span>
-                  } @else if (sp.soLuongTon <= 10) {
-                    <span class="badge badge-low">Sắp hết ({{ sp.soLuongTon }})</span>
+                    <nz-tag nzColor="error">Hết hàng (0)</nz-tag>
+                  } @else if (sp.soLuongTon <= 5) {
+                    <nz-tag nzColor="warning">Còn {{ sp.soLuongTon }}</nz-tag>
                   } @else {
-                    <span class="badge badge-good">Còn {{ sp.soLuongTon }}</span>
+                    <nz-tag nzColor="success">Còn {{ sp.soLuongTon }}</nz-tag>
                   }
                 </div>
               </div>
             }
           </div>
         }
-      </div>
+      </nz-card>
     </div>
   </div>
 </div>

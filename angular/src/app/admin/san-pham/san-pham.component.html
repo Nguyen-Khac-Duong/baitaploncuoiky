@@ -1,195 +1,217 @@
 <div class="product-page">
   <!-- Page Header -->
   <div class="page-header">
-    <div>
-      <h1 class="page-title">📦 Quản Lý Sản Phẩm</h1>
-      <p class="page-subtitle">Thêm mới, tìm kiếm, chỉnh sửa và quản lý kho sản phẩm</p>
+    <div class="header-titles">
+      <h1 class="page-title">
+        <span nz-icon nzType="appstore" nzTheme="outline" class="title-icon"></span>
+        Quản Lý Sản Phẩm
+      </h1>
+      <p class="page-subtitle">Thêm mới, tìm kiếm, chỉnh sửa và quản lý kho hàng với chuẩn Ant Design</p>
     </div>
-    <button class="btn btn-primary" (click)="moModalThem()">
-      + Thêm Sản Phẩm Mới
+    <button nz-button nzType="primary" nzSize="large" (click)="moModalThem()" class="btn-create">
+      <span nz-icon nzType="plus" nzTheme="outline"></span>
+      Thêm Sản Phẩm Mới
     </button>
   </div>
 
   <!-- Search & Filter Bar -->
-  <div class="toolbar-card">
-    <div class="search-box">
-      <span class="search-icon">🔍</span>
-      <input 
-        type="text" 
-        [formControl]="searchControl" 
-        placeholder="Tìm kiếm theo tên sản phẩm hoặc mã SP..." 
-      />
-    </div>
+  <nz-card [nzBordered]="false" class="filter-card">
+    <div class="filter-wrapper">
+      <div class="search-input-box">
+        <nz-input-group [nzPrefix]="prefixSearch" nzSize="large">
+          <input 
+            type="text" 
+            nz-input 
+            [formControl]="searchControl" 
+            placeholder="Tìm theo tên sản phẩm hoặc mã SP (VD: SP001, iPhone, Macbook)..." 
+          />
+        </nz-input-group>
+        <ng-template #prefixSearch>
+          <span nz-icon nzType="search" class="text-muted"></span>
+        </ng-template>
+      </div>
 
-    <div class="filter-box">
-      <label>Danh mục:</label>
-      <select [formControl]="categoryFilterControl">
-        @for (dm of danhMucList; track dm) {
-          <option [value]="dm === 'Tất cả' ? 'all' : dm">{{ dm }}</option>
-        }
-      </select>
+      <div class="category-select-box">
+        <span class="filter-label">Danh mục:</span>
+        <nz-select [formControl]="categoryFilterControl" nzSize="large" class="category-select">
+          @for (dm of danhMucList; track dm) {
+            <nz-option [nzValue]="dm === 'Tất cả' ? 'all' : dm" [nzLabel]="dm"></nz-option>
+          }
+        </nz-select>
+      </div>
     </div>
-  </div>
+  </nz-card>
 
   <!-- Product Table -->
-  <div class="content-card">
-    <!-- Header bảng cố định bên ngoài vùng cuộn -->
-    <table class="data-table fixed-header-table">
-      <thead>
-        <tr>
-          <th style="width: 10%;">Mã SP</th>
-          <th style="width: 28%;">Tên sản phẩm</th>
-          <th style="width: 14%;">Danh mục</th>
-          <th style="width: 14%;">Giá bán</th>
-          <th style="width: 11%;">Tồn kho</th>
-          <th style="width: 11%;">Ngày tạo</th>
-          <th style="width: 12%;" class="text-center">Hành động</th>
-        </tr>
-      </thead>
-    </table>
-
-    <!-- Chỉ cuộn danh sách hàng sản phẩm bên dưới -->
-    <div class="table-container">
-      @if (sanPhamHienThi$ | async; as danhSach) {
-        @if (danhSach.length > 0) {
-          <table class="data-table body-table">
-            <tbody>
-              @for (sp of danhSach; track sp.id) {
-                <tr>
-                  <td style="width: 10%;"><span class="sku-badge">{{ sp.maSp }}</span></td>
-                  <td style="width: 28%;">
-                    <div class="product-name">{{ sp.ten }}</div>
-                    @if (sp.moTa) {
-                      <small class="product-desc">{{ sp.moTa }}</small>
-                    }
-                  </td>
-                  <td style="width: 14%;"><span class="category-badge">{{ sp.danhMuc }}</span></td>
-                  <td style="width: 14%;" class="font-bold text-primary">{{ formatTien(sp.gia) }}</td>
-                  <td style="width: 11%;">
-                    @if (sp.soLuongTon === 0) {
-                      <span class="badge badge-out">Hết hàng</span>
-                    } @else if (sp.soLuongTon <= 5) {
-                      <span class="badge badge-low">Còn {{ sp.soLuongTon }}</span>
-                    } @else {
-                      <span class="badge badge-good">Còn {{ sp.soLuongTon }}</span>
-                    }
-                  </td>
-                  <td style="width: 11%;" class="text-muted">{{ sp.ngayTao }}</td>
-                  <td style="width: 12%;" class="text-center">
-                    <div class="actions-cell">
-                      <button class="btn-icon btn-edit" title="Chỉnh sửa" (click)="moModalSua(sp)">
-                        ✏️
-                      </button>
-                      <button class="btn-icon btn-delete" title="Xóa" (click)="yeuCauXoa(sp)">
-                        🗑️
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        } @else {
-          <div class="empty-state">
-            <p>Không tìm thấy sản phẩm nào khớp với điều kiện tìm kiếm.</p>
-          </div>
-        }
-      }
-    </div>
-  </div>
-
-  <!-- Modal Thêm / Sửa Sản Phẩm -->
-  @if (hienModal) {
-    <div class="modal-backdrop" (click)="dongModal()">
-      <div class="modal-card" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>{{ dangChinhSua ? '✏️ Chỉnh Sửa Sản Phẩm' : '➕ Thêm Sản Phẩm Mới' }}</h3>
-          <button class="btn-close" (click)="dongModal()">✕</button>
-        </div>
-
-        <form [formGroup]="formSanPham" (ngSubmit)="luuSanPham()">
-          <div class="modal-body">
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label>Mã sản phẩm *</label>
-                <input type="text" formControlName="maSp" placeholder="VD: SP001" />
-                @if (formSanPham.get('maSp')?.touched && formSanPham.get('maSp')?.invalid) {
-                  <span class="error-msg">Mã SP là bắt buộc (chữ hoa/số).</span>
+  <nz-card [nzBordered]="false" class="table-card">
+    @if (sanPhamHienThi$ | async; as danhSach) {
+      <nz-table 
+        #productTable 
+        [nzData]="danhSach" 
+        [nzPageSize]="8"
+        nzShowPagination
+        nzShowSizeChanger
+        [nzPageSizeOptions]="[5, 8, 15, 30]"
+        nzSize="middle"
+        class="custom-nz-table"
+      >
+        <thead>
+          <tr>
+            <th nzWidth="120px">Mã SP</th>
+            <th nzWidth="300px">Tên sản phẩm</th>
+            <th nzWidth="140px">Danh mục</th>
+            <th nzWidth="160px" [nzSortFn]="compareGia">Giá bán</th>
+            <th nzWidth="140px" [nzSortFn]="compareTon">Tồn kho</th>
+            <th nzWidth="130px">Ngày tạo</th>
+            <th nzWidth="120px" nzAlign="center">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (sp of productTable.data; track sp.id) {
+            <tr>
+              <td>
+                <span class="sku-tag">{{ sp.maSp }}</span>
+              </td>
+              <td>
+                <div class="product-title">{{ sp.ten }}</div>
+                @if (sp.moTa) {
+                  <div class="product-desc" [title]="sp.moTa">{{ sp.moTa }}</div>
                 }
-              </div>
-
-              <div class="form-group flex-1">
-                <label>Danh mục *</label>
-                <select formControlName="danhMuc">
-                  <option value="Điện thoại">Điện thoại</option>
-                  <option value="Laptop">Laptop</option>
-                  <option value="Phụ kiện">Phụ kiện</option>
-                  <option value="Âm thanh">Âm thanh</option>
-                  <option value="Màn hình">Màn hình</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Tên sản phẩm *</label>
-              <input type="text" formControlName="ten" placeholder="Nhập tên sản phẩm..." />
-              @if (formSanPham.get('ten')?.touched && formSanPham.get('ten')?.invalid) {
-                <span class="error-msg">Tên sản phẩm từ 3 ký tự trở lên.</span>
-              }
-            </div>
-
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label>Giá bán (VNĐ) *</label>
-                <input type="number" formControlName="gia" placeholder="VD: 5000000" />
-                @if (formSanPham.get('gia')?.touched && formSanPham.get('gia')?.invalid) {
-                  <span class="error-msg">Giá bán phải lớn hơn 1,000 VNĐ.</span>
+              </td>
+              <td>
+                <nz-tag [nzColor]="getDanhMucColor(sp.danhMuc)">{{ sp.danhMuc }}</nz-tag>
+              </td>
+              <td class="price-cell">
+                {{ formatTien(sp.gia) }}
+              </td>
+              <td>
+                @if (sp.soLuongTon === 0) {
+                  <nz-badge nzStatus="error" nzText="Hết hàng"></nz-badge>
+                } @else if (sp.soLuongTon <= 5) {
+                  <nz-badge nzStatus="warning" [nzText]="'Còn ' + sp.soLuongTon"></nz-badge>
+                } @else {
+                  <nz-badge nzStatus="success" [nzText]="'Còn ' + sp.soLuongTon"></nz-badge>
                 }
-              </div>
+              </td>
+              <td class="text-muted">{{ sp.ngayTao }}</td>
+              <td nzAlign="center">
+                <nz-space>
+                  <button 
+                    *nzSpaceItem
+                    nz-button 
+                    nzType="text" 
+                    nzShape="circle" 
+                    (click)="moModalSua(sp)" 
+                    nz-tooltip="Chỉnh sửa sản phẩm"
+                    class="action-btn edit-btn"
+                  >
+                    <span nz-icon nzType="edit" nzTheme="outline"></span>
+                  </button>
 
-              <div class="form-group flex-1">
-                <label>Số lượng tồn kho *</label>
-                <input type="number" formControlName="soLuongTon" placeholder="VD: 10" />
-                @if (formSanPham.get('soLuongTon')?.touched && formSanPham.get('soLuongTon')?.invalid) {
-                  <span class="error-msg">Số lượng tồn không âm.</span>
-                }
-              </div>
-            </div>
+                  <button 
+                    *nzSpaceItem
+                    nz-button 
+                    nzType="text" 
+                    nzDanger 
+                    nzShape="circle" 
+                    nz-popconfirm
+                    [nzPopconfirmTitle]="'Bạn có chắc chắn muốn xóa sản phẩm ' + sp.ten + ' (' + sp.maSp + ')?'"
+                    nzOkText="Xóa"
+                    nzCancelText="Hủy"
+                    [nzOkDanger]="true"
+                    (nzOnConfirm)="xacNhanXoa(sp)"
+                    nz-tooltip="Xóa sản phẩm"
+                    class="action-btn delete-btn"
+                  >
+                    <span nz-icon nzType="delete" nzTheme="outline"></span>
+                  </button>
+                </nz-space>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </nz-table>
+    }
+  </nz-card>
 
-            <div class="form-group">
-              <label>Mô tả ngắn</label>
-              <textarea rows="3" formControlName="moTa" placeholder="Nhập thông tin mô tả chi tiết..."></textarea>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" (click)="dongModal()">Hủy</button>
-            <button type="submit" class="btn btn-primary" [disabled]="formSanPham.invalid">
-              {{ dangChinhSua ? 'Cập Nhật' : 'Tạo Sản Phẩm' }}
-            </button>
-          </div>
-        </form>
+  <!-- Modal Thêm / Chỉnh Sửa Sản Phẩm (Ant Design Modal & Form) -->
+  <nz-modal
+    [(nzVisible)]="hienModal"
+    [nzTitle]="modalTitleTemplate"
+    [nzContent]="modalContentTemplate"
+    [nzFooter]="modalFooterTemplate"
+    (nzOnCancel)="dongModal()"
+    [nzWidth]="620"
+  >
+    <ng-template #modalTitleTemplate>
+      <div class="modal-title-custom">
+        <span nz-icon [nzType]="dangChinhSua ? 'edit' : 'plus-circle'" nzTheme="outline" class="modal-icon"></span>
+        <span>{{ dangChinhSua ? 'Chỉnh Sửa Sản Phẩm' : 'Thêm Sản Phẩm Mới Vào Kho' }}</span>
       </div>
-    </div>
-  }
+    </ng-template>
 
-  <!-- Modal Xác Nhận Xóa -->
-  @if (hienModalXacNhanXoa && sanPhamDangXoa) {
-    <div class="modal-backdrop" (click)="dongModalXoa()">
-      <div class="modal-card modal-confirm" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>⚠️ Xác Nhận Xóa</h3>
-          <button class="btn-close" (click)="dongModalXoa()">✕</button>
+    <ng-template #modalContentTemplate>
+      <form nz-form [formGroup]="formSanPham" nzLayout="vertical" class="zorro-modal-form">
+        <div class="form-row">
+          <nz-form-item class="form-col">
+            <nz-form-label nzRequired>Mã sản phẩm</nz-form-label>
+            <nz-form-control nzErrorTip="Mã SP là bắt buộc (chữ hoa/số)">
+              <input nz-input formControlName="maSp" placeholder="VD: SP001" />
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item class="form-col">
+            <nz-form-label nzRequired>Danh mục</nz-form-label>
+            <nz-form-control nzErrorTip="Vui lòng chọn danh mục">
+              <nz-select formControlName="danhMuc">
+                <nz-option nzValue="Điện thoại" nzLabel="Điện thoại"></nz-option>
+                <nz-option nzValue="Laptop" nzLabel="Laptop"></nz-option>
+                <nz-option nzValue="Phụ kiện" nzLabel="Phụ kiện"></nz-option>
+                <nz-option nzValue="Âm thanh" nzLabel="Âm thanh"></nz-option>
+                <nz-option nzValue="Màn hình" nzLabel="Màn hình"></nz-option>
+              </nz-select>
+            </nz-form-control>
+          </nz-form-item>
         </div>
-        <div class="modal-body">
-          <p>Bạn có chắc chắn muốn xóa sản phẩm <strong>{{ sanPhamDangXoa.ten }}</strong> ({{ sanPhamDangXoa.maSp }})?</p>
-          <p class="text-muted">Hành động này sẽ cập nhật trực tiếp vào cơ sở dữ liệu kho.</p>
+
+        <nz-form-item>
+          <nz-form-label nzRequired>Tên sản phẩm</nz-form-label>
+          <nz-form-control nzErrorTip="Tên sản phẩm tối thiểu 3 ký tự">
+            <input nz-input formControlName="ten" placeholder="Nhập tên sản phẩm (VD: iPhone 16 Pro Max)..." />
+          </nz-form-control>
+        </nz-form-item>
+
+        <div class="form-row">
+          <nz-form-item class="form-col">
+            <nz-form-label nzRequired>Giá bán (VNĐ)</nz-form-label>
+            <nz-form-control nzErrorTip="Giá bán phải lớn hơn 1,000 VNĐ">
+              <input nz-input type="number" formControlName="gia" placeholder="VD: 25000000" />
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item class="form-col">
+            <nz-form-label nzRequired>Số lượng tồn kho</nz-form-label>
+            <nz-form-control nzErrorTip="Số lượng tồn kho không được âm">
+              <input nz-input type="number" formControlName="soLuongTon" placeholder="VD: 15" />
+            </nz-form-control>
+          </nz-form-item>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="dongModalXoa()">Hủy bỏ</button>
-          <button type="button" class="btn btn-danger" (click)="xacNhanXoa()">Xác Nhận Xóa</button>
-        </div>
-      </div>
-    </div>
-  }
+
+        <nz-form-item>
+          <nz-form-label>Mô tả chi tiết</nz-form-label>
+          <nz-form-control>
+            <textarea nz-input rows="3" formControlName="moTa" placeholder="Nhập thông tin giới thiệu, cấu hình, bảo hành..."></textarea>
+          </nz-form-control>
+        </nz-form-item>
+      </form>
+    </ng-template>
+
+    <ng-template #modalFooterTemplate>
+      <button nz-button nzType="default" (click)="dongModal()">Hủy bỏ</button>
+      <button nz-button nzType="primary" (click)="luuSanPham()" [disabled]="formSanPham.invalid">
+        <span nz-icon [nzType]="dangChinhSua ? 'check' : 'save'"></span>
+        {{ dangChinhSua ? 'Cập Nhật Thay Đổi' : 'Xác Nhận Tạo' }}
+      </button>
+    </ng-template>
+  </nz-modal>
 </div>
