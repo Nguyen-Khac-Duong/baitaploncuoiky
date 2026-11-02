@@ -115,36 +115,66 @@ html {
   padding: 0;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: var(--text-primary);
-  background-attachment: fixed !important;
-  /* Light Mode Ambient Glow Mesh Background */
-  background: 
-    radial-gradient(circle at 10% 15%, rgba(99, 102, 241, 0.15) 0%, transparent 45%),
-    radial-gradient(circle at 90% 10%, rgba(236, 72, 153, 0.12) 0%, transparent 40%),
-    radial-gradient(circle at 80% 85%, rgba(14, 165, 233, 0.12) 0%, transparent 45%),
-    radial-gradient(circle at 20% 85%, rgba(168, 85, 247, 0.10) 0%, transparent 40%),
-    #edf2f7 !important;
-}
-
-html[data-theme='dark'],
-[data-theme='dark'] html {
-  /* Dark Mode Ambient Glow Mesh Background */
-  background: 
-    radial-gradient(circle at 12% 18%, rgba(99, 102, 241, 0.22) 0%, transparent 45%),
-    radial-gradient(circle at 88% 12%, rgba(168, 85, 247, 0.20) 0%, transparent 42%),
-    radial-gradient(circle at 80% 80%, rgba(14, 165, 233, 0.18) 0%, transparent 45%),
-    radial-gradient(circle at 20% 85%, rgba(236, 72, 153, 0.15) 0%, transparent 42%),
-    #060911 !important;
-  background-attachment: fixed !important;
+  background-color: var(--bg-app) !important;
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 body, body.bg-light {
   min-height: 100vh;
   margin: 0;
   padding: 0;
-  background: transparent !important;
   background-color: transparent !important;
   color: var(--text-primary) !important;
   font-family: inherit;
+  position: relative;
+  transition: color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Light Mode Ambient Glow Mesh - Fixed Cross-Fade Layer */
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: -1;
+    background: 
+      radial-gradient(circle at 10% 15%, rgba(99, 102, 241, 0.15) 0%, transparent 45%),
+      radial-gradient(circle at 90% 10%, rgba(236, 72, 153, 0.12) 0%, transparent 40%),
+      radial-gradient(circle at 80% 85%, rgba(14, 165, 233, 0.12) 0%, transparent 45%),
+      radial-gradient(circle at 20% 85%, rgba(168, 85, 247, 0.10) 0%, transparent 40%);
+    opacity: 1;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Dark Mode Ambient Glow Mesh - Fixed Cross-Fade Layer */
+  &::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: -1;
+    background: 
+      radial-gradient(circle at 12% 18%, rgba(99, 102, 241, 0.22) 0%, transparent 45%),
+      radial-gradient(circle at 88% 12%, rgba(168, 85, 247, 0.20) 0%, transparent 42%),
+      radial-gradient(circle at 80% 80%, rgba(14, 165, 233, 0.18) 0%, transparent 45%),
+      radial-gradient(circle at 20% 85%, rgba(236, 72, 153, 0.15) 0%, transparent 42%);
+    opacity: 0;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+[data-theme='dark'] body::before {
+  opacity: 0;
+}
+
+[data-theme='dark'] body::after {
+  opacity: 1;
 }
 
 /* ==================== GLOBAL OCD-PERFECT SLIM SCROLLBAR ==================== */
@@ -542,5 +572,227 @@ input::placeholder {
   border-radius: 0.75rem !important;
   box-shadow: var(--glass-card-shadow) !important;
 }
+
+/* ==================== GLOBAL SMOOTH THEME TRANSITION ==================== */
+html,
+body,
+.layout-wrapper,
+.main-container,
+.page-content,
+.topbar,
+.sidebar,
+.user-layout,
+.store-header,
+.store-footer,
+.ant-card,
+.ant-table,
+.ant-table-thead > tr > th,
+.ant-table-tbody > tr > td,
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select-selector,
+.ant-modal-content,
+.ant-modal-header,
+.ant-modal-footer,
+.ant-pagination-item,
+.ant-pagination-item-link,
+.filter-card,
+.table-card,
+.price-cell,
+.sku-tag,
+.order-tag,
+.customer-name,
+.product-title,
+.product-desc,
+.btn-action,
+.user-profile-btn,
+.ant-descriptions-item-label,
+.ant-descriptions-item-content,
+.ant-dropdown-menu {
+  transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* ==================== ANT DESIGN BADGE (NG-ZORRO) THEME FIX ==================== */
+.ant-badge-status-text {
+  color: var(--text-primary) !important;
+  font-weight: 500;
+  transition: color 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+[data-theme='dark'] .ant-badge-status-text {
+  color: var(--text-primary) !important;
+}
+
+/* ==================== ANT DESIGN BUTTONS & ACTION ICONS THEME FIX ==================== */
+.ant-btn-text,
+.action-btn {
+  color: var(--text-primary) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &.edit-btn,
+  &.view-btn {
+    color: var(--text-secondary) !important;
+
+    &:hover {
+      color: #3b82f6 !important;
+      background: rgba(59, 130, 246, 0.15) !important;
+    }
+  }
+
+  &.delete-btn {
+    color: #ef4444 !important;
+
+    &:hover {
+      color: #dc2626 !important;
+      background: rgba(239, 68, 68, 0.15) !important;
+    }
+  }
+}
+
+[data-theme='dark'] {
+  .ant-btn-text {
+    color: var(--text-primary) !important;
+  }
+
+  .ant-btn-link {
+    color: #60a5fa !important;
+
+    &:hover {
+      color: #93c5fd !important;
+    }
+  }
+
+  .action-btn {
+    &.edit-btn,
+    &.view-btn {
+      color: #93c5fd !important;
+      background: rgba(255, 255, 255, 0.08) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+
+      &:hover {
+        color: #bfdbfe !important;
+        background: rgba(59, 130, 246, 0.28) !important;
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.45) !important;
+        border-color: #3b82f6 !important;
+      }
+    }
+
+    &.delete-btn {
+      color: #fca5a5 !important;
+      background: rgba(239, 68, 68, 0.15) !important;
+      border: 1px solid rgba(239, 68, 68, 0.25) !important;
+
+      &:hover {
+        color: #ffffff !important;
+        background: rgba(239, 68, 68, 0.35) !important;
+        box-shadow: 0 0 10px rgba(239, 68, 68, 0.45) !important;
+        border-color: #ef4444 !important;
+      }
+    }
+  }
+
+  /* Tags Neon Glass Theme in Dark Mode */
+  .ant-tag {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-primary);
+  }
+
+  .ant-tag-blue {
+    color: #60a5fa !important;
+    background: rgba(59, 130, 246, 0.18) !important;
+    border-color: rgba(59, 130, 246, 0.35) !important;
+  }
+
+  .ant-tag-purple {
+    color: #c084fc !important;
+    background: rgba(168, 85, 247, 0.18) !important;
+    border-color: rgba(168, 85, 247, 0.35) !important;
+  }
+
+  .ant-tag-cyan {
+    color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.18) !important;
+    border-color: rgba(56, 189, 248, 0.35) !important;
+  }
+
+  .ant-tag-orange {
+    color: #fb923c !important;
+    background: rgba(251, 146, 60, 0.18) !important;
+    border-color: rgba(251, 146, 60, 0.35) !important;
+  }
+
+  .ant-tag-magenta {
+    color: #f472b6 !important;
+    background: rgba(244, 114, 182, 0.18) !important;
+    border-color: rgba(244, 114, 182, 0.35) !important;
+  }
+
+  .ant-tag-geekblue {
+    color: #818cf8 !important;
+    background: rgba(99, 102, 241, 0.18) !important;
+    border-color: rgba(99, 102, 241, 0.35) !important;
+  }
+
+  .ant-tag-success {
+    color: #34d399 !important;
+    background: rgba(52, 211, 153, 0.18) !important;
+    border-color: rgba(52, 211, 153, 0.35) !important;
+  }
+
+  .ant-tag-warning {
+    color: #fbbf24 !important;
+    background: rgba(251, 191, 36, 0.18) !important;
+    border-color: rgba(251, 191, 36, 0.35) !important;
+  }
+
+  .ant-tag-error {
+    color: #f87171 !important;
+    background: rgba(248, 113, 113, 0.18) !important;
+    border-color: rgba(248, 113, 113, 0.35) !important;
+  }
+
+  .ant-tag-processing {
+    color: #60a5fa !important;
+    background: rgba(59, 130, 246, 0.18) !important;
+    border-color: rgba(59, 130, 246, 0.35) !important;
+  }
+
+  /* Tags & Monospace labels */
+  .sku-tag,
+  .order-tag {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  }
+
+  /* Tooltips */
+  .ant-tooltip-inner {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
+  }
+}
+
+/* Table Footer / Summary */
+.ant-table-footer,
+.ant-table tfoot > tr > td {
+  background: var(--bg-table-header) !important;
+  color: var(--text-primary) !important;
+  border-top: 1px solid var(--border-color) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+
 
 

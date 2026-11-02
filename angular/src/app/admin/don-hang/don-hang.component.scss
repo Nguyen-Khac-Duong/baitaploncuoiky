@@ -139,10 +139,31 @@
 
   .action-btn {
     transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    color: var(--text-secondary);
 
     &.view-btn:hover {
-      background: rgba(24, 144, 255, 0.1);
-      color: #1890ff;
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+    }
+  }
+}
+
+:host-context([data-theme='dark']) {
+  .action-btn.view-btn {
+    color: #93c5fd !important;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+    &:hover {
+      color: #bfdbfe !important;
+      background: rgba(59, 130, 246, 0.3) !important;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.45);
+      border-color: #3b82f6;
     }
   }
 }

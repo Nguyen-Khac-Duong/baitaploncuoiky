@@ -24,11 +24,13 @@ export class GiaoDienService {
     if (this.isBrowser()) {
       const daLuu = localStorage.getItem(STORAGE_THEME);
       // Ưu tiên cấu hình đã lưu, nếu chưa có thì kiểm tra prefers-color-scheme của máy
-      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const prefersDark = typeof window.matchMedia === 'function' 
+        ? window.matchMedia('(prefers-color-scheme: dark)').matches 
+        : false;
       const isDark = daLuu ? daLuu === 'toi' : prefersDark;
 
-      this.cheDoToi.set(isDark);
-      this.apDungGiaoDien(isDark);
+      this.cheDoToi.set(Boolean(isDark));
+      this.apDungGiaoDien(Boolean(isDark));
     }
   }
 

@@ -61,6 +61,13 @@ describe('HeaderComponent', () => {
     expect(spyEmit).toHaveBeenCalled();
   });
 
+  it('nên gọi chuyenDoiGiaoDien khi click nút đổi theme', () => {
+    const spyTheme = vi.spyOn(component.giaoDienService, 'chuyenDoiGiaoDien');
+    const btnTheme = fixture.nativeElement.querySelector('.btn-theme');
+    btnTheme.click();
+    expect(spyTheme).toHaveBeenCalled();
+  });
+
   it('nên gọi đăng xuất và chuyển về trang đăng nhập', () => {
     component.dangXuat();
     expect(mockXacThucService.dangXuat).toHaveBeenCalled();

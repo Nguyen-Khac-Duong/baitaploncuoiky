@@ -84,13 +84,13 @@
               <td class="price-cell">
                 {{ formatTien(sp.gia) }}
               </td>
-              <td>
+              <td class="stock-cell">
                 @if (sp.soLuongTon === 0) {
-                  <nz-badge nzStatus="error" nzText="Hết hàng"></nz-badge>
+                  <nz-badge nzStatus="error" nzText="Hết hàng" class="stock-badge stock-error"></nz-badge>
                 } @else if (sp.soLuongTon <= 5) {
-                  <nz-badge nzStatus="warning" [nzText]="'Còn ' + sp.soLuongTon"></nz-badge>
+                  <nz-badge nzStatus="warning" [nzText]="'Còn ' + sp.soLuongTon" class="stock-badge stock-warning"></nz-badge>
                 } @else {
-                  <nz-badge nzStatus="success" [nzText]="'Còn ' + sp.soLuongTon"></nz-badge>
+                  <nz-badge nzStatus="success" [nzText]="'Còn ' + sp.soLuongTon" class="stock-badge stock-success"></nz-badge>
                 }
               </td>
               <td class="text-muted">{{ sp.ngayTao }}</td>
