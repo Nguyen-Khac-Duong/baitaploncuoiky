@@ -48,6 +48,20 @@ export interface DonHang {
   chiTiet: ChiTietDonHang[];
 }
 
+export interface CreateChiTietDonHangInput {
+  sanPhamId: string;
+  soLuong: number;
+}
+
+export interface CreateDonHangInput {
+  nguoiDungId?: string;
+  tenKhachHang: string;
+  soDienThoai: string;
+  diaChi: string;
+  ghiChu?: string;
+  chiTiet: CreateChiTietDonHangInput[];
+}
+
 export interface ThongKeDashboard {
   tongSanPham: number;
   tongDonHang: number;

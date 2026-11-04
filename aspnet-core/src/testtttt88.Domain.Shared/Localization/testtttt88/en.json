@@ -4,6 +4,13 @@
     "AppName": "testtttt88",
     "Menu:Home": "Home",
     "Welcome": "Welcome",
-    "LongWelcomeMessage": "Welcome to the application. This is a startup project based on the ABP framework. For more information, visit abp.io."
+    "LongWelcomeMessage": "Welcome to the application. This is a startup project based on the ABP framework. For more information, visit abp.io.",
+    "testtttt88:SanPhams:0001": "Product code '{MaSp}' already exists in the system. Please choose another code!",
+    "testtttt88:SanPhams:0002": "Product with ID '{Id}' was not found!",
+    "testtttt88:SanPhams:0003": "Product '{TenSanPham}' only has {SoLuongTon} item(s) in stock, not enough for requested quantity ({SoLuongYeuCau})!",
+    "testtttt88:DonHangs:0001": "An order must contain at least one valid product!",
+    "testtttt88:DonHangs:0002": "Order is already in a terminal state ({TrangThai}) and cannot be changed!",
+    "testtttt88:DonHangs:0003": "Status transition to '{TrangThai}' is invalid for this order!",
+    "testtttt88:DonHangs:0004": "Requested order was not found!"
   }
 }

@@ -4,6 +4,13 @@
     "AppName": "testtttt88",
     "Menu:Home": "Trang chủ",
     "Welcome": "Chào mừng bạn",
-    "LongWelcomeMessage": "Chào mừng bạn đến ứng dụng. Đây là một dự án khởi nghiệp dựa trên khung ABP. Để biết thêm thông tin, hãy truy cập abp.io."
+    "LongWelcomeMessage": "Chào mừng bạn đến ứng dụng. Đây là một dự án khởi nghiệp dựa trên khung ABP. Để biết thêm thông tin, hãy truy cập abp.io.",
+    "testtttt88:SanPhams:0001": "Mã sản phẩm '{MaSp}' đã tồn tại trong hệ thống. Vui lòng chọn mã khác!",
+    "testtttt88:SanPhams:0002": "Không tìm thấy sản phẩm có mã định danh '{Id}'!",
+    "testtttt88:SanPhams:0003": "Sản phẩm '{TenSanPham}' chỉ còn {SoLuongTon} sản phẩm trong kho, không đủ số lượng đặt ({SoLuongYeuCau})!",
+    "testtttt88:DonHangs:0001": "Đơn hàng phải có ít nhất một sản phẩm hợp lệ!",
+    "testtttt88:DonHangs:0002": "Đơn hàng đã ở trạng thái kết thúc ({TrangThai}), không thể thay đổi trạng thái nữa!",
+    "testtttt88:DonHangs:0003": "Trạng thái chuyển đổi '{TrangThai}' không hợp lệ cho đơn hàng này!",
+    "testtttt88:DonHangs:0004": "Không tìm thấy đơn hàng yêu cầu!"
   }
 }

@@ -27,13 +27,13 @@ public class DonHangManager : DomainService
     }
 
     /// <summary>
-    /// Tạo mới một đơn hàng: Tự sinh mã đơn, kiểm tra & trừ tồn kho, tính tổng tiền
+    /// Tạo mới một đơn hàng: Lấy giá và tên từ Server (chống client tự đặt giá), kiểm tra & trừ tồn kho, tính tổng tiền
     /// </summary>
     public async Task<DonHang> CreateOrderAsync(
         string tenKhachHang,
         string soDienThoai,
         string diaChi,
-        List<(Guid sanPhamId, string tenSanPham, int soLuong, decimal donGia, string? hinhAnh)> chiTietItems,
+        List<(Guid sanPhamId, int soLuong)> chiTietInputs,
         string? nguoiDungId = null,
         string? ghiChu = null)
     {
@@ -41,20 +41,17 @@ public class DonHangManager : DomainService
         Check.NotNullOrWhiteSpace(soDienThoai, nameof(soDienThoai));
         Check.NotNullOrWhiteSpace(diaChi, nameof(diaChi));
 
-        if (chiTietItems == null || chiTietItems.Count == 0)
+        if (chiTietInputs == null || chiTietInputs.Count == 0)
         {
-            throw new UserFriendlyException("Đơn hàng phải có ít nhất một sản phẩm!");
+            throw new BusinessException(testtttt88DomainErrorCodes.DonHangPhaiCoSanPham);
         }
 
-        // Tự sinh mã đơn hàng không trùng lặp
+        // Tự sinh mã đơn hàng không trùng lặp và có timestamp (BE #24)
         string maDon;
         do
         {
-            maDon = "DH" + new Random().Next(100000, 999999);
+            maDon = $"DH{Clock.Now:yyMMddHHmmss}{Random.Shared.Next(100, 999)}";
         } while (await _donHangRepository.AnyAsync(x => x.MaDon == maDon));
-
-        // Tính tổng tiền đơn hàng
-        decimal tongTien = chiTietItems.Sum(x => x.donGia * x.soLuong);
 
         var donHang = new DonHang(
             GuidGenerator.Create(),
@@ -62,37 +59,42 @@ public class DonHangManager : DomainService
             tenKhachHang,
             soDienThoai,
             diaChi,
-            tongTien,
-            nguoiDungId,
-            ghiChu,
-            "cho_xu_ly"
-        );
-
-        // Duyệt từng sản phẩm: Tạo chi tiết đơn hàng và trừ tồn kho
-        foreach (var item in chiTietItems)
+            tongTien: 0,
+            nguoiDungId: nguoiDungId,
+            ghiChu: ghiChu
+        )
         {
-            var chiTiet = new ChiTietDonHang(
-                GuidGenerator.Create(),
-                donHang.Id,
-                item.sanPhamId,
-                item.tenSanPham,
-                item.soLuong,
-                item.donGia,
-                item.donGia * item.soLuong,
-                item.hinhAnh
-            );
-            donHang.ChiTiet.Add(chiTiet);
+            NgayTao = Clock.Now
+        };
 
-            // Cập nhật tồn kho sản phẩm trong tầng Domain
-            if (item.sanPhamId != Guid.Empty)
+        // Duyệt từng sản phẩm: Lấy thông tin giá gốc từ server, kiểm tra tồn kho và trừ kho (BE #1 & BE #2)
+        foreach (var item in chiTietInputs)
+        {
+            if (item.soLuong <= 0)
             {
-                var sanPham = await _sanPhamRepository.FindAsync(item.sanPhamId);
-                if (sanPham != null)
-                {
-                    sanPham.SoLuongTon = Math.Max(0, sanPham.SoLuongTon - item.soLuong);
-                    await _sanPhamRepository.UpdateAsync(sanPham);
-                }
+                throw new ArgumentException("Số lượng sản phẩm đặt mua phải lớn hơn 0.", nameof(item.soLuong));
             }
+
+            var sanPham = await _sanPhamRepository.FindAsync(item.sanPhamId);
+            if (sanPham == null)
+            {
+                throw new BusinessException(testtttt88DomainErrorCodes.SanPhamKhongTonTai)
+                    .WithData("Id", item.sanPhamId);
+            }
+
+            // Trừ tồn kho và bảo toàn invariant (ném ngoại lệ nếu kho không đủ)
+            sanPham.GiamSoLuongTon(item.soLuong);
+            await _sanPhamRepository.UpdateAsync(sanPham);
+
+            // Server-controlled Price: Lấy đơn giá và hình ảnh gốc từ Entity SanPham
+            donHang.ThemChiTiet(
+                GuidGenerator.Create(),
+                sanPham.Id,
+                sanPham.Ten,
+                item.soLuong,
+                sanPham.Gia,
+                sanPham.HinhAnh
+            );
         }
 
         return await _donHangRepository.InsertAsync(donHang);
@@ -100,6 +102,7 @@ public class DonHangManager : DomainService
 
     /// <summary>
     /// Thay đổi trạng thái đơn hàng (Chờ xử lý -> Đang giao -> Hoàn thành / Hủy)
+    /// Khi hủy đơn: Tự động hoàn trả số lượng tồn kho (BE #1)
     /// </summary>
     public async Task<DonHang> ChangeStatusAsync(Guid id, string newStatus)
     {
@@ -113,7 +116,23 @@ public class DonHangManager : DomainService
             throw new EntityNotFoundException(typeof(DonHang), id);
         }
 
-        donHang.TrangThai = newStatus;
+        // Chuyển đổi trạng thái với State Machine check
+        donHang.ChuyenTrangThai(newStatus);
+
+        // Nếu trạng thái mới là ĐÃ HỦY: Hoàn trả số lượng tồn kho cho các sản phẩm
+        if (newStatus == DonHang.TrangThaiDaHuy)
+        {
+            foreach (var item in donHang.ChiTiet)
+            {
+                var sanPham = await _sanPhamRepository.FindAsync(item.SanPhamId);
+                if (sanPham != null)
+                {
+                    sanPham.TangSoLuongTon(item.SoLuong);
+                    await _sanPhamRepository.UpdateAsync(sanPham);
+                }
+            }
+        }
+
         return await _donHangRepository.UpdateAsync(donHang);
     }
 }

@@ -94,6 +94,9 @@ public class testtttt88DbContext :
             b.Property(x => x.DanhMuc).IsRequired().HasMaxLength(128);
             b.Property(x => x.HinhAnh).HasMaxLength(1024);
             b.Property(x => x.MoTa).HasMaxLength(2048);
+
+            // BE #17: Unique index có lọc soft delete
+            b.HasIndex(x => x.MaSp).IsUnique().HasFilter("[IsDeleted] = 0");
         });
 
         builder.Entity<DonHang>(b =>
@@ -108,6 +111,11 @@ public class testtttt88DbContext :
             b.Property(x => x.TongTien).HasPrecision(18, 2);
             b.Property(x => x.TrangThai).IsRequired().HasMaxLength(64);
             b.HasMany(x => x.ChiTiet).WithOne().HasForeignKey(x => x.DonHangId).IsRequired();
+
+            // BE #17: Unique index có lọc soft delete
+            b.HasIndex(x => x.MaDon).IsUnique().HasFilter("[IsDeleted] = 0");
+            // BE #22: Index cho truy vấn Dashboard và lọc trạng thái
+            b.HasIndex(x => new { x.TrangThai, x.CreationTime });
         });
 
         builder.Entity<ChiTietDonHang>(b =>

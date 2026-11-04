@@ -37,7 +37,9 @@ public class SanPhamAppService : testtttt88AppService, ISanPhamAppService
             throw new EntityNotFoundException(typeof(SanPham), id);
         }
 
-        return ObjectMapper.Map<SanPham, SanPhamDto>(sanPham);
+        var dto = ObjectMapper.Map<SanPham, SanPhamDto>(sanPham);
+        dto.NgayTao = sanPham.CreationTime;
+        return dto;
     }
 
     /// <summary>
@@ -52,7 +54,12 @@ public class SanPhamAppService : testtttt88AppService, ISanPhamAppService
             string.IsNullOrWhiteSpace(input.Sorting) ? nameof(SanPham.CreationTime) + " desc" : input.Sorting
         );
 
-        var dtos = entities.Select(x => ObjectMapper.Map<SanPham, SanPhamDto>(x)).ToList();
+        var dtos = entities.Select(x =>
+        {
+            var dto = ObjectMapper.Map<SanPham, SanPhamDto>(x);
+            dto.NgayTao = x.CreationTime;
+            return dto;
+        }).ToList();
         return new PagedResultDto<SanPhamDto>(totalCount, dtos);
     }
 
@@ -62,7 +69,12 @@ public class SanPhamAppService : testtttt88AppService, ISanPhamAppService
     public virtual async Task<List<SanPhamDto>> GetAllListAsync()
     {
         var entities = await _sanPhamRepository.GetListAsync();
-        return entities.Select(x => ObjectMapper.Map<SanPham, SanPhamDto>(x)).ToList();
+        return entities.Select(x =>
+        {
+            var dto = ObjectMapper.Map<SanPham, SanPhamDto>(x);
+            dto.NgayTao = x.CreationTime;
+            return dto;
+        }).ToList();
     }
 
     /// <summary>
@@ -81,7 +93,9 @@ public class SanPhamAppService : testtttt88AppService, ISanPhamAppService
             moTa: input.MoTa
         );
 
-        return ObjectMapper.Map<SanPham, SanPhamDto>(createdSanPham);
+        var dto = ObjectMapper.Map<SanPham, SanPhamDto>(createdSanPham);
+        dto.NgayTao = createdSanPham.CreationTime;
+        return dto;
     }
 
     /// <summary>
@@ -101,7 +115,9 @@ public class SanPhamAppService : testtttt88AppService, ISanPhamAppService
             moTa: input.MoTa
         );
 
-        return ObjectMapper.Map<SanPham, SanPhamDto>(updatedSanPham);
+        var dto = ObjectMapper.Map<SanPham, SanPhamDto>(updatedSanPham);
+        dto.NgayTao = updatedSanPham.CreationTime;
+        return dto;
     }
 
     /// <summary>

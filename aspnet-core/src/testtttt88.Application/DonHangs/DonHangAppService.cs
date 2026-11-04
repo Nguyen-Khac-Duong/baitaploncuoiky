@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using testtttt88.Permissions;
 using testtttt88.SanPhams;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 
@@ -31,12 +33,58 @@ public class DonHangAppService : testtttt88AppService, IDonHangAppService
 
     /// <summary>
     /// Lấy danh sách toàn bộ đơn hàng kèm chi tiết sản phẩm (Eager Loading WithDetailsAsync)
+    /// Yêu cầu quyền quản lý đơn hàng
     /// </summary>
+    [Authorize(testtttt88Permissions.DonHangs.Default)]
     public async Task<List<DonHangDto>> GetListAsync()
     {
         var query = await _donHangRepository.WithDetailsAsync(x => x.ChiTiet);
         var orders = await AsyncExecuter.ToListAsync(query.OrderByDescending(x => x.CreationTime));
-        return orders.Select(x => ObjectMapper.Map<DonHang, DonHangDto>(x)).ToList();
+        return orders.Select(x =>
+        {
+            var dto = ObjectMapper.Map<DonHang, DonHangDto>(x);
+            dto.NgayTao = x.CreationTime;
+            return dto;
+        }).ToList();
+    }
+
+    /// <summary>
+    /// Lấy danh sách đơn hàng có phân trang và bộ lọc từ Server (BE #10, FE #1)
+    /// </summary>
+    [Authorize(testtttt88Permissions.DonHangs.Default)]
+    public async Task<PagedResultDto<DonHangDto>> GetPagedListAsync(GetDonHangListFilterDto input)
+    {
+        var query = await _donHangRepository.WithDetailsAsync(x => x.ChiTiet);
+
+        if (!string.IsNullOrWhiteSpace(input.Filter))
+        {
+            var keyword = input.Filter.Trim().ToLower();
+            query = query.Where(x =>
+                x.MaDon.ToLower().Contains(keyword) ||
+                x.TenKhachHang.ToLower().Contains(keyword) ||
+                x.SoDienThoai.Contains(keyword)
+            );
+        }
+
+        if (!string.IsNullOrWhiteSpace(input.TrangThai) && input.TrangThai != "all")
+        {
+            query = query.Where(x => x.TrangThai == input.TrangThai);
+        }
+
+        var totalCount = await AsyncExecuter.CountAsync(query);
+
+        var sorting = string.IsNullOrWhiteSpace(input.Sorting) ? $"{nameof(DonHang.CreationTime)} desc" : input.Sorting;
+        var pagedQuery = query.OrderBy(sorting).Skip(input.SkipCount).Take(input.MaxResultCount);
+
+        var orders = await AsyncExecuter.ToListAsync(pagedQuery);
+        var dtos = orders.Select(x =>
+        {
+            var dto = ObjectMapper.Map<DonHang, DonHangDto>(x);
+            dto.NgayTao = x.CreationTime;
+            return dto;
+        }).ToList();
+
+        return new PagedResultDto<DonHangDto>(totalCount, dtos);
     }
 
     /// <summary>
@@ -51,7 +99,9 @@ public class DonHangAppService : testtttt88AppService, IDonHangAppService
             throw new EntityNotFoundException(typeof(DonHang), id);
         }
 
-        return ObjectMapper.Map<DonHang, DonHangDto>(order);
+        var dto = ObjectMapper.Map<DonHang, DonHangDto>(order);
+        dto.NgayTao = order.CreationTime;
+        return dto;
     }
 
     /// <summary>
@@ -63,32 +113,33 @@ public class DonHangAppService : testtttt88AppService, IDonHangAppService
         var orders = await AsyncExecuter.ToListAsync(
             query.Where(x => x.NguoiDungId == nguoiDungId).OrderByDescending(x => x.CreationTime)
         );
-        return orders.Select(x => ObjectMapper.Map<DonHang, DonHangDto>(x)).ToList();
+        return orders.Select(x =>
+        {
+            var dto = ObjectMapper.Map<DonHang, DonHangDto>(x);
+            dto.NgayTao = x.CreationTime;
+            return dto;
+        }).ToList();
     }
 
     /// <summary>
-    /// Tạo đơn hàng mới: Ủy thác toàn bộ nghiệp vụ kiểm tra & trừ kho cho DonHangManager
+    /// Tạo đơn hàng mới: Ủy thác toàn bộ nghiệp vụ kiểm tra & trừ kho, lấy giá server cho DonHangManager (BE #1, BE #2)
     /// </summary>
     public async Task<DonHangDto> CreateAsync(CreateDonHangDto input)
     {
-        var items = input.ChiTiet.Select(x => (
-            x.SanPhamId,
-            x.TenSanPham,
-            x.SoLuong,
-            x.DonGia,
-            x.HinhAnh
-        )).ToList();
+        var items = input.ChiTiet.Select(x => (x.SanPhamId, x.SoLuong)).ToList();
 
         var createdOrder = await _donHangManager.CreateOrderAsync(
             tenKhachHang: input.TenKhachHang,
             soDienThoai: input.SoDienThoai,
             diaChi: input.DiaChi,
-            chiTietItems: items,
+            chiTietInputs: items,
             nguoiDungId: input.NguoiDungId,
             ghiChu: input.GhiChu
         );
 
-        return ObjectMapper.Map<DonHang, DonHangDto>(createdOrder);
+        var dto = ObjectMapper.Map<DonHang, DonHangDto>(createdOrder);
+        dto.NgayTao = createdOrder.CreationTime;
+        return dto;
     }
 
     /// <summary>
@@ -98,12 +149,15 @@ public class DonHangAppService : testtttt88AppService, IDonHangAppService
     public async Task<DonHangDto> DoiTrangThaiAsync(Guid id, DoiTrangThaiDonHangDto input)
     {
         var updatedOrder = await _donHangManager.ChangeStatusAsync(id, input.TrangThai);
-        return ObjectMapper.Map<DonHang, DonHangDto>(updatedOrder);
+        var dto = ObjectMapper.Map<DonHang, DonHangDto>(updatedOrder);
+        dto.NgayTao = updatedOrder.CreationTime;
+        return dto;
     }
 
     /// <summary>
-    /// Thống kê Dashboard
+    /// Thống kê Dashboard (Yêu cầu quyền quản lý)
     /// </summary>
+    [Authorize(testtttt88Permissions.DonHangs.Default)]
     public async Task<ThongKeDashboardDto> GetThongKeDashboardAsync()
     {
         var totalOrders = await _donHangRepository.GetCountAsync();
@@ -111,7 +165,7 @@ public class DonHangAppService : testtttt88AppService, IDonHangAppService
         var outOfStockCount = await _sanPhamRepository.CountAsync(x => x.SoLuongTon <= 0);
 
         var queryOrders = await _donHangRepository.GetQueryableAsync();
-        var completedOrders = queryOrders.Where(x => x.TrangThai == "hoan_thanh" || x.TrangThai == "da_giao");
+        var completedOrders = queryOrders.Where(x => x.TrangThai == DonHang.TrangThaiHoanThanh);
         var totalRevenue = await AsyncExecuter.SumAsync(completedOrders, x => x.TongTien);
 
         return new ThongKeDashboardDto

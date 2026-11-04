@@ -88,6 +88,10 @@ export class DonHangComponent implements OnInit {
   }
 
   doiTrangThai(dh: DonHang, trangThaiMoi: string): void {
+    if (dh.trangThai === 'hoan_thanh' || dh.trangThai === 'da_huy') {
+      this.msg.warning(`Đơn hàng #${dh.maDon} đã ở trạng thái kết thúc, không thể thay đổi.`);
+      return;
+    }
     this.duLieuService.doiTrangThaiDonHang(dh.id, trangThaiMoi as TrangThaiDonHang);
     this.msg.success(`Đã cập nhật trạng thái đơn #${dh.maDon} sang "${this.layTenTrangThai(trangThaiMoi as TrangThaiDonHang)}"`);
   }

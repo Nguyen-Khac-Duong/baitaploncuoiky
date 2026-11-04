@@ -36,7 +36,8 @@ public class SanPhamManager : DomainService
         var existing = await _sanPhamRepository.FirstOrDefaultAsync(x => x.MaSp == maSp);
         if (existing != null)
         {
-            throw new UserFriendlyException($"Mã sản phẩm '{maSp}' đã tồn tại trong hệ thống. Vui lòng chọn mã khác!");
+            throw new BusinessException(testtttt88DomainErrorCodes.SanPhamDaTonTai)
+                .WithData("MaSp", maSp);
         }
 
         var sanPham = new SanPham(
@@ -74,16 +75,19 @@ public class SanPhamManager : DomainService
         var existing = await _sanPhamRepository.FirstOrDefaultAsync(x => x.MaSp == maSp && x.Id != id);
         if (existing != null)
         {
-            throw new UserFriendlyException($"Mã sản phẩm '{maSp}' đã thuộc về một sản phẩm khác!");
+            throw new BusinessException(testtttt88DomainErrorCodes.SanPhamDaTonTai)
+                .WithData("MaSp", maSp);
         }
 
-        sanPham.MaSp = maSp;
-        sanPham.Ten = ten;
-        sanPham.Gia = gia;
-        sanPham.SoLuongTon = soLuongTon;
-        sanPham.DanhMuc = danhMuc;
-        sanPham.HinhAnh = hinhAnh;
-        sanPham.MoTa = moTa;
+        sanPham.CapNhatThongTin(
+            maSp: maSp,
+            ten: ten,
+            gia: gia,
+            soLuongTon: soLuongTon,
+            danhMuc: danhMuc,
+            hinhAnh: hinhAnh,
+            moTa: moTa
+        );
 
         return await _sanPhamRepository.UpdateAsync(sanPham);
     }
