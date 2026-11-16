@@ -5,11 +5,15 @@ namespace testtttt88.SanPhams;
 
 public class SanPhamDto : FullAuditedEntityDto<Guid>
 {
+    public Guid CuaHangId { get; set; }
+    public string? TenCuaHang { get; set; }
+    public string? CuaHangSlug { get; set; }
     public string MaSp { get; set; } = string.Empty;
     public string Ten { get; set; } = string.Empty;
     public decimal Gia { get; set; }
     public int SoLuongTon { get; set; }
     public string DanhMuc { get; set; } = string.Empty;
+    public Guid? DanhMucId { get; set; }
     public string? HinhAnh { get; set; }
     public string? MoTa { get; set; }
     public DateTime NgayTao { get; set; }

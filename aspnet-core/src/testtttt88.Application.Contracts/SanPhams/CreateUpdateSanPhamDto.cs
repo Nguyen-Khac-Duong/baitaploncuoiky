@@ -5,6 +5,8 @@ namespace testtttt88.SanPhams;
 
 public class CreateUpdateSanPhamDto
 {
+    public Guid? CuaHangId { get; set; }
+
     [Required]
     [MaxLength(32)]
     public string MaSp { get; set; } = string.Empty;
@@ -22,6 +24,8 @@ public class CreateUpdateSanPhamDto
     [Required]
     [MaxLength(128)]
     public string DanhMuc { get; set; } = string.Empty;
+
+    public Guid? DanhMucId { get; set; }
 
     [MaxLength(1024)]
     public string? HinhAnh { get; set; }

@@ -1,63 +1,49 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, map, catchError, of, tap } from 'rxjs';
+import { BehaviorSubject, Observable, map, tap } from 'rxjs';
 import {
   SanPham,
   DonHang,
+  DonHangTong,
+  CuaHang,
+  DangKyCuaHangInput,
+  CapNhatNganHangInput,
+  ViCuaHang,
+  GiaoDichVi,
+  YeuCauRutTien,
+  TaoYeuCauRutTienInput,
+  XuLyRutTienInput,
   ThongKeDashboard,
   TrangThaiDonHang,
   MonGioHang,
-  CreateDonHangInput
+  NhomGioHangShop,
+  CreateDonHangInput,
+  NguoiDungHeThong,
+  DanhMuc,
+  DanhMucTree,
+  DanhGiaSanPham,
+  TaoDanhGiaDto,
+  PhanHoiDanhGiaDto,
+  ThongKeDanhGia,
+  YeuCauTraHangDto,
+  XuLyTraHangDto,
+  ThongBaoItem
 } from '../../shared/mo-hinh/du-lieu.model';
 import { environment } from '../../../environments/environment';
-import { MOCK_PRODUCTS } from '../../services/mock-products';
 
-const STORAGE_SAN_PHAM = 'admin_du_lieu_san_pham';
-const STORAGE_DON_HANG = 'admin_du_lieu_don_hang';
 const STORAGE_GIO_HANG = 'user_du_lieu_gio_hang';
-
-const DEFAULT_SAN_PHAM: SanPham[] = MOCK_PRODUCTS.slice(0, 6).map(p => ({
-  id: p.id,
-  maSp: p.maSp,
-  ten: p.ten,
-  gia: p.gia,
-  soLuongTon: p.soLuongTon,
-  danhMuc: p.danhMuc,
-  hinhAnh: p.hinhAnh,
-  moTa: p.moTaNgan,
-  ngayTao: '2026-01-10'
-}));
-
-const DEFAULT_DON_HANG: DonHang[] = [
-  {
-    id: 'dh-1001',
-    maDon: 'DH1001',
-    nguoiDungId: 'user-khach-1',
-    tenKhachHang: 'Trần Khách Hàng',
-    soDienThoai: '0988776655',
-    diaChi: '123 Phố Huế, Hai Bà Trưng, Hà Nội',
-    tongTien: 34990000,
-    trangThai: 'hoan_thanh',
-    ngayTao: '2026-01-11 10:30:00',
-    chiTiet: [
-      {
-        sanPhamId: 'sp-01',
-        tenSanPham: 'iPhone 16 Pro Max 256GB',
-        soLuong: 1,
-        donGia: 34990000,
-        thanhTien: 34990000
-      }
-    ]
-  }
-];
 
 interface SanPhamDtoResponse {
   id: string;
+  cuaHangId?: string;
+  tenCuaHang?: string;
+  cuaHangSlug?: string;
   maSp: string;
   ten: string;
   gia: number | string;
   soLuongTon: number;
   danhMuc: string;
+  danhMucId?: string;
   hinhAnh?: string;
   moTa?: string;
   ngayTao?: string;
@@ -65,6 +51,7 @@ interface SanPhamDtoResponse {
 }
 
 interface ChiTietDonHangDtoResponse {
+  id?: string;
   sanPhamId: string;
   tenSanPham: string;
   soLuong: number;
@@ -75,17 +62,31 @@ interface ChiTietDonHangDtoResponse {
 
 interface DonHangDtoResponse {
   id: string;
+  cuaHangId?: string;
+  tenCuaHang?: string;
+  donHangTongId?: string;
+  maDonTong?: string;
   maDon: string;
   nguoiDungId?: string;
   tenKhachHang: string;
   soDienThoai: string;
   diaChi: string;
   ghiChu?: string;
+  tienHang?: number | string;
+  phiVanChuyen?: number | string;
+  tienHoaHongSan?: number | string;
+  thucNhanCuaShop?: number | string;
   tongTien: number | string;
   trangThai: TrangThaiDonHang;
   ngayTao?: string;
   creationTime?: string;
   chiTiet?: ChiTietDonHangDtoResponse[];
+  lyDoTraHang?: string;
+  ghiChuTraHang?: string;
+  hinhAnhTraHang?: string;
+  thoiGianYeuCauTraHang?: string;
+  phanHoiTraHang?: string;
+  thoiGianXuLyTraHang?: string;
 }
 
 @Injectable({
@@ -95,125 +96,243 @@ export class DuLieuService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apis.default.url || 'https://localhost:44351';
 
-  private readonly sanPham$ = new BehaviorSubject<SanPham[]>((this.docLocalStorage(STORAGE_SAN_PHAM) as SanPham[]) || DEFAULT_SAN_PHAM);
-  private readonly donHang$ = new BehaviorSubject<DonHang[]>((this.docLocalStorage(STORAGE_DON_HANG) as DonHang[]) || DEFAULT_DON_HANG);
+  private readonly sanPham$ = new BehaviorSubject<SanPham[]>([]);
+  private readonly donHang$ = new BehaviorSubject<DonHang[]>([]);
 
-  // === SIGNAL SẢN PHẨM & GIỎ HÀNG (Signal tức thì 100%) ===
-  readonly sanPhamListSignal = signal<SanPham[]>((this.docLocalStorage(STORAGE_SAN_PHAM) as SanPham[]) || DEFAULT_SAN_PHAM);
+  readonly sanPhamListSignal = signal<SanPham[]>([]);
+  readonly cayDanhMucSignal = signal<DanhMucTree[]>([]);
   readonly gioHang = signal<MonGioHang[]>(this.khoiTaoGioHang());
+
   readonly tongSoLuongGioHang = computed(() =>
     this.gioHang().reduce((tong, item) => tong + item.soLuong, 0)
   );
+
   readonly tongTienGioHang = computed(() =>
     this.gioHang().reduce((tong, item) => tong + item.sanPham.gia * item.soLuong, 0)
   );
+
+  /**
+   * Gom nhóm các sản phẩm trong giỏ hàng theo từng Gian Hàng (Multi-vendor Cart)
+   */
+  readonly gioHangNhomTheoShop = computed<NhomGioHangShop[]>(() => {
+    const items = this.gioHang();
+    const mapShops = new Map<string, { ten: string; items: MonGioHang[]; tong: number }>();
+
+    for (const item of items) {
+      const shopId = item.sanPham.cuaHangId || 'official-store';
+      const shopTen = item.sanPham.tenCuaHang || 'ShopTech Official Store';
+
+      if (!mapShops.has(shopId)) {
+        mapShops.set(shopId, { ten: shopTen, items: [], tong: 0 });
+      }
+
+      const shopGroup = mapShops.get(shopId)!;
+      shopGroup.items.push(item);
+      shopGroup.tong += item.sanPham.gia * item.soLuong;
+    }
+
+    return Array.from(mapShops.entries()).map(([cuaHangId, data]) => ({
+      cuaHangId,
+      tenCuaHang: data.ten,
+      danhSachMon: data.items,
+      tongTien: data.tong
+    }));
+  });
 
   constructor() {
     this.taiDuLieuTuBackend();
   }
 
-  /**
-   * Đồng bộ dữ liệu thật từ ABP Backend SQL Server
-   */
   taiDuLieuTuBackend(): void {
-    // 1. Tải danh sách sản phẩm từ SQL Server qua ABP API
-    this.http.get<{ totalCount: number; items: SanPhamDtoResponse[] }>(`${this.apiUrl}/api/app/san-pham?maxResultCount=1000`)
-      .pipe(
-        catchError(err => {
-          console.warn('Không thể kết nối API Sản phẩm ABP, sử dụng dữ liệu cục bộ:', err.message);
-          return of({ totalCount: 0, items: [] });
-        })
-      )
-      .subscribe(res => {
-        if (res?.items && res.items.length > 0) {
-          const sanPhams: SanPham[] = res.items.map(item => ({
-            id: item.id,
-            maSp: item.maSp,
-            ten: item.ten,
-            gia: Number(item.gia),
-            soLuongTon: item.soLuongTon,
-            danhMuc: item.danhMuc,
-            hinhAnh: item.hinhAnh,
-            moTa: item.moTa,
-            ngayTao: (item.ngayTao || item.creationTime || '').split('T')[0]
-          }));
-          this.capNhatSanPhamLocal(sanPhams);
-        }
-      });
+    this.http.get<{ totalCount: number; items: SanPhamDtoResponse[] }>(
+      `${this.apiUrl}/api/app/san-pham?maxResultCount=1000`
+    ).subscribe({
+      next: (res) => {
+        const items = res?.items || [];
+        const danhSach: SanPham[] = items.map(item => this.mapSanPhamDto(item));
+        this.sanPham$.next(danhSach);
+        this.sanPhamListSignal.set(danhSach);
+      },
+      error: (err) => {
+        console.warn('Không thể kết nối API Sản phẩm ABP:', err?.message || err);
+      }
+    });
 
-    // 2. Tải danh sách đơn hàng từ SQL Server qua ABP API
-    this.http.get<DonHangDtoResponse[]>(`${this.apiUrl}/api/app/don-hang`)
-      .pipe(
-        catchError(err => {
-          console.warn('Không thể kết nối API Đơn hàng ABP, sử dụng dữ liệu cục bộ:', err.message);
-          return of([]);
-        })
-      )
-      .subscribe(orders => {
-        if (orders && orders.length > 0) {
-          const donHangs: DonHang[] = orders.map(item => ({
-            id: item.id,
-            maDon: item.maDon,
-            nguoiDungId: item.nguoiDungId,
-            tenKhachHang: item.tenKhachHang,
-            soDienThoai: item.soDienThoai,
-            diaChi: item.diaChi,
-            ghiChu: item.ghiChu,
-            tongTien: Number(item.tongTien),
-            trangThai: item.trangThai as TrangThaiDonHang,
-            ngayTao: new Date(item.ngayTao || item.creationTime || Date.now()).toLocaleString('vi-VN'),
-            chiTiet: (item.chiTiet || []).map(ct => ({
-              sanPhamId: ct.sanPhamId,
-              tenSanPham: ct.tenSanPham,
-              soLuong: ct.soLuong,
-              donGia: Number(ct.donGia),
-              thanhTien: Number(ct.thanhTien),
-              hinhAnh: ct.hinhAnh
-            }))
-          }));
-          this.capNhatDonHangLocal(donHangs);
-        }
-      });
+    this.http.get<DonHangDtoResponse[]>(`${this.apiUrl}/api/app/don-hang`).subscribe({
+      next: (orders) => {
+        const items = orders || [];
+        const danhSach: DonHang[] = items.map(item => this.mapDonHangDto(item));
+        this.donHang$.next(danhSach);
+      },
+      error: (err) => {
+        console.warn('Không thể kết nối API Đơn hàng ABP:', err?.message || err);
+      }
+    });
+
+    this.taiCayDanhMuc();
   }
 
-  // === GETTERS ===
+  taiCayDanhMuc(): void {
+    this.getCayDanhMuc().subscribe({
+      next: (tree) => this.cayDanhMucSignal.set(tree),
+      error: (err) => console.warn('Không thể tải cây danh mục ABP:', err?.message || err)
+    });
+  }
+
+  // === DANH MỤC SẢN PHẨM (CATEGORY TREE) ===
+  getCayDanhMuc(): Observable<DanhMucTree[]> {
+    return this.http.get<DanhMucTree[]>(`${this.apiUrl}/api/app/danh-muc/tree`);
+  }
+
+  getDanhSachDanhMuc(): Observable<{ totalCount: number; items: DanhMuc[] }> {
+    return this.http.get<{ totalCount: number; items: DanhMuc[] }>(`${this.apiUrl}/api/app/danh-muc?maxResultCount=1000`);
+  }
+
+  taoDanhMuc(input: { ten: string; slug?: string; icon?: string; moTa?: string; parentId?: string | null; thuTu?: number; trangThai?: boolean }): Observable<DanhMuc> {
+    return this.http.post<DanhMuc>(`${this.apiUrl}/api/app/danh-muc`, input).pipe(
+      tap(() => this.taiCayDanhMuc())
+    );
+  }
+
+  capNhatDanhMuc(id: string, input: { ten: string; slug?: string; icon?: string; moTa?: string; parentId?: string | null; thuTu?: number; trangThai?: boolean }): Observable<DanhMuc> {
+    return this.http.put<DanhMuc>(`${this.apiUrl}/api/app/danh-muc/${id}`, input).pipe(
+      tap(() => this.taiCayDanhMuc())
+    );
+  }
+
+  xoaDanhMuc(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/api/app/danh-muc/${id}`).pipe(
+      tap(() => this.taiCayDanhMuc())
+    );
+  }
+
+  // === GETTERS CHUNG ===
   getDanhSachSanPham(): Observable<SanPham[]> {
     return this.sanPham$.asObservable();
+  }
+
+  getSanPhamById(id: string): Observable<SanPham> {
+    return this.http.get<SanPhamDtoResponse>(`${this.apiUrl}/api/app/san-pham/${id}`).pipe(
+      map(dto => this.mapSanPhamDto(dto))
+    );
   }
 
   getDanhSachDonHang(): Observable<DonHang[]> {
     return this.donHang$.asObservable();
   }
 
-  getDonHangCuaKhachHang(nguoiDungId?: string, soDienThoai?: string): Observable<DonHang[]> {
-    return this.donHang$.pipe(
-      map(danhSach => danhSach.filter(dh => {
-        if (nguoiDungId && dh.nguoiDungId === nguoiDungId) return true;
-        if (soDienThoai && dh.soDienThoai === soDienThoai) return true;
-        return false;
-      }))
+  getDonHangCuaKhachHang(): Observable<DonHang[]> {
+    return this.http.get<DonHangDtoResponse[]>(`${this.apiUrl}/api/app/don-hang/by-nguoi-dung`).pipe(
+      map(orders => (orders || []).map(item => this.mapDonHangDto(item)))
     );
   }
 
   getThongKeDashboard(): Observable<ThongKeDashboard> {
-    return this.http.get<ThongKeDashboard>(`${this.apiUrl}/api/app/don-hang/thong-ke-dashboard`).pipe(
-      catchError(() => {
-        // Fallback tính toán từ local state
-        const sanPhamList = this.sanPham$.value;
-        const donHangList = this.donHang$.value;
-        const tongSanPham = sanPhamList.length;
-        const sanPhamHetHang = sanPhamList.filter(sp => sp.soLuongTon <= 0).length;
-        const tongDonHang = donHangList.length;
-        const tongDoanhThu = donHangList
-          .filter(dh => dh.trangThai === 'hoan_thanh' || dh.trangThai === 'dang_giao')
-          .reduce((tong, dh) => tong + dh.tongTien, 0);
+    return this.http.get<ThongKeDashboard>(`${this.apiUrl}/api/app/don-hang/thong-ke-dashboard`);
+  }
 
-        return of({ tongSanPham, tongDonHang, tongDoanhThu, sanPhamHetHang });
-      })
+  getDanhSachNguoiDung(): Observable<{ totalCount: number; items: NguoiDungHeThong[] }> {
+    return this.http.get<{ totalCount: number; items: NguoiDungHeThong[] }>(
+      `${this.apiUrl}/api/identity/users?maxResultCount=100`
     );
   }
 
-  // === THAO TÁC GIỎ HÀNG (DÀNH CHO USER) ===
+  // === MULTI-VENDOR CỬA HÀNG (MARKETPLACE) ===
+  getMyStore(): Observable<CuaHang | null> {
+    return this.http.get<CuaHang | null>(`${this.apiUrl}/api/app/cua-hang/my-store`);
+  }
+
+  getCuaHangBySlug(slug: string): Observable<CuaHang> {
+    return this.http.get<CuaHang>(`${this.apiUrl}/api/app/cua-hang/by-slug?slug=${slug}`);
+  }
+
+  getCuaHangById(id: string): Observable<CuaHang> {
+    return this.http.get<CuaHang>(`${this.apiUrl}/api/app/cua-hang/${id}`);
+  }
+
+  getDanhSachCuaHang(): Observable<{ totalCount: number; items: CuaHang[] }> {
+    return this.http.get<{ totalCount: number; items: CuaHang[] }>(`${this.apiUrl}/api/app/cua-hang?maxResultCount=1000`);
+  }
+
+  dangKyCuaHang(input: DangKyCuaHangInput): Observable<CuaHang> {
+    return this.http.post<CuaHang>(`${this.apiUrl}/api/app/cua-hang/dang-ky`, input);
+  }
+
+  capNhatThongTinCuaHang(id: string, input: DangKyCuaHangInput): Observable<CuaHang> {
+    return this.http.post<CuaHang>(`${this.apiUrl}/api/app/cua-hang/${id}/cap-nhat-thong-tin`, input);
+  }
+
+  capNhatNganHangCuaHang(input: CapNhatNganHangInput): Observable<CuaHang> {
+    return this.http.post<CuaHang>(`${this.apiUrl}/api/app/cua-hang/cap-nhat-ngan-hang`, input);
+  }
+
+  duyetShop(id: string): Observable<CuaHang> {
+    return this.http.post<CuaHang>(`${this.apiUrl}/api/app/cua-hang/${id}/duyet-shop`, {});
+  }
+
+  khoaShop(id: string): Observable<CuaHang> {
+    return this.http.post<CuaHang>(`${this.apiUrl}/api/app/cua-hang/${id}/khoa-shop`, {});
+  }
+
+  moKhoaShop(id: string): Observable<CuaHang> {
+    return this.http.post<CuaHang>(`${this.apiUrl}/api/app/cua-hang/${id}/mo-khoa-shop`, {});
+  }
+
+  // === VÍ GIAN HÀNG & RÚT TIỀN (SELLER WALLET & PAYOUT) ===
+  getMyWallet(): Observable<ViCuaHang> {
+    return this.http.get<ViCuaHang>(`${this.apiUrl}/api/app/vi-cua-hang/my-wallet`);
+  }
+
+  getMyTransactions(): Observable<{ totalCount: number; items: GiaoDichVi[] }> {
+    return this.http.get<{ totalCount: number; items: GiaoDichVi[] }>(`${this.apiUrl}/api/app/vi-cua-hang/my-transactions?maxResultCount=100`);
+  }
+
+  taoYeuCauRutTien(input: TaoYeuCauRutTienInput): Observable<YeuCauRutTien> {
+    return this.http.post<YeuCauRutTien>(`${this.apiUrl}/api/app/vi-cua-hang/tao-yeu-cau-rut-tien`, input);
+  }
+
+  getMyPayoutRequests(): Observable<{ totalCount: number; items: YeuCauRutTien[] }> {
+    return this.http.get<{ totalCount: number; items: YeuCauRutTien[] }>(`${this.apiUrl}/api/app/vi-cua-hang/my-payout-requests?maxResultCount=100`);
+  }
+
+  getAdminPayoutRequests(): Observable<{ totalCount: number; items: YeuCauRutTien[] }> {
+    return this.http.get<{ totalCount: number; items: YeuCauRutTien[] }>(`${this.apiUrl}/api/app/vi-cua-hang/admin-payout-requests?maxResultCount=100`);
+  }
+
+  xuLyRutTien(id: string, input: XuLyRutTienInput): Observable<YeuCauRutTien> {
+    return this.http.post<YeuCauRutTien>(`${this.apiUrl}/api/app/vi-cua-hang/${id}/xu-ly-rut-tien`, input);
+  }
+
+  // === SELLER CENTER (KHO SẢN PHẨM & ĐƠN HÀNG CỦA SHOP) ===
+  getMyStoreProducts(): Observable<SanPham[]> {
+    return this.http.get<{ totalCount: number; items: SanPhamDtoResponse[] }>(
+      `${this.apiUrl}/api/app/san-pham/my-products?maxResultCount=1000`
+    ).pipe(
+      map(res => (res.items || []).map(item => this.mapSanPhamDto(item)))
+    );
+  }
+
+  getProductsByShop(shopId: string): Observable<SanPham[]> {
+    return this.http.get<{ totalCount: number; items: SanPhamDtoResponse[] }>(
+      `${this.apiUrl}/api/app/san-pham/by-shop/${shopId}?maxResultCount=1000`
+    ).pipe(
+      map(res => (res.items || []).map(item => this.mapSanPhamDto(item)))
+    );
+  }
+
+  getMyStoreOrders(): Observable<DonHang[]> {
+    return this.http.get<{ totalCount: number; items: DonHangDtoResponse[] }>(
+      `${this.apiUrl}/api/app/don-hang/my-store-orders?maxResultCount=1000`
+    ).pipe(
+      map(res => (res.items || []).map(item => this.mapDonHangDto(item)))
+    );
+  }
+
+  getThongKeMyStore(): Observable<ThongKeDashboard> {
+    return this.http.get<ThongKeDashboard>(`${this.apiUrl}/api/app/don-hang/thong-ke-my-store`);
+  }
+
+  // === QUẢN LÝ GIỎ HÀNG (Client Signal State) ===
   themVaoGioHang(sanPham: SanPham, soLuong: number = 1): boolean {
     if (sanPham.soLuongTon <= 0) {
       return false;
@@ -222,280 +341,288 @@ export class DuLieuService {
     const current = [...this.gioHang()];
     const index = current.findIndex(item => item.sanPham.id === sanPham.id);
 
-    if (index > -1) {
+    if (index >= 0) {
       const soLuongMoi = current[index].soLuong + soLuong;
       if (soLuongMoi > sanPham.soLuongTon) {
         return false;
       }
-      current[index] = { ...current[index], soLuong: soLuongMoi };
+      current[index] = {
+        ...current[index],
+        soLuong: soLuongMoi
+      };
     } else {
+      if (soLuong > sanPham.soLuongTon) {
+        return false;
+      }
       current.push({ sanPham, soLuong });
     }
 
-    this.gioHang.set(current);
-    this.luuLocalStorage(STORAGE_GIO_HANG, current);
+    this.capNhatGioHang(current);
     return true;
   }
 
-  capNhatSoLuongGioHang(sanPhamId: string, soLuong: number): void {
-    let current = [...this.gioHang()];
+  capNhatSoLuongGioHang(sanPhamId: string, soLuong: number): boolean {
+    const current = [...this.gioHang()];
+    const index = current.findIndex(item => item.sanPham.id === sanPhamId);
+    if (index < 0) return false;
+
+    const sp = current[index].sanPham;
     if (soLuong <= 0) {
-      current = current.filter(item => item.sanPham.id !== sanPhamId);
-    } else {
-      const index = current.findIndex(item => item.sanPham.id === sanPhamId);
-      if (index > -1) {
-        current[index] = { ...current[index], soLuong };
-      }
+      this.xoaKhoiGioHang(sanPhamId);
+      return true;
     }
-    this.gioHang.set(current);
-    this.luuLocalStorage(STORAGE_GIO_HANG, current);
+
+    if (soLuong > sp.soLuongTon) {
+      return false;
+    }
+
+    current[index] = { ...current[index], soLuong };
+    this.capNhatGioHang(current);
+    return true;
   }
 
   xoaKhoiGioHang(sanPhamId: string): void {
-    const current = this.gioHang().filter(item => item.sanPham.id !== sanPhamId);
-    this.gioHang.set(current);
-    this.luuLocalStorage(STORAGE_GIO_HANG, current);
+    const filtered = this.gioHang().filter(item => item.sanPham.id !== sanPhamId);
+    this.capNhatGioHang(filtered);
   }
 
   xoaSachGioHang(): void {
-    this.gioHang.set([]);
-    this.luuLocalStorage(STORAGE_GIO_HANG, []);
+    this.capNhatGioHang([]);
   }
 
-  // === ĐẶT HÀNG USER -> LƯU VÀO SQL SERVER QUA ABP API & CẬP NHẬT TỒN KHO ===
-  // BE #2, FE #5: Chỉ gửi sanPhamId và soLuong lên server
-  datHang(thongTin: {
-    nguoiDungId?: string;
-    tenKhachHang: string;
-    soDienThoai: string;
-    diaChi: string;
-    ghiChu?: string;
-  }): DonHang | null {
+  private capNhatGioHang(gioHangMoi: MonGioHang[]): void {
+    this.gioHang.set(gioHangMoi);
+    this.luuLocalStorage(STORAGE_GIO_HANG, gioHangMoi);
+  }
+
+  /**
+   * Đặt hàng Multi-vendor: Tự động gom nhóm theo shop và chia đơn hàng con
+   */
+  datHang(thongTin: CreateDonHangInput): Observable<DonHangTong> {
     const gioHang = this.gioHang();
     if (gioHang.length === 0) {
-      return null;
+      throw new Error('Giỏ hàng trống!');
     }
 
-    const maDonTam = 'DH' + Math.floor(1000 + Math.random() * 9000);
-    const tongTien = this.tongTienGioHang();
-
-    const donHangMoi: DonHang = {
-      id: 'dh-' + Date.now(),
-      maDon: maDonTam,
-      nguoiDungId: thongTin.nguoiDungId,
+    const createOrderPayload = {
       tenKhachHang: thongTin.tenKhachHang,
       soDienThoai: thongTin.soDienThoai,
       diaChi: thongTin.diaChi,
-      ghiChu: thongTin.ghiChu,
-      tongTien,
-      trangThai: 'cho_xu_ly',
-      ngayTao: new Date().toLocaleString('vi-VN'),
+      ghiChu: thongTin.ghiChu || null,
       chiTiet: gioHang.map(item => ({
         sanPhamId: item.sanPham.id,
-        tenSanPham: item.sanPham.ten,
-        soLuong: item.soLuong,
-        donGia: item.sanPham.gia,
-        thanhTien: item.sanPham.gia * item.soLuong,
-        hinhAnh: item.sanPham.hinhAnh
-      }))
-    };
-
-    // 1. Phản hồi tức thì trên UI
-    const danhSachDonHang = [donHangMoi, ...this.donHang$.value];
-    this.capNhatDonHangLocal(danhSachDonHang);
-
-    const danhSachSanPham = this.sanPham$.value.map(sp => {
-      const monHang = gioHang.find(item => item.sanPham.id === sp.id);
-      if (monHang) {
-        return {
-          ...sp,
-          soLuongTon: Math.max(0, sp.soLuongTon - monHang.soLuong)
-        };
-      }
-      return sp;
-    });
-    this.capNhatSanPhamLocal(danhSachSanPham);
-
-    this.xoaSachGioHang();
-
-    // 2. Gửi request lưu vào SQL Server qua ABP Backend (BE #2 & FE #5: CHỈ gửi SanPhamId và SoLuong)
-    const createOrderPayload: CreateDonHangInput = {
-      nguoiDungId: thongTin.nguoiDungId || undefined,
-      tenKhachHang: thongTin.tenKhachHang,
-      soDienThoai: thongTin.soDienThoai,
-      diaChi: thongTin.diaChi,
-      ghiChu: thongTin.ghiChu || undefined,
-      chiTiet: gioHang.map(item => ({
-        sanPhamId: this.isGuid(item.sanPham.id) ? item.sanPham.id : '00000000-0000-0000-0000-000000000000',
         soLuong: item.soLuong
       }))
     };
 
-    this.http.post<DonHangDtoResponse>(`${this.apiUrl}/api/app/don-hang`, createOrderPayload)
-      .pipe(
-        catchError(err => {
-          console.warn('Lỗi khi lưu đơn hàng lên server ABP:', err.message);
-          return of(null);
-        })
-      )
-      .subscribe(savedOrder => {
-        if (savedOrder) {
-          // Cập nhật lại đơn hàng thật từ server (mã đơn server sinh, ID thật)
-          const updatedOrders = this.donHang$.value.map(dh => {
-            if (dh.id === donHangMoi.id) {
-              return {
-                id: savedOrder.id,
-                maDon: savedOrder.maDon,
-                nguoiDungId: savedOrder.nguoiDungId,
-                tenKhachHang: savedOrder.tenKhachHang,
-                soDienThoai: savedOrder.soDienThoai,
-                diaChi: savedOrder.diaChi,
-                ghiChu: savedOrder.ghiChu,
-                tongTien: Number(savedOrder.tongTien),
-                trangThai: savedOrder.trangThai,
-                ngayTao: new Date(savedOrder.ngayTao || savedOrder.creationTime || Date.now()).toLocaleString('vi-VN'),
-                chiTiet: (savedOrder.chiTiet || []).map(ct => ({
-                  sanPhamId: ct.sanPhamId,
-                  tenSanPham: ct.tenSanPham,
-                  soLuong: ct.soLuong,
-                  donGia: Number(ct.donGia),
-                  thanhTien: Number(ct.thanhTien),
-                  hinhAnh: ct.hinhAnh
-                }))
-              };
-            }
-            return dh;
-          });
-          this.capNhatDonHangLocal(updatedOrders);
-          this.taiDuLieuTuBackend();
-        }
-      });
-
-    return donHangMoi;
+    return this.http.post<DonHangTong>(`${this.apiUrl}/api/app/don-hang/tao-don-hang-tong`, createOrderPayload).pipe(
+      map(savedMasterOrder => {
+        this.xoaSachGioHang();
+        this.taiDuLieuTuBackend();
+        return savedMasterOrder;
+      })
+    );
   }
 
-  // === QUẢN LÝ SẢN PHẨM ADMIN ===
-  themSanPham(sp: Omit<SanPham, 'id' | 'ngayTao'>): void {
-    const moi: SanPham = {
-      ...sp,
-      id: 'sp-' + Date.now(),
-      ngayTao: new Date().toISOString().split('T')[0]
-    };
-    this.capNhatSanPhamLocal([moi, ...this.sanPham$.value]);
-
-    // Gửi request POST lên ABP API để lưu vào SQL Server
+  // === QUẢN LÝ SẢN PHẨM ===
+  themSanPham(sp: Omit<SanPham, 'id' | 'ngayTao'>): Observable<SanPham> {
     const payload = {
+      cuaHangId: sp.cuaHangId || null,
       maSp: sp.maSp,
       ten: sp.ten,
       gia: sp.gia,
       soLuongTon: sp.soLuongTon,
       danhMuc: sp.danhMuc,
+      danhMucId: sp.danhMucId || null,
       hinhAnh: sp.hinhAnh || null,
       moTa: sp.moTa || null
     };
 
-    this.http.post<SanPhamDtoResponse>(`${this.apiUrl}/api/app/san-pham`, payload)
-      .pipe(
-        catchError(err => {
-          console.warn('Lỗi khi thêm sản phẩm lên server:', err.message);
-          return of(null);
-        })
-      )
-      .subscribe(res => {
-        if (res && res.id) {
-          // Cập nhật ID thật từ database
-          const updatedList = this.sanPham$.value.map(item =>
-            item.id === moi.id ? { ...item, id: res.id } : item
-          );
-          this.capNhatSanPhamLocal(updatedList);
-        }
-      });
+    return this.http.post<SanPhamDtoResponse>(`${this.apiUrl}/api/app/san-pham`, payload).pipe(
+      map(res => {
+        const item = this.mapSanPhamDto(res);
+        this.taiDuLieuTuBackend();
+        return item;
+      })
+    );
   }
 
-  capNhatThongTinSanPham(id: string, duLieu: Partial<SanPham>): void {
-    const danhSach = this.sanPham$.value.map(sp => {
-      if (sp.id === id) {
-        return { ...sp, ...duLieu };
-      }
-      return sp;
+  capNhatThongTinSanPham(id: string, duLieu: Partial<SanPham>): Observable<SanPham> {
+    const payload = {
+      cuaHangId: duLieu.cuaHangId || null,
+      maSp: duLieu.maSp,
+      ten: duLieu.ten,
+      gia: duLieu.gia,
+      soLuongTon: duLieu.soLuongTon,
+      danhMuc: duLieu.danhMuc,
+      danhMucId: duLieu.danhMucId || null,
+      hinhAnh: duLieu.hinhAnh || null,
+      moTa: duLieu.moTa || null
+    };
+
+    return this.http.put<SanPhamDtoResponse>(`${this.apiUrl}/api/app/san-pham/${id}`, payload).pipe(
+      map(res => {
+        const item = this.mapSanPhamDto(res);
+        this.taiDuLieuTuBackend();
+        return item;
+      })
+    );
+  }
+
+  xoaSanPham(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/api/app/san-pham/${id}`).pipe(
+      tap(() => {
+        this.taiDuLieuTuBackend();
+      })
+    );
+  }
+
+  doiTrangThaiDonHang(id: string, trangThaiMoi: TrangThaiDonHang): Observable<DonHang> {
+    return this.http.post<DonHangDtoResponse>(
+      `${this.apiUrl}/api/app/don-hang/${id}/doi-trang-thai`,
+      { trangThai: trangThaiMoi }
+    ).pipe(
+      map(res => {
+        const item = this.mapDonHangDto(res);
+        this.taiDuLieuTuBackend();
+        return item;
+      })
+    );
+  }
+
+  // === HELPERS & MAPPERS ===
+  private mapSanPhamDto(dto: SanPhamDtoResponse): SanPham {
+    return {
+      id: dto.id,
+      cuaHangId: dto.cuaHangId,
+      tenCuaHang: dto.tenCuaHang,
+      cuaHangSlug: dto.cuaHangSlug,
+      maSp: dto.maSp,
+      ten: dto.ten,
+      gia: Number(dto.gia),
+      soLuongTon: dto.soLuongTon,
+      danhMuc: dto.danhMuc,
+      danhMucId: dto.danhMucId,
+      hinhAnh: dto.hinhAnh,
+      moTa: dto.moTa,
+      ngayTao: dto.ngayTao || dto.creationTime || new Date().toISOString()
+    };
+  }
+
+  private mapDonHangDto(dto: DonHangDtoResponse): DonHang {
+    return {
+      id: dto.id,
+      cuaHangId: dto.cuaHangId,
+      tenCuaHang: dto.tenCuaHang,
+      donHangTongId: dto.donHangTongId,
+      maDonTong: dto.maDonTong,
+      maDon: dto.maDon,
+      nguoiDungId: dto.nguoiDungId,
+      tenKhachHang: dto.tenKhachHang,
+      soDienThoai: dto.soDienThoai,
+      diaChi: dto.diaChi,
+      ghiChu: dto.ghiChu,
+      tienHang: Number(dto.tienHang || dto.tongTien),
+      phiVanChuyen: Number(dto.phiVanChuyen || 0),
+      tienHoaHongSan: Number(dto.tienHoaHongSan || 0),
+      thucNhanCuaShop: Number(dto.thucNhanCuaShop || dto.tongTien),
+      tongTien: Number(dto.tongTien),
+      trangThai: dto.trangThai,
+      ngayTao: dto.ngayTao || dto.creationTime || new Date().toISOString(),
+      chiTiet: (dto.chiTiet || []).map(ct => ({
+        id: ct.id,
+        sanPhamId: ct.sanPhamId,
+        tenSanPham: ct.tenSanPham,
+        soLuong: ct.soLuong,
+        donGia: Number(ct.donGia),
+        thanhTien: Number(ct.thanhTien),
+        hinhAnh: ct.hinhAnh
+      })),
+      lyDoTraHang: dto.lyDoTraHang,
+      ghiChuTraHang: dto.ghiChuTraHang,
+      hinhAnhTraHang: dto.hinhAnhTraHang,
+      thoiGianYeuCauTraHang: dto.thoiGianYeuCauTraHang,
+      phanHoiTraHang: dto.phanHoiTraHang,
+      thoiGianXuLyTraHang: dto.thoiGianXuLyTraHang
+    };
+  }
+
+  // === TRẢ HÀNG & HOÀN TIỀN (RETURN & REFUND) ===
+  yeuCauTraHang(donHangId: string, input: YeuCauTraHangDto): Observable<DonHang> {
+    return this.http.post<DonHangDtoResponse>(`${this.apiUrl}/api/app/don-hang/${donHangId}/yeu-cau-tra-hang`, input).pipe(
+      map(res => {
+        const item = this.mapDonHangDto(res);
+        this.taiDuLieuTuBackend();
+        return item;
+      })
+    );
+  }
+
+  xuLyTraHang(donHangId: string, input: XuLyTraHangDto): Observable<DonHang> {
+    return this.http.post<DonHangDtoResponse>(`${this.apiUrl}/api/app/don-hang/${donHangId}/xu-ly-tra-hang`, input).pipe(
+      map(res => {
+        const item = this.mapDonHangDto(res);
+        this.taiDuLieuTuBackend();
+        return item;
+      })
+    );
+  }
+
+  // === ĐÁNH GIÁ SẢN PHẨM & PHẢN HỒI GIAN HÀNG ===
+  taoDanhGia(input: TaoDanhGiaDto): Observable<DanhGiaSanPham> {
+    return this.http.post<DanhGiaSanPham>(`${this.apiUrl}/api/app/danh-gia/tao-danh-gia`, input);
+  }
+
+  getDanhGiaTheoSanPham(sanPhamId: string): Observable<DanhGiaSanPham[]> {
+    return this.http.get<DanhGiaSanPham[]>(`${this.apiUrl}/api/app/danh-gia/danh-sach-theo-san-pham/${sanPhamId}`);
+  }
+
+  getThongKeDanhGiaTheoSanPham(sanPhamId: string): Observable<ThongKeDanhGia> {
+    return this.http.get<ThongKeDanhGia>(`${this.apiUrl}/api/app/danh-gia/thong-ke-theo-san-pham/${sanPhamId}`);
+  }
+
+  getDanhSachDanhGiaCuaToi(): Observable<DanhGiaSanPham[]> {
+    return this.http.get<DanhGiaSanPham[]>(`${this.apiUrl}/api/app/danh-gia/danh-sach-cua-toi`);
+  }
+
+  getDanhGiaTheoShop(shopId?: string): Observable<DanhGiaSanPham[]> {
+    const query = shopId ? `?shopId=${shopId}` : '';
+    return this.http.get<DanhGiaSanPham[]>(`${this.apiUrl}/api/app/danh-gia/danh-sach-theo-shop${query}`);
+  }
+
+  shopPhanHoiDanhGia(danhGiaId: string, noiDungPhanHoi: string): Observable<DanhGiaSanPham> {
+    return this.http.post<DanhGiaSanPham>(`${this.apiUrl}/api/app/danh-gia/shop-phan-hoi/${danhGiaId}`, {
+      noiDungPhanHoi
     });
-    this.capNhatSanPhamLocal(danhSach);
-
-    const spTarget = danhSach.find(s => s.id === id);
-    if (spTarget && this.isGuid(id)) {
-      const payload = {
-        maSp: spTarget.maSp,
-        ten: spTarget.ten,
-        gia: spTarget.gia,
-        soLuongTon: spTarget.soLuongTon,
-        danhMuc: spTarget.danhMuc,
-        hinhAnh: spTarget.hinhAnh || null,
-        moTa: spTarget.moTa || null
-      };
-      this.http.put(`${this.apiUrl}/api/app/san-pham/${id}`, payload)
-        .pipe(catchError(() => of(null)))
-        .subscribe();
-    }
   }
 
-  xoaSanPham(id: string): void {
-    this.capNhatSanPhamLocal(this.sanPham$.value.filter(sp => sp.id !== id));
-
-    if (this.isGuid(id)) {
-      this.http.delete(`${this.apiUrl}/api/app/san-pham/${id}`)
-        .pipe(catchError(() => of(null)))
-        .subscribe();
-    }
+  // === THÔNG BÁO HỆ THỐNG (NOTIFICATIONS) ===
+  getDanhSachThongBao(doiTuong?: 'buyer' | 'seller'): Observable<ThongBaoItem[]> {
+    const params = doiTuong ? `?doiTuong=${doiTuong}` : '';
+    return this.http.get<ThongBaoItem[]>(`${this.apiUrl}/api/app/thong-bao/danh-sach${params}`);
   }
 
-  doiTrangThaiDonHang(id: string, trangThaiMoi: TrangThaiDonHang): void {
-    const targetOrder = this.donHang$.value.find(dh => dh.id === id);
-    if (!targetOrder) return;
-
-    // Chặn sửa đơn đã hoàn thành hoặc đã hủy (BE #1)
-    if (targetOrder.trangThai === 'hoan_thanh' || targetOrder.trangThai === 'da_huy') {
-      console.warn('Không thể thay đổi trạng thái đơn hàng đã hoàn tất hoặc đã hủy.');
-      return;
-    }
-
-    // Cập nhật trạng thái đơn hàng trên local state
-    const danhSach = this.donHang$.value.map(dh => {
-      if (dh.id === id) {
-        return { ...dh, trangThai: trangThaiMoi };
-      }
-      return dh;
-    });
-    this.capNhatDonHangLocal(danhSach);
-
-    // Khi trạng thái mới là ĐÃ HỦY: Hoàn trả số lượng tồn kho (BE #1)
-    if (trangThaiMoi === 'da_huy') {
-      const sanPhamMap = new Map(this.sanPham$.value.map(sp => [sp.id, { ...sp }]));
-      for (const ct of targetOrder.chiTiet) {
-        const sp = sanPhamMap.get(ct.sanPhamId);
-        if (sp) {
-          sp.soLuongTon += ct.soLuong;
-        }
-      }
-      this.capNhatSanPhamLocal(Array.from(sanPhamMap.values()));
-    }
-
-    if (this.isGuid(id)) {
-      this.http.post(`${this.apiUrl}/api/app/don-hang/${id}/doi-trang-thai`, { trangThai: trangThaiMoi })
-        .pipe(catchError(() => of(null)))
-        .subscribe();
-    }
+  getSoThongBaoChuaDoc(doiTuong?: 'buyer' | 'seller'): Observable<number> {
+    const params = doiTuong ? `?doiTuong=${doiTuong}` : '';
+    return this.http.get<number>(`${this.apiUrl}/api/app/thong-bao/so-chua-doc${params}`);
   }
 
-  // === PERSISTENCE HELPERS ===
-  private capNhatSanPhamLocal(danhSach: SanPham[]): void {
-    this.sanPham$.next(danhSach);
-    this.sanPhamListSignal.set(danhSach);
-    this.luuLocalStorage(STORAGE_SAN_PHAM, danhSach);
+  danhDauThongBaoDaDoc(id: string): Observable<ThongBaoItem> {
+    return this.http.post<ThongBaoItem>(`${this.apiUrl}/api/app/thong-bao/${id}/danh-dau-da-doc`, {});
   }
 
-  private capNhatDonHangLocal(danhSach: DonHang[]): void {
-    this.donHang$.next(danhSach);
-    this.luuLocalStorage(STORAGE_DON_HANG, danhSach);
+  danhDauTatCaThongBaoDaDoc(doiTuong?: 'buyer' | 'seller'): Observable<void> {
+    const params = doiTuong ? `?doiTuong=${doiTuong}` : '';
+    return this.http.post<void>(`${this.apiUrl}/api/app/thong-bao/danh-dau-tat-ca-da-doc${params}`, {});
+  }
+
+  xoaThongBao(id: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/api/app/thong-bao/${id}/xoa-thong-bao`, {});
+  }
+
+  xoaTatCaThongBao(doiTuong?: 'buyer' | 'seller'): Observable<void> {
+    const params = doiTuong ? `?doiTuong=${doiTuong}` : '';
+    return this.http.post<void>(`${this.apiUrl}/api/app/thong-bao/xoa-tat-ca${params}`, {});
   }
 
   private khoiTaoGioHang(): MonGioHang[] {
@@ -523,9 +650,5 @@ export class DuLieuService {
       console.error('Lỗi khi đọc localStorage', e);
     }
     return null;
-  }
-
-  private isGuid(str: string): boolean {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
   }
 }

@@ -1,0 +1,226 @@
+<div class="layout-wrapper" [class.dark-mode]="giaoDienService.cheDoToi()">
+  <!-- SIDEBAR SELLER CENTER -->
+  @if (sellerState.cuaHang()?.trangThai === 'HoatDong') {
+  <aside class="sidebar" [class.collapsed]="sidebarThuGon">
+    <div class="brand">
+      <span nz-icon nzType="shop" nzTheme="outline" class="brand-icon"></span>
+      @if (!sidebarThuGon) {
+      <div class="brand-text">
+        <span class="brand-name">KD</span>
+        <span class="brand-tag">Seller Center</span>
+      </div>
+      }
+    </div>
+
+    <ul nz-menu nzMode="inline" [nzInlineCollapsed]="sidebarThuGon" class="ant-admin-menu">
+      @for (item of menuItems; track item.route) {
+      <li nz-menu-item [routerLink]="item.route" routerLinkActive="ant-menu-item-selected" nz-tooltip
+        [nzTooltipTitle]="sidebarThuGon ? item.label : null" nzTooltipPlacement="right">
+        <span nz-icon [nzType]="item.icon" nzTheme="outline"></span>
+        <span>{{ item.label }}</span>
+      </li>
+      }
+    </ul>
+
+    <div class="sidebar-footer">
+      <a routerLink="/cua-hang" class="btn-sidebar-store" [title]="sidebarThuGon ? 'Về Sàn Mua Sắm' : ''">
+        <span nz-icon nzType="home" nzTheme="outline"></span>
+        @if (!sidebarThuGon) {
+        <span>Về Sàn Mua Sắm</span>
+        }
+      </a>
+      <button type="button" class="btn-sidebar-logout" (click)="dangXuat()" [title]="sidebarThuGon ? 'Đăng Xuất' : ''">
+        <span nz-icon nzType="logout" nzTheme="outline" class="logout-icon"></span>
+        @if (!sidebarThuGon) {
+        <span class="nav-text">Đăng Xuất</span>
+        }
+      </button>
+      @if (!sidebarThuGon) {
+      <div class="version-tag">ShopTech Seller v2.0</div>
+      }
+    </div>
+  </aside>
+  }
+
+  <!-- MAIN CONTAINER -->
+  <div class="main-container">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        @if (sellerState.cuaHang()?.trangThai === 'HoatDong') {
+        <button class="btn-toggle-sidebar" (click)="onToggleSidebar()" title="Thu gọn / Mở rộng Menu">
+          <span class="icon">☰</span>
+        </button>
+        }
+        <div class="page-indicator">
+          <span class="route-title">{{ tieuDeTrang }}</span>
+          @if (sellerState.cuaHang(); as shop) {
+          <div class="shop-status-badge">
+            <span class="shop-name">🏬 {{ shop.ten }}</span>
+            <nz-tag [nzColor]="shop.trangThai === 'HoatDong' ? 'success' : 'warning'">
+              {{ shop.trangThai === 'HoatDong' ? 'Đang Hoạt Động' : 'Chờ Duyệt' }}
+            </nz-tag>
+            <span class="commission-info">Hoa hồng: {{ shop.phanTramHoaHong }}%</span>
+          </div>
+          }
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <!-- Chuông Thông Báo (Notification Bell Dropdown) -->
+        <div class="notif-wrapper" nz-dropdown [nzDropdownMenu]="notifDropdown" [(nzVisible)]="hienDropdownThongBao" nzTrigger="click" nzPlacement="bottomRight">
+          <button class="btn-action btn-notif" type="button" title="Thông báo hệ thống">
+            <span class="action-icon">🔔</span>
+            <span class="action-label">Thông báo</span>
+            @if (soChuaDoc() > 0) {
+              <span class="badge-count">{{ soChuaDoc() > 99 ? '99+' : soChuaDoc() }}</span>
+            }
+          </button>
+        </div>
+
+        <nz-dropdown-menu #notifDropdown="nzDropdownMenu">
+          <div class="notif-dropdown-box">
+            <!-- Header -->
+            <div class="notif-header">
+              <div class="notif-title-group">
+                <span class="notif-header-title">🔔 Thông Báo</span>
+                @if (soChuaDoc() > 0) {
+                  <span class="unread-pill">{{ soChuaDoc() }} mới</span>
+                }
+              </div>
+              @if (soChuaDoc() > 0) {
+                <button type="button" class="btn-mark-all" (click)="danhDauTatCaDaDoc()">
+                  ✓ Đã đọc tất cả
+                </button>
+              }
+            </div>
+
+            <!-- Tabs Lọc -->
+            <div class="notif-filter-tabs">
+              <button
+                type="button"
+                class="tab-btn"
+                [class.active]="locTabThongBao() === 'all'"
+                (click)="locTabThongBao.set('all')"
+              >
+                Tất cả ({{ danhSachThongBao().length }})
+              </button>
+              <button
+                type="button"
+                class="tab-btn"
+                [class.active]="locTabThongBao() === 'unread'"
+                (click)="locTabThongBao.set('unread')"
+              >
+                Chưa đọc ({{ soChuaDoc() }})
+              </button>
+            </div>
+
+            <!-- List Thông Báo -->
+            <div class="notif-list-container">
+              @for (tb of thongBaoHienThi(); track tb.id) {
+                <div class="notif-item-card" [class.is-unread]="!tb.daDoc" (click)="onNotificationClick(tb)">
+                  <div class="notif-icon-circle" [class]="'type-' + tb.loai">
+                    {{ layIconLoai(tb.loai) }}
+                  </div>
+                  <div class="notif-text-box">
+                    <div class="notif-card-title">
+                      <span>{{ tb.tieuDe }}</span>
+                      @if (!tb.daDoc) {
+                        <span class="unread-dot" title="Chưa đọc"></span>
+                      }
+                    </div>
+                    <p class="notif-card-desc">{{ tb.noiDung }}</p>
+                    <div class="notif-card-footer">
+                      <span class="time-ago">🕒 {{ formatTimeAgo(tb.creationTime) }}</span>
+                      @if (tb.lienKet) {
+                        <span class="link-hint">Xem chi tiết →</span>
+                      }
+                    </div>
+                  </div>
+                  <button type="button" class="btn-del-single" (click)="xoaThongBao($event, tb.id)" title="Xóa thông báo">
+                    ✕
+                  </button>
+                </div>
+              } @empty {
+                <div class="notif-empty-state">
+                  <span class="empty-icon">🔕</span>
+                  <p class="empty-title">Không có thông báo nào!</p>
+                  <span class="empty-sub">Các cập nhật đơn hàng, đánh giá và đối soát ví sẽ hiển thị ở đây.</span>
+                </div>
+              }
+            </div>
+
+            <!-- Footer -->
+            @if (danhSachThongBao().length > 0) {
+              <div class="notif-dropdown-footer">
+                <button type="button" class="btn-clear-history" (click)="xoaTatCaThongBao()">
+                  🗑️ Xóa toàn bộ thông báo
+                </button>
+              </div>
+            }
+          </div>
+        </nz-dropdown-menu>
+
+        <!-- Chế độ sáng / tối -->
+        <button class="btn-action btn-theme" (click)="giaoDienService.chuyenDoiGiaoDien()"
+          [title]="giaoDienService.cheDoToi() ? 'Đang ở chế độ Tối (Nhấp để đổi sang Sáng)' : 'Đang ở chế độ Sáng (Nhấp để đổi sang Tối)'">
+          <span class="action-icon">{{ giaoDienService.cheDoToi() ? '🌙' : '☀️' }}</span>
+          <span class="action-label">{{ giaoDienService.cheDoToi() ? 'Chế độ Tối' : 'Chế độ Sáng' }}</span>
+        </button>
+
+        <!-- User Profile Dropdown -->
+        <div class="user-wrapper" nz-dropdown [nzDropdownMenu]="userDropdown" nzTrigger="click"
+          nzPlacement="bottomRight">
+          <button class="user-profile-btn" type="button">
+            <div class="user-avatar">{{ xacThucService.currentUser()?.avatar || 'SP' }}</div>
+            <div class="user-meta">
+              <span class="user-name">{{ xacThucService.currentUser()?.hoTen || 'Chủ Gian Hàng' }}</span>
+              <span class="user-status"><span class="status-dot"></span> Chủ Shop</span>
+            </div>
+            <span class="chevron-icon">▾</span>
+          </button>
+        </div>
+
+        <nz-dropdown-menu #userDropdown="nzDropdownMenu">
+          <div class="user-dropdown-container">
+            <div class="user-header">
+              <div class="user-avatar large">{{ xacThucService.currentUser()?.avatar || 'SP' }}</div>
+              <div class="user-header-info">
+                <span class="name">{{ xacThucService.currentUser()?.hoTen || 'Chủ Gian Hàng' }}</span>
+                <span class="email">{{ xacThucService.currentUser()?.email }}</span>
+              </div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <div class="user-menu-list">
+              <div class="menu-item-info">
+                <span>Gian Hàng:</span>
+                <span class="role-badge">{{ sellerState.cuaHang()?.ten || 'Chưa duyệt' }}</span>
+              </div>
+              <div class="dropdown-divider"></div>
+              <a routerLink="/cua-hang" class="menu-item-action">
+                <span>🏠</span>
+                <span>Về Sàn Mua Sắm</span>
+              </a>
+              <button type="button" class="menu-item-action logout" (click)="dangXuat()">
+                <span>🚪</span>
+                <span>Đăng Xuất</span>
+              </button>
+            </div>
+          </div>
+        </nz-dropdown-menu>
+
+        <!-- Nút Đăng Xuất Trực Tiếp -->
+        <button type="button" class="btn-action btn-logout-direct" (click)="dangXuat()"
+          title="Đăng xuất khỏi Kênh Người Bán">
+          <span class="action-icon">🚪</span>
+          <span class="action-label">Đăng Xuất</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- CONTENT OUTLET -->
+    <main class="page-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

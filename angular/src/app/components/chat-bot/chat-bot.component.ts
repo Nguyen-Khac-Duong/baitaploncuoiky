@@ -142,7 +142,9 @@ export class ChatBotComponent implements AfterViewChecked {
           timestamp: new Date()
         }
       ]);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMessage = error instanceof Error ? error.message : String(error);
+      console.warn('Chatbot error:', errMessage);
       const danhSachSanPhamThat = this.duLieuService.sanPhamListSignal();
       this.messages.update(prev => [
         ...prev,

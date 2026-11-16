@@ -1,0 +1,458 @@
+<div class="seller-container">
+  @if (dangTai()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Đang tải dữ liệu Kênh Người Bán...</p>
+    </div>
+  } @else {
+    @if (!cuaHang()) {
+      <!-- FORM ĐĂNG KÝ GIAN HÀNG NẾU CHƯA CÓ -->
+      <div class="register-shop-card">
+        <div class="register-header">
+          <div class="shop-badge">🏪 Kênh Người Bán (Seller Center)</div>
+          <h1>Đăng Ký Mở Gian Hàng Bán Hàng Trực Tuyến</h1>
+          <p>Tham gia bán hàng cùng hàng ngàn khách hàng tiềm năng trên nền tảng ShopTech Marketplace.</p>
+        </div>
+
+        <form [formGroup]="formDangKyShop" (ngSubmit)="xuLyDangKyShop()" class="form-layout">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Tên Gian Hàng *</label>
+              <input type="text" formControlName="ten" placeholder="Ví dụ: TechZone Official Store" />
+            </div>
+
+            <div class="form-group">
+              <label>Đường dẫn Shop (Slug duy nhất) *</label>
+              <div class="slug-input-wrapper">
+                <span class="prefix">shoptech.vn/shop/</span>
+                <input type="text" formControlName="slug" placeholder="techzone-store" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Số điện thoại liên hệ *</label>
+              <input type="text" formControlName="soDienThoai" placeholder="0987654321" />
+            </div>
+
+            <div class="form-group">
+              <label>Email liên hệ *</label>
+              <input type="email" formControlName="email" placeholder="contact@shop.com" />
+            </div>
+
+            <div class="form-group full-width">
+              <label>Địa chỉ kho hàng / gửi hàng *</label>
+              <input type="text" formControlName="diaChi" placeholder="Địa chỉ chi tiết kho hàng của bạn" />
+            </div>
+
+            <div class="form-group full-width">
+              <label>Mô tả ngắn về gian hàng</label>
+              <textarea rows="3" formControlName="moTa" placeholder="Giới thiệu thương hiệu, uy tín của shop..."></textarea>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-large" [disabled]="dangXuLy">
+              {{ dangXuLy ? 'Đang Khởi Tạo...' : '🚀 Kích Hoạt Gian Hàng Ngay' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    } @else {
+      <!-- GIAO DIỆN CHÍNH SELLER CENTER KHI ĐÃ CÓ SHOP -->
+      @if (cuaHang(); as shop) {
+        <div class="seller-header-card">
+          <div class="shop-meta">
+            <div class="shop-avatar">🏪</div>
+            <div>
+              <div class="shop-title-row">
+                <h2>{{ shop.ten }}</h2>
+                <nz-tag [nzColor]="shop.trangThai === 'HoatDong' ? 'success' : 'warning'">
+                  {{ shop.trangThai === 'HoatDong' ? 'Đang Hoạt Động' : 'Chờ Duyệt' }}
+                </nz-tag>
+                <span class="commission-badge">Phí hoa hồng sàn: {{ shop.phanTramHoaHong }}%</span>
+              </div>
+              <div class="shop-sub-info">
+                <span>📍 {{ shop.diaChi }}</span>
+                <span>📞 {{ shop.soDienThoai }}</span>
+                <span>🔗 <a [routerLink]="['/shop', shop.slug]" target="_blank">Xem Trang Shop Khách Hàng ↗</a></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="shop-header-actions">
+            <button class="btn btn-outline" (click)="moModalNganHang()">
+              🏦 {{ shop.soTaiKhoanNganHang ? 'Sửa Tài Khoản Ngân Hàng' : 'Liên Kết Ngân Hàng' }}
+            </button>
+            <button class="btn btn-primary" (click)="moModalRutTien()">
+              💰 Rút Tiền Về Ngân Hàng
+            </button>
+          </div>
+        </div>
+
+        <!-- STATS CARDS / VÍ SỐ DƯ GIAN HÀNG -->
+        <div class="wallet-ribbon">
+          <div class="ribbon-card available">
+            <div class="card-icon">💵</div>
+            <div class="card-body">
+              <span class="label">Số Dư Khả Dụng (Rút được ngay)</span>
+              <strong class="value">{{ formatTien(viCuaHang()?.soDuKhaDung) }}</strong>
+            </div>
+          </div>
+
+          <div class="ribbon-card escrow">
+            <div class="card-icon">⏳</div>
+            <div class="card-body">
+              <span class="label">Số Dư Tạm Giữ Escrow (Đơn đang giao)</span>
+              <strong class="value">{{ formatTien(viCuaHang()?.soDuTamGiu) }}</strong>
+            </div>
+          </div>
+
+          <div class="ribbon-card withdrawn">
+            <div class="card-icon">🏦</div>
+            <div class="card-body">
+              <span class="label">Tổng Tiền Đã Rút Thành Công</span>
+              <strong class="value">{{ formatTien(viCuaHang()?.tongTienDaRut) }}</strong>
+            </div>
+          </div>
+
+          <div class="ribbon-card orders">
+            <div class="card-icon">📦</div>
+            <div class="card-body">
+              <span class="label">Tổng Đơn Hàng Của Shop</span>
+              <strong class="value">{{ donHangList().length }} đơn</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- MAIN TABS -->
+        <div class="seller-tabs-card">
+          <div class="tabs-nav">
+            <button [class.active]="activeTab === 'tong-quan'" (click)="activeTab = 'tong-quan'">
+              📊 Ví Tiền & Đối Soát
+            </button>
+            <button [class.active]="activeTab === 'san-pham'" (click)="activeTab = 'san-pham'">
+              📦 Kho Hàng ({{ sanPhamList().length }})
+            </button>
+            <button [class.active]="activeTab === 'don-hang'" (click)="activeTab = 'don-hang'">
+              📑 Đơn Hàng Con ({{ donHangList().length }})
+            </button>
+          </div>
+
+          <div class="tabs-content">
+            <!-- TAB 1: VÍ TIỀN & ĐỐI SOÁT -->
+            @if (activeTab === 'tong-quan') {
+              <div class="wallet-tables-grid">
+                <!-- Bảng Lịch Sử Biến Động Ví -->
+                <div class="sub-table-card">
+                  <h3>📜 Lịch Sử Biến Động Số Dư (Ledger)</h3>
+                  <nz-table #gdTable [nzData]="giaoDichList()" [nzPageSize]="5" [nzBordered]="true">
+                    <thead>
+                      <tr>
+                        <th>Thời Gian</th>
+                        <th>Loại Giao Dịch</th>
+                        <th>Biến Động</th>
+                        <th>Nội Dung</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of gdTable.data; track item.id) {
+                        <tr>
+                          <td>{{ item.creationTime | date:'dd/MM/yyyy HH:mm' }}</td>
+                          <td>
+                            <nz-tag [nzColor]="item.soTien >= 0 ? 'green' : 'red'">{{ item.loaiGiaoDich }}</nz-tag>
+                          </td>
+                          <td [class.text-success]="item.soTien > 0" [class.text-danger]="item.soTien < 0" class="font-bold">
+                            {{ item.soTien > 0 ? '+' : '' }}{{ formatTien(item.soTien) }}
+                          </td>
+                          <td>{{ item.moTa }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </nz-table>
+                </div>
+
+                <!-- Bảng Lịch Sử Lệnh Rút Tiền -->
+                <div class="sub-table-card">
+                  <h3>💳 Lịch Sử Yêu Cầu Rút Tiền</h3>
+                  <nz-table #rtTable [nzData]="rutTienList()" [nzPageSize]="5" [nzBordered]="true">
+                    <thead>
+                      <tr>
+                        <th>Ngày Tạo</th>
+                        <th>Số Tiền</th>
+                        <th>Ngân Hàng</th>
+                        <th>Trạng Thái</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of rtTable.data; track item.id) {
+                        <tr>
+                          <td>{{ item.creationTime | date:'dd/MM/yyyy HH:mm' }}</td>
+                          <td class="font-bold text-danger">-{{ formatTien(item.soTien) }}</td>
+                          <td>
+                            <div>{{ item.tenNganHang }}</div>
+                            <small>{{ item.soTaiKhoan }} - {{ item.tenChuTaiKhoan }}</small>
+                          </td>
+                          <td>
+                            <nz-tag [nzColor]="layMauTrangThaiRut(item.trangThai)">
+                              {{ item.trangThai === 'ChoDuyet' ? 'Chờ Duyệt' : (item.trangThai === 'DaChuyenTien' ? 'Đã Giải Ngân' : 'Bị Từ Chối') }}
+                            </nz-tag>
+                            @if (item.lyDoTuChoi) {
+                              <div class="reject-reason">Lý do: {{ item.lyDoTuChoi }}</div>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </nz-table>
+                </div>
+              </div>
+            }
+
+            <!-- TAB 2: KHO SẢN PHẨM CỦA SHOP -->
+            @if (activeTab === 'san-pham') {
+              <div class="products-tab">
+                <div class="tab-toolbar">
+                  <h3>Danh Sách Sản Phẩm Thuộc Gian Hàng Của Bạn</h3>
+                  <button class="btn btn-primary" (click)="moModalThemSanPham()">+ Thêm Sản Phẩm Mới</button>
+                </div>
+
+                <nz-table #spTable [nzData]="sanPhamList()" [nzPageSize]="10" [nzBordered]="true">
+                  <thead>
+                    <tr>
+                      <th>Hình Ảnh</th>
+                      <th>Mã SP</th>
+                      <th>Tên Sản Phẩm</th>
+                      <th>Danh Mục</th>
+                      <th>Giá Bán</th>
+                      <th>Tồn Kho</th>
+                      <th>Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (sp of spTable.data; track sp.id) {
+                      <tr>
+                        <td>
+                          <img [src]="sp.hinhAnh || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=60'" class="table-thumb" [alt]="sp.ten" />
+                        </td>
+                        <td><code>{{ sp.maSp }}</code></td>
+                        <td class="font-bold">{{ sp.ten }}</td>
+                        <td><nz-tag>{{ sp.danhMuc }}</nz-tag></td>
+                        <td class="font-bold text-primary">{{ formatTien(sp.gia) }}</td>
+                        <td>
+                          <nz-tag [nzColor]="sp.soLuongTon > 0 ? 'blue' : 'red'">{{ sp.soLuongTon }}</nz-tag>
+                        </td>
+                        <td>
+                          <div class="action-btns">
+                            <button class="btn-sm btn-outline" (click)="moModalSuaSanPham(sp)">Sửa</button>
+                            <button class="btn-sm btn-danger" (click)="xoaSanPham(sp.id)">Xóa</button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </nz-table>
+              </div>
+            }
+
+            <!-- TAB 3: ĐƠN HÀNG CON CỦA SHOP -->
+            @if (activeTab === 'don-hang') {
+              <div class="orders-tab">
+                <div class="tab-toolbar">
+                  <h3>Đơn Hàng Khách Đặt Cần Shop Đóng Gói & Giao Đi</h3>
+                </div>
+
+                <nz-table #orderTable [nzData]="donHangList()" [nzPageSize]="10" [nzBordered]="true">
+                  <thead>
+                    <tr>
+                      <th>Mã Đơn Con</th>
+                      <th>Khách Hàng & Giao Nhận</th>
+                      <th>Sản Phẩm Đặt</th>
+                      <th>Tài Chính Shop</th>
+                      <th>Trạng Thái</th>
+                      <th>Xử Lý Đơn</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (dh of orderTable.data; track dh.id) {
+                      <tr>
+                        <td>
+                          <div class="font-bold">#{{ dh.maDon }}</div>
+                          <small class="text-muted">{{ dh.ngayTao | date:'dd/MM/yyyy HH:mm' }}</small>
+                          @if (dh.donHangTongId) {
+                            <div><nz-tag nzColor="purple">Đơn tổng: #{{ dh.maDonTong || dh.donHangTongId.substring(0, 8) }}</nz-tag></div>
+                          }
+                        </td>
+                        <td>
+                          <div class="font-bold">{{ dh.tenKhachHang }}</div>
+                          <div>📞 {{ dh.soDienThoai }}</div>
+                          <small>📍 {{ dh.diaChi }}</small>
+                        </td>
+                        <td>
+                          <ul class="order-items-list">
+                            @for (ct of dh.chiTiet; track ct.sanPhamId) {
+                              <li>
+                                {{ ct.tenSanPham }} × <strong>{{ ct.soLuong }}</strong>
+                                <span class="item-price">({{ formatTien(ct.thanhTien) }})</span>
+                              </li>
+                            }
+                          </ul>
+                        </td>
+                        <td>
+                          <div>Tiền hàng: <strong>{{ formatTien(dh.tienHang || dh.tongTien) }}</strong></div>
+                          <small class="text-danger">Hoa hồng sàn ({{ shop.phanTramHoaHong }}%): -{{ formatTien(dh.tienHoaHongSan) }}</small>
+                          <div class="text-success font-bold">Shop thực nhận: {{ formatTien(dh.thucNhanCuaShop || dh.tongTien) }}</div>
+                        </td>
+                        <td>
+                          <nz-tag [nzColor]="layMauTrangThaiDon(dh.trangThai)">
+                            {{ layTenTrangThaiDon(dh.trangThai) }}
+                          </nz-tag>
+                        </td>
+                        <td>
+                          <div class="status-actions">
+                            @if (dh.trangThai === 'cho_xu_ly') {
+                              <button class="btn-sm btn-primary" (click)="chuyenTrangThaiDon(dh, 'dang_giao')">
+                                🚚 Giao Hàng
+                              </button>
+                              <button class="btn-sm btn-danger" (click)="chuyenTrangThaiDon(dh, 'da_huy')">
+                                ✕ Hủy Đơn
+                              </button>
+                            } @else if (dh.trangThai === 'dang_giao') {
+                              <button class="btn-sm btn-success" (click)="chuyenTrangThaiDon(dh, 'hoan_thanh')">
+                                ✅ Giao Thành Công
+                              </button>
+                              <button class="btn-sm btn-danger" (click)="chuyenTrangThaiDon(dh, 'da_huy')">
+                                ✕ Bị Hoàn Trả
+                              </button>
+                            } @else {
+                              <span class="text-muted">Đã kết thúc</span>
+                            }
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </nz-table>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    }
+  }
+
+  <!-- MODAL RÚT TIỀN -->
+  <nz-modal
+    [(nzVisible)]="hienModalRutTien"
+    nzTitle="💰 Yêu Cầu Rút Tiền Về Ngân Hàng"
+    (nzOnCancel)="dongModalRutTien()"
+    (nzOnOk)="xacNhanRutTien()"
+    [nzOkLoading]="dangXuLy"
+    nzOkText="Xác Nhận Rút Tiền"
+  >
+    <ng-container *nzModalContent>
+      @if (cuaHang(); as shop) {
+        <div class="bank-preview">
+          <div class="bank-row"><span>Ngân hàng:</span> <strong>{{ shop.tenNganHang }}</strong></div>
+          <div class="bank-row"><span>Số tài khoản:</span> <strong>{{ shop.soTaiKhoanNganHang }}</strong></div>
+          <div class="bank-row"><span>Chủ tài khoản:</span> <strong>{{ shop.tenChuTaiKhoan }}</strong></div>
+          <div class="bank-row"><span>Số dư khả dụng:</span> <strong class="text-success">{{ formatTien(viCuaHang()?.soDuKhaDung) }}</strong></div>
+        </div>
+
+        <form [formGroup]="formRutTien" class="modal-form">
+          <div class="form-group">
+            <label>Số tiền muốn rút (VNĐ) *</label>
+            <input type="number" formControlName="soTien" placeholder="Tối thiểu 50,000đ" />
+          </div>
+          <div class="form-group">
+            <label>Ghi chú</label>
+            <input type="text" formControlName="ghiChu" placeholder="Ví dụ: Rút doanh thu tuần" />
+          </div>
+        </form>
+      }
+    </ng-container>
+  </nz-modal>
+
+  <!-- MODAL CẬP NHẬT TÀI KHOẢN NGÂN HÀNG -->
+  <nz-modal
+    [(nzVisible)]="hienModalNganHang"
+    nzTitle="🏦 Thông Tin Tài Khoản Ngân Hàng Nhận Tiền"
+    (nzOnCancel)="dongModalNganHang()"
+    (nzOnOk)="luuNganHang()"
+    [nzOkLoading]="dangXuLy"
+    nzOkText="Lưu Thông Tin"
+  >
+    <ng-container *nzModalContent>
+      <form [formGroup]="formNganHang" class="modal-form">
+        <div class="form-group">
+          <label>Tên Ngân Hàng (VD: Vietcombank, Techcombank, MB Bank) *</label>
+          <input type="text" formControlName="tenNganHang" placeholder="Nhập tên ngân hàng..." />
+        </div>
+        <div class="form-group">
+          <label>Số Tài Khoản *</label>
+          <input type="text" formControlName="soTaiKhoanNganHang" placeholder="Nhập số tài khoản..." />
+        </div>
+        <div class="form-group">
+          <label>Tên Chủ Tài Khoản (In hoa không dấu) *</label>
+          <input type="text" formControlName="tenChuTaiKhoan" placeholder="NGUYEN VAN A" />
+        </div>
+      </form>
+    </ng-container>
+  </nz-modal>
+
+  <!-- MODAL THÊM / SỬA SẢN PHẨM CỦA SHOP -->
+  <nz-modal
+    [(nzVisible)]="hienModalSanPham"
+    [nzTitle]="sanPhamDangSua ? '✏️ Cập Nhật Sản Phẩm' : '➕ Thêm Sản Phẩm Mới Vào Gian Hàng'"
+    (nzOnCancel)="dongModalSanPham()"
+    (nzOnOk)="luuSanPham()"
+    [nzOkLoading]="dangXuLy"
+    [nzOkText]="sanPhamDangSua ? 'Lưu Thay Đổi' : 'Thêm Vào Kho'"
+    [nzWidth]="650"
+  >
+    <ng-container *nzModalContent>
+      <form [formGroup]="formSanPham" class="modal-form-grid">
+        <div class="form-group">
+          <label>Mã sản phẩm *</label>
+          <input type="text" formControlName="maSp" placeholder="SP001" />
+        </div>
+
+        <div class="form-group">
+          <label>Danh mục *</label>
+          <select formControlName="danhMuc">
+            <option value="Điện thoại">Điện thoại</option>
+            <option value="Laptop">Laptop</option>
+            <option value="Tai nghe">Tai nghe</option>
+            <option value="Đồng hồ">Đồng hồ</option>
+            <option value="Phụ kiện">Phụ kiện</option>
+          </select>
+        </div>
+
+        <div class="form-group full-width">
+          <label>Tên sản phẩm *</label>
+          <input type="text" formControlName="ten" placeholder="Nhập tên sản phẩm..." />
+        </div>
+
+        <div class="form-group">
+          <label>Giá bán (VNĐ) *</label>
+          <input type="number" formControlName="gia" />
+        </div>
+
+        <div class="form-group">
+          <label>Số lượng tồn kho *</label>
+          <input type="number" formControlName="soLuongTon" />
+        </div>
+
+        <div class="form-group full-width">
+          <label>Link hình ảnh sản phẩm</label>
+          <input type="text" formControlName="hinhAnh" placeholder="https://..." />
+        </div>
+
+        <div class="form-group full-width">
+          <label>Mô tả chi tiết sản phẩm</label>
+          <textarea rows="3" formControlName="moTa" placeholder="Thông số kỹ thuật, bảo hành..."></textarea>
+        </div>
+      </form>
+    </ng-container>
+  </nz-modal>
+</div>
+

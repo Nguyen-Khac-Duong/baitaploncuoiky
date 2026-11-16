@@ -80,7 +80,7 @@
         <div class="user-avatar">{{ xacThucService.currentUser()?.avatar || 'AD' }}</div>
         <div class="user-meta">
           <span class="user-name">{{ xacThucService.currentUser()?.hoTen || 'Quản Trị Viên' }}</span>
-          <span class="user-status"><span class="status-dot"></span> Người Bán</span>
+          <span class="user-status"><span class="status-dot"></span> Quản Trị Viên Sàn</span>
         </div>
         <span class="chevron-icon">▾</span>
       </button>
@@ -99,7 +99,7 @@
         <div class="user-menu-list">
           <div class="menu-item-info">
             <span>Phân quyền:</span>
-            <span class="role-badge">Người Bán (Admin)</span>
+            <span class="role-badge">Platform Super Admin</span>
           </div>
           <div class="dropdown-divider"></div>
           <button type="button" class="menu-item-action logout" (click)="dangXuat()">

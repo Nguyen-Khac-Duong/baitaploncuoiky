@@ -1,0 +1,322 @@
+<div class="admin-danh-muc-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="title-row">
+        <div class="header-icon-badge">
+          <span nz-icon nzType="appstore" nzTheme="outline"></span>
+        </div>
+        <div>
+          <h1 class="page-title">Quản Lý Danh Mục Ngành Hàng</h1>
+          <p class="page-subtitle">
+            Cấu hình phân cấp danh mục động (Cấp 1 & Cấp 2), biểu tượng emoji, slug URL thân thiện SEO cho toàn sàn TMĐT
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button nz-button nzType="default" (click)="taiCayDanhMuc()" [nzLoading]="dangTai()" class="btn-refresh">
+        <span nz-icon nzType="reload"></span> Làm mới
+      </button>
+      <button nz-button nzType="primary" (click)="moModalThem()" class="btn-create">
+        <span nz-icon nzType="plus"></span> Thêm Danh Mục Mới
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon bg-blue">🏛️</div>
+      <div class="stat-info">
+        <span class="stat-label">Ngành Hàng Cấp 1 (Gốc)</span>
+        <span class="stat-value">{{ cayDanhMuc().length }}</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon bg-green">📂</div>
+      <div class="stat-info">
+        <span class="stat-label">Nhóm Hàng Cấp 2 (Con)</span>
+        <span class="stat-value">{{ danhSachBang().length - cayDanhMuc().length }}</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon bg-purple">📑</div>
+      <div class="stat-info">
+        <span class="stat-label">Tổng Danh Mục Hệ Thống</span>
+        <span class="stat-value">{{ danhSachBang().length }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <nz-card [nzBordered]="false" class="main-card">
+    <div class="card-toolbar">
+      <div class="toolbar-title">
+        <span class="icon">🏷️</span> Cây Phân Cấp & Danh Sách Ngành Hàng
+      </div>
+      <div class="toolbar-note">
+        <span class="badge-dot"></span> Các danh mục được cấu hình tại đây sẽ tự động hiển thị trên Kênh Người Bán & Trang Mua Sắm Khách Hàng.
+      </div>
+    </div>
+
+    <nz-table 
+      #danhMucTable 
+      [nzData]="danhSachBang()" 
+      [nzLoading]="dangTai()"
+      [nzPageSize]="15"
+      nzShowPagination
+      nzShowSizeChanger
+      [nzPageSizeOptions]="[10, 15, 30, 50]"
+      class="custom-category-table"
+    >
+      <thead>
+        <tr>
+          <th nzWidth="320px">Tên Danh Mục & Biểu Tượng</th>
+          <th nzWidth="180px">Slug (Đường Dẫn)</th>
+          <th nzWidth="180px">Phân Cấp / Danh Mục Cha</th>
+          <th nzWidth="110px" nzAlign="center">Thứ Tự</th>
+          <th nzWidth="120px" nzAlign="center">Sản Phẩm</th>
+          <th nzWidth="120px" nzAlign="center">Trạng Thái</th>
+          <th nzWidth="200px" nzAlign="center">Thao Tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of danhMucTable.data; track item.id) {
+          <tr [class.cap-1-row]="item.laCap1" [class.cap-2-row]="!item.laCap1">
+            <!-- Tên & Icon -->
+            <td>
+              <div class="category-name-cell" [class.child-indent]="!item.laCap1">
+                @if (!item.laCap1) {
+                  <span class="tree-line">↳</span>
+                }
+                <span class="category-emoji">{{ item.icon || '📦' }}</span>
+                <div class="category-info">
+                  <span class="name-text" [class.bold-name]="item.laCap1">{{ item.ten }}</span>
+                  @if (item.moTa) {
+                    <span class="desc-text">{{ item.moTa }}</span>
+                  }
+                </div>
+                @if (item.laCap1) {
+                  <nz-tag nzColor="processing" class="cap-tag">Cấp 1</nz-tag>
+                } @else {
+                  <nz-tag class="cap-tag cap-2">Cấp 2</nz-tag>
+                }
+              </div>
+            </td>
+
+            <!-- Slug -->
+            <td>
+              <code class="slug-badge">/{{ item.slug }}</code>
+            </td>
+
+            <!-- Danh Mục Cha -->
+            <td>
+              @if (item.laCap1) {
+                <span class="root-badge">⭐ Danh mục gốc</span>
+              } @else {
+                <nz-tag nzColor="cyan" class="parent-tag">
+                  📁 {{ item.tenCha }}
+                </nz-tag>
+              }
+            </td>
+
+            <!-- Thứ Tự -->
+            <td nzAlign="center">
+              <span class="order-badge">{{ item.thuTu }}</span>
+            </td>
+
+            <!-- Số SP -->
+            <td nzAlign="center">
+              <span class="product-count-badge" [class.has-products]="item.soLuongSanPham > 0">
+                {{ item.soLuongSanPham }} sp
+              </span>
+            </td>
+
+            <!-- Trạng Thái -->
+            <td nzAlign="center">
+              @if (item.trangThai) {
+                <nz-tag nzColor="success">Hoạt động</nz-tag>
+              } @else {
+                <nz-tag nzColor="default">Đang ẩn</nz-tag>
+              }
+            </td>
+
+            <!-- Thao Tác -->
+            <td nzAlign="center">
+              <div class="action-buttons">
+                @if (item.laCap1) {
+                  <button 
+                    nz-button 
+                    nzType="link" 
+                    nzSize="small"
+                    nz-tooltip="Thêm danh mục con thuộc ngành hàng này"
+                    (click)="moModalThem(item.id)" 
+                    class="btn-action btn-add-child"
+                  >
+                    <span nz-icon nzType="plus-circle"></span> Thêm con
+                  </button>
+                }
+
+                <button 
+                  nz-button 
+                  nzType="link" 
+                  nzSize="small"
+                  nz-tooltip="Chỉnh sửa danh mục"
+                  (click)="moModalSua(item)" 
+                  class="btn-action btn-edit"
+                >
+                  <span nz-icon nzType="edit"></span> Sửa
+                </button>
+
+                <button 
+                  nz-button 
+                  nzType="link" 
+                  nzDanger 
+                  nzSize="small"
+                  nz-tooltip="Xóa danh mục"
+                  nz-popconfirm
+                  nzPopconfirmTitle="Bạn có chắc chắn muốn xóa danh mục '{{ item.ten }}' không? (Lưu ý: Không thể xóa danh mục đang chứa sản phẩm hoặc có danh mục con)"
+                  nzOkText="Đồng ý xóa"
+                  nzCancelText="Hủy"
+                  (nzOnConfirm)="xoaDanhMuc(item.id)"
+                  class="btn-action btn-delete"
+                >
+                  <span nz-icon nzType="delete"></span> Xóa
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </nz-table>
+  </nz-card>
+
+  <!-- Modal Thêm/Sửa Danh Mục -->
+  <nz-modal
+    [(nzVisible)]="hienModal"
+    [nzTitle]="dangSuaId ? '✏️ Chỉnh Sửa Danh Mục' : '➕ Thêm Danh Mục Mới'"
+    (nzOnCancel)="hienModal = false"
+    (nzOnOk)="luuDanhMuc()"
+    [nzOkLoading]="dangLuu"
+    nzOkText="Lưu Danh Mục"
+    nzCancelText="Hủy Bỏ"
+    [nzWidth]="640"
+  >
+    <ng-container *nzModalContent>
+      <form [formGroup]="form" class="modal-form">
+        <!-- Tên danh mục -->
+        <div class="form-group">
+          <label class="form-label required">Tên Danh Mục</label>
+          <input 
+            nz-input 
+            formControlName="ten" 
+            placeholder="VD: Điện Thoại, Laptop, Thời Trang Nam..." 
+            (input)="onTenChange()"
+            class="form-control-input"
+          />
+          @if (form.get('ten')?.invalid && form.get('ten')?.touched) {
+            <span class="field-error">Vui lòng nhập tên danh mục hợp lệ (tối đa 256 ký tự).</span>
+          }
+        </div>
+
+        <!-- Biểu Tượng Emoji -->
+        <div class="form-group">
+          <label class="form-label">Biểu Tượng Emoji</label>
+          <div class="emoji-input-row">
+            <input 
+              nz-input 
+              formControlName="icon" 
+              placeholder="VD: 📱, 💻, 👕" 
+              class="emoji-input"
+            />
+            <div class="emoji-suggestions">
+              @for (emo of emojiGoiY; track emo) {
+                <button 
+                  type="button" 
+                  class="emoji-btn" 
+                  (click)="chonEmoji(emo)"
+                  [class.active]="form.get('icon')?.value === emo"
+                >
+                  {{ emo }}
+                </button>
+              }
+            </div>
+          </div>
+          <span class="field-hint">Chọn nhanh emoji đại diện hoặc tự gõ ký hiệu yêu thích.</span>
+        </div>
+
+        <!-- Cấp bậc / Ngành hàng cha -->
+        <div class="form-group">
+          <label class="form-label">Thuộc Danh Mục Cha (Phân Cấp Cấp 2)</label>
+          <nz-select 
+            formControlName="parentId" 
+            nzPlaceHolder="Chọn danh mục cha hoặc để trống nếu là Cấp 1"
+            class="full-width-select"
+            [nzAllowClear]="true"
+          >
+            <nz-option [nzValue]="null" nzLabel="⭐ Danh mục gốc (Cấp 1 cao nhất)"></nz-option>
+            @for (cha of danhMucChaList(); track cha.id) {
+              <!-- Tránh chọn chính nó làm cha khi đang sửa -->
+              @if (cha.id !== dangSuaId) {
+                <nz-option [nzValue]="cha.id" [nzLabel]="(cha.icon || '📁') + ' ' + cha.ten"></nz-option>
+              }
+            }
+          </nz-select>
+          <span class="field-hint">Nếu chọn danh mục cha, danh mục này sẽ là nhóm con (Cấp 2).</span>
+        </div>
+
+        <!-- Đường dẫn Slug -->
+        <div class="form-group">
+          <label class="form-label">Đường Dẫn Slug URL</label>
+          <nz-input-group nzPrefix="/">
+            <input 
+              nz-input 
+              formControlName="slug" 
+              placeholder="VD: dien-thoai, laptop, thoi-trang-nam" 
+            />
+          </nz-input-group>
+          <span class="field-hint">Tự động tạo theo chuẩn SEO, có thể tùy biến đường dẫn theo ý muốn.</span>
+        </div>
+
+        <!-- Hàng Thứ Tự & Trạng Thái -->
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label">Thứ Tự Hiển Thị</label>
+            <input 
+              nz-input 
+              type="number" 
+              formControlName="thuTu" 
+              min="0"
+              placeholder="1, 2, 3..." 
+            />
+            <span class="field-hint">Số nhỏ hơn sẽ đứng trước.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Trạng Thái Hoạt Động</label>
+            <div class="switch-row">
+              <nz-switch formControlName="trangThai"></nz-switch>
+              <span class="switch-label">
+                {{ form.get('trangThai')?.value ? 'Đang mở (Hiển thị)' : 'Đang tạm ẩn' }}
+              </span>
+            </div>
+            <span class="field-hint">Tắt nếu chưa muốn người mua & người bán thấy mục này.</span>
+          </div>
+        </div>
+
+        <!-- Mô tả -->
+        <div class="form-group">
+          <label class="form-label">Mô Tả Ngắn</label>
+          <textarea 
+            nz-input 
+            formControlName="moTa" 
+            rows="3" 
+            placeholder="Mô tả ngành hàng, tiêu chí sản phẩm thuộc danh mục này..."
+          ></textarea>
+        </div>
+      </form>
+    </ng-container>
+  </nz-modal>
+</div>
+

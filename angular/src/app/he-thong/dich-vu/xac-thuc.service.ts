@@ -1,42 +1,82 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { OAuthService } from 'angular-oauth2-oidc';
+import { ConfigStateService, CurrentUserDto } from '@abp/ng.core';
+import { Observable, from, map, catchError, of, switchMap } from 'rxjs';
 import { NguoiDung, VaiTroNguoiDung } from '../../shared/mo-hinh/du-lieu.model';
-
-export const TAI_KHOAN_KHOI_TAO: NguoiDung[] = [
-  {
-    id: 'user-admin-1',
-    email: 'admin@gmail.com',
-    matKhau: '123456',
-    hoTen: 'Nguyễn Văn Admin',
-    soDienThoai: '0909123456',
-    diaChi: 'Hà Nội, Việt Nam',
-    vaiTro: 'admin',
-    avatar: 'AD'
-  },
-  {
-    id: 'user-khach-1',
-    email: 'khachhang@gmail.com',
-    matKhau: '123456',
-    hoTen: 'Trần Khách Hàng',
-    soDienThoai: '0988776655',
-    diaChi: '123 Phố Huế, Hai Bà Trưng, Hà Nội',
-    vaiTro: 'khach_hang',
-    avatar: 'KH'
-  }
-];
+import { environment } from '../../../environments/environment';
 
 const STORAGE_USER = 'auth_current_user';
-const STORAGE_ALL_USERS = 'auth_danh_sach_tai_khoan';
 
 @Injectable({
   providedIn: 'root'
 })
 export class XacThucService {
-  private danhSachTaiKhoan: NguoiDung[] = this.khoiTaoDanhSachTaiKhoan();
+  private readonly http = inject(HttpClient);
+  private readonly oAuthService = inject(OAuthService);
+  private readonly configStateService = inject(ConfigStateService);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly apiUrl = environment.apis.default.url || 'https://localhost:44351';
+
   readonly currentUser = signal<NguoiDung | null>(this.khoiTaoNguoiDung());
 
+  constructor() {
+    this.dongBoTrangThaiOAuth();
+  }
+
+  private dongBoTrangThaiOAuth(): void {
+    if (this.isBrowser() && this.oAuthService.hasValidAccessToken()) {
+      const currentUserDto = this.configStateService.getOne('currentUser') as CurrentUserDto;
+      if (currentUserDto?.isAuthenticated) {
+        const vaiTro: VaiTroNguoiDung = (currentUserDto.roles || []).includes('admin') ? 'admin' : 'khach_hang';
+        const user: NguoiDung = {
+          id: currentUserDto.id || '',
+          email: currentUserDto.email || currentUserDto.userName || '',
+          hoTen: currentUserDto.name ? `${currentUserDto.name} ${currentUserDto.surName || ''}`.trim() : currentUserDto.userName || '',
+          vaiTro,
+          avatar: (currentUserDto.userName || 'ND').slice(0, 2).toUpperCase()
+        };
+        this.currentUser.set(user);
+        this.luuNguoiDung(user);
+      }
+    }
+  }
+
   /**
-   * Đăng ký tài khoản Khách Hàng (Người mua sắm)
-   * Duy nhất chủ shop sở hữu tài khoản Admin quản trị.
+   * Đăng nhập chuẩn ABP OpenIddict OAuth (Password Flow) - 🔴 F1
+   */
+  dangNhap(email: string, matKhau: string): Observable<NguoiDung | null> {
+    const username = email.trim();
+
+    return from(this.oAuthService.fetchTokenUsingPasswordFlow(username, matKhau)).pipe(
+      switchMap(() => from(this.configStateService.refreshAppState())),
+      map(() => {
+        const currentUserDto = this.configStateService.getOne('currentUser') as CurrentUserDto;
+        if (currentUserDto && currentUserDto.isAuthenticated) {
+          const vaiTro: VaiTroNguoiDung = (currentUserDto.roles || []).includes('admin') ? 'admin' : 'khach_hang';
+          const user: NguoiDung = {
+            id: currentUserDto.id || '',
+            email: currentUserDto.email || username,
+            hoTen: currentUserDto.name ? `${currentUserDto.name} ${currentUserDto.surName || ''}`.trim() : currentUserDto.userName || username,
+            vaiTro,
+            avatar: (currentUserDto.userName || 'ND').slice(0, 2).toUpperCase()
+          };
+          this.currentUser.set(user);
+          this.luuNguoiDung(user);
+          return user;
+        }
+        return null;
+      }),
+      catchError(err => {
+        console.warn('OAuth fetchToken error:', err?.message || err);
+        return of(null);
+      })
+    );
+  }
+
+  /**
+   * Đăng ký tài khoản khách hàng mới vào ABP Identity backend - 🔴 F1
    */
   dangKy(thongTin: {
     hoTen: string;
@@ -44,74 +84,36 @@ export class XacThucService {
     matKhau: string;
     soDienThoai: string;
     diaChi: string;
-  }): { thanhCong: boolean; thongBao: string; user?: NguoiDung } {
+  }): Observable<{ thanhCong: boolean; thongBao: string }> {
     const emailChuanHoa = thongTin.email.trim().toLowerCase();
+    const payload = {
+      userName: emailChuanHoa.split('@')[0] + '_' + Math.floor(Math.random() * 10000),
+      emailAddress: emailChuanHoa,
+      password: thongTin.matKhau,
+      appName: 'testtttt88'
+    };
 
-    // 1. Kiểm tra email đã tồn tại hay chưa
-    const daTonTai = this.danhSachTaiKhoan.some(
-      u => u.email.toLowerCase() === emailChuanHoa
+    return this.http.post(`${this.apiUrl}/api/account/register`, payload).pipe(
+      map(() => ({
+        thanhCong: true,
+        thongBao: 'Đăng ký tài khoản thành công! Vui lòng đăng nhập với mật khẩu vừa tạo.'
+      })),
+      catchError(err => {
+        const msg = err.error?.error?.message || err.error?.message || 'Đăng ký thất bại. Vui lòng thử lại!';
+        return of({ thanhCong: false, thongBao: msg });
+      })
     );
-
-    if (daTonTai) {
-      return {
-        thanhCong: false,
-        thongBao: `Email "${thongTin.email}" đã được đăng ký! Vui lòng chọn email khác hoặc đăng nhập.`
-      };
-    }
-
-    // 2. Tạo ID và Avatar chữ cái đầu
-    const hoTenParts = thongTin.hoTen.trim().split(' ');
-    const avatar = hoTenParts.length > 1
-      ? (hoTenParts[0][0] + hoTenParts[hoTenParts.length - 1][0]).toUpperCase()
-      : thongTin.hoTen.slice(0, 2).toUpperCase();
-
-    const nguoiDungMoi: NguoiDung = {
-      id: 'user-' + Date.now(),
-      email: emailChuanHoa,
-      matKhau: thongTin.matKhau,
-      hoTen: thongTin.hoTen.trim(),
-      soDienThoai: thongTin.soDienThoai.trim(),
-      diaChi: thongTin.diaChi.trim(),
-      vaiTro: 'khach_hang', // Luôn luôn là tài khoản Khách Hàng (Người Mua)
-      avatar
-    };
-
-    // 3. Lưu vào danh sách tài khoản
-    this.danhSachTaiKhoan.push(nguoiDungMoi);
-    this.luuDanhSachTaiKhoan();
-
-    // Lưu ý: Không tự động đăng nhập ngay theo quy chuẩn Spec RM-001; 
-    // Người dùng được chuyển về tab Đăng nhập để xác nhận lại mật khẩu.
-    return {
-      thanhCong: true,
-      thongBao: `Đăng ký tài khoản thành công! Vui lòng nhập mật khẩu để đăng nhập.`,
-      user: nguoiDungMoi
-    };
   }
 
   /**
-   * Đăng nhập với email và mật khẩu
-   */
-  dangNhap(email: string, matKhau: string): NguoiDung | null {
-    const emailChuanHoa = email.trim().toLowerCase();
-    const user = this.danhSachTaiKhoan.find(
-      u => u.email.toLowerCase() === emailChuanHoa && u.matKhau === matKhau
-    );
-
-    if (user) {
-      this.currentUser.set(user);
-      if (this.isBrowser()) {
-        localStorage.setItem(STORAGE_USER, JSON.stringify(user));
-      }
-      return user;
-    }
-    return null;
-  }
-
-  /**
-   * Đăng xuất
+   * Đăng xuất và dọn sạch OAuth Token
    */
   dangXuat(): void {
+    try {
+      this.oAuthService.logOut();
+    } catch {
+      // ignore
+    }
     this.currentUser.set(null);
     if (this.isBrowser()) {
       localStorage.removeItem(STORAGE_USER);
@@ -126,6 +128,10 @@ export class XacThucService {
     return this.currentUser()?.vaiTro === 'admin';
   }
 
+  laAdmin(): boolean {
+    return this.isAdmin();
+  }
+
   isKhachHang(): boolean {
     return this.currentUser()?.vaiTro === 'khach_hang';
   }
@@ -134,29 +140,9 @@ export class XacThucService {
     return this.currentUser()?.vaiTro || null;
   }
 
-  // === INTERNAL HELPERS ===
-  private khoiTaoDanhSachTaiKhoan(): NguoiDung[] {
+  private luuNguoiDung(user: NguoiDung): void {
     if (this.isBrowser()) {
-      const raw = localStorage.getItem(STORAGE_ALL_USERS);
-      if (raw) {
-        try {
-          const list = JSON.parse(raw);
-          if (Array.isArray(list) && list.length > 0) {
-            return list;
-          }
-        } catch {
-          // ignore
-        }
-      }
-      // Lưu danh sách khởi tạo mẫu
-      localStorage.setItem(STORAGE_ALL_USERS, JSON.stringify(TAI_KHOAN_KHOI_TAO));
-    }
-    return [...TAI_KHOAN_KHOI_TAO];
-  }
-
-  private luuDanhSachTaiKhoan(): void {
-    if (this.isBrowser()) {
-      localStorage.setItem(STORAGE_ALL_USERS, JSON.stringify(this.danhSachTaiKhoan));
+      localStorage.setItem(STORAGE_USER, JSON.stringify(user));
     }
   }
 
@@ -175,6 +161,6 @@ export class XacThucService {
   }
 
   private isBrowser(): boolean {
-    return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+    return isPlatformBrowser(this.platformId);
   }
 }

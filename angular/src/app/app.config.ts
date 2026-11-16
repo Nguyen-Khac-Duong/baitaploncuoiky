@@ -6,7 +6,7 @@ import {
 } from '@abp/ng.theme.shared';
 import { ApplicationConfig } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors, withInterceptorsFromDi } from '@angular/common/http';
 
 import { appRoutes } from './app.routes';
 import { APP_ROUTE_PROVIDER } from './route.provider';
@@ -21,10 +21,14 @@ import { provideTenantManagementConfig } from '@abp/ng.tenant-management/config'
 import { provideFeatureManagementConfig } from '@abp/ng.feature-management';
 import { provideThemeLeptonX } from '@abp/ng.theme.lepton-x';
 import { provideSideMenuLayout } from '@abp/ng.theme.lepton-x/layouts';
+import { xacThucInterceptor } from './he-thong/chan-bat/xac-thuc.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideHttpClient(),
+    provideHttpClient(
+      withInterceptors([xacThucInterceptor]),
+      withInterceptorsFromDi()
+    ),
     provideRouter(appRoutes),
     APP_ROUTE_PROVIDER,
     provideAbpCore(

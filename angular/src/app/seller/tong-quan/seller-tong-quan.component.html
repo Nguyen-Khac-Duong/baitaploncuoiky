@@ -1,0 +1,181 @@
+<div class="dashboard-page">
+  <!-- 4 KPI CARDS KINH DOANH -->
+  @if (sellerState.thongKe(); as thongKe) {
+    <div nz-row [nzGutter]="[16, 16]" class="kpi-row">
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+        <nz-card [nzBordered]="false" class="kpi-card card-blue">
+          <nz-statistic
+            [nzValue]="thongKe.tongSanPham"
+            [nzTitle]="'Tổng Sản Phẩm'"
+            [nzPrefix]="iconProduct"
+            [nzValueStyle]="{ color: '#1890ff', fontWeight: '700' }"
+          ></nz-statistic>
+          <ng-template #iconProduct>
+            <span nz-icon nzType="appstore" nzTheme="outline" class="kpi-icon"></span>
+          </ng-template>
+          <div class="kpi-extra">Đang quản lý trong kho shop</div>
+        </nz-card>
+      </div>
+
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+        <nz-card [nzBordered]="false" class="kpi-card card-green">
+          <nz-statistic
+            [nzValue]="thongKe.tongDonHang"
+            [nzTitle]="'Tổng Đơn Hàng'"
+            [nzPrefix]="iconOrder"
+            [nzValueStyle]="{ color: '#52c41a', fontWeight: '700' }"
+          ></nz-statistic>
+          <ng-template #iconOrder>
+            <span nz-icon nzType="shopping-cart" nzTheme="outline" class="kpi-icon"></span>
+          </ng-template>
+          <div class="kpi-extra">Đơn hàng con gửi đến shop</div>
+        </nz-card>
+      </div>
+
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+        <nz-card [nzBordered]="false" class="kpi-card card-purple">
+          <nz-statistic
+            [nzValue]="formatTien(thongKe.tongDoanhThu)"
+            [nzTitle]="'Tổng Doanh Thu'"
+            [nzPrefix]="iconRevenue"
+            [nzValueStyle]="{ color: '#722ed1', fontWeight: '700' }"
+          ></nz-statistic>
+          <ng-template #iconRevenue>
+            <span nz-icon nzType="dollar" nzTheme="outline" class="kpi-icon"></span>
+          </ng-template>
+          <div class="kpi-extra">Thực nhận sau trừ hoa hồng sàn</div>
+        </nz-card>
+      </div>
+
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+        <nz-card [nzBordered]="false" class="kpi-card card-red">
+          <nz-statistic
+            [nzValue]="thongKe.sanPhamHetHang"
+            [nzTitle]="'Sản Phẩm Hết Hàng'"
+            [nzPrefix]="iconAlert"
+            [nzValueStyle]="{ color: '#ff4d4f', fontWeight: '700' }"
+          ></nz-statistic>
+          <ng-template #iconAlert>
+            <span nz-icon nzType="alert" nzTheme="outline" class="kpi-icon"></span>
+          </ng-template>
+          <div class="kpi-extra">Cần bổ sung nhập kho</div>
+        </nz-card>
+      </div>
+    </div>
+  }
+
+  <!-- NỘI DUNG CHI TIẾT (TỪ ẢNH 2) -->
+  <div nz-row [nzGutter]="[20, 20]" class="content-row">
+    <!-- Đơn hàng gần đây -->
+    <div nz-col [nzXs]="24" [nzLg]="15">
+      <nz-card 
+        [nzBordered]="false" 
+        [nzTitle]="orderHeaderTitle" 
+        [nzExtra]="orderHeaderExtra" 
+        class="dashboard-card"
+      >
+        <ng-template #orderHeaderTitle>
+          <div class="card-title-box">
+            <span nz-icon nzType="shopping" nzTheme="outline" style="color: #1890ff;"></span>
+            <span>Đơn Hàng Gần Đây Của Shop</span>
+            <nz-badge [nzCount]="donHangList().length" [nzStyle]="{ backgroundColor: '#1890ff' }"></nz-badge>
+          </div>
+        </ng-template>
+
+        <ng-template #orderHeaderExtra>
+          <a routerLink="/seller/don-hang" nz-button nzType="link">
+            Xem tất cả <span nz-icon nzType="arrow-right"></span>
+          </a>
+        </ng-template>
+
+        <nz-table 
+          #recentOrders 
+          [nzData]="donHangList()" 
+          [nzShowPagination]="false" 
+          nzSize="middle"
+          class="dashboard-table"
+        >
+          <thead>
+            <tr>
+              <th nzWidth="120px">Mã đơn</th>
+              <th>Khách hàng</th>
+              <th nzWidth="140px">Shop thực nhận</th>
+              <th nzWidth="130px">Trạng thái</th>
+              <th nzWidth="110px">Thời gian</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (dh of recentOrders.data.slice(0, 6); track dh.id) {
+              <tr>
+                <td>
+                  <span class="sku-tag">#{{ dh.maDon }}</span>
+                </td>
+                <td>
+                  <div style="font-weight: 600; color: var(--text-primary);">{{ dh.tenKhachHang }}</div>
+                  <small class="text-muted">{{ dh.soDienThoai }}</small>
+                </td>
+                <td class="price-cell font-bold" style="color: #52c41a;">
+                  {{ formatTien(dh.thucNhanCuaShop || dh.tongTien) }}
+                </td>
+                <td>
+                  <nz-tag [nzColor]="getTrangThaiColor(dh.trangThai)">
+                    {{ layTenTrangThai(dh.trangThai) }}
+                  </nz-tag>
+                </td>
+                <td class="text-muted">{{ dh.ngayTao | date:'dd/MM HH:mm' }}</td>
+              </tr>
+            }
+          </tbody>
+        </nz-table>
+      </nz-card>
+    </div>
+
+    <!-- Cảnh báo tồn kho -->
+    <div nz-col [nzXs]="24" [nzLg]="9">
+      <nz-card 
+        [nzBordered]="false" 
+        [nzTitle]="stockHeaderTitle" 
+        [nzExtra]="stockHeaderExtra" 
+        class="dashboard-card"
+      >
+        <ng-template #stockHeaderTitle>
+          <div class="card-title-box">
+            <span nz-icon nzType="warning" nzTheme="outline" style="color: #faad14;"></span>
+            <span>Tồn Kho Cần Lưu Ý</span>
+          </div>
+        </ng-template>
+
+        <ng-template #stockHeaderExtra>
+          <a routerLink="/seller/san-pham" nz-button nzType="link">
+            Quản lý kho <span nz-icon nzType="arrow-right"></span>
+          </a>
+        </ng-template>
+
+        <div class="stock-list-container">
+          @for (sp of sanPhamList().slice(0, 7); track sp.id) {
+            <div class="stock-item-row">
+              <div class="stock-item-info">
+                <div class="stock-item-name">{{ sp.ten }}</div>
+                <div class="stock-item-sub">
+                  <span class="sku-tag">{{ sp.maSp }}</span>
+                  <span>{{ sp.danhMuc }}</span>
+                  <span>•</span>
+                  <span class="price-cell">{{ formatTien(sp.gia) }}</span>
+                </div>
+              </div>
+              <div class="stock-item-badge">
+                @if (sp.soLuongTon === 0) {
+                  <nz-tag nzColor="error">Hết hàng (0)</nz-tag>
+                } @else if (sp.soLuongTon <= 5) {
+                  <nz-tag nzColor="warning">Còn {{ sp.soLuongTon }}</nz-tag>
+                } @else {
+                  <nz-tag nzColor="success">Còn {{ sp.soLuongTon }}</nz-tag>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </nz-card>
+    </div>
+  </div>
+</div>

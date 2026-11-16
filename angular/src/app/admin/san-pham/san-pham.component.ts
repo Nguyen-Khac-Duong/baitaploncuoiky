@@ -5,11 +5,13 @@ import { Observable, Subject, combineLatest } from 'rxjs';
 import { map, startWith, debounceTime } from 'rxjs/operators';
 import { DuLieuService } from '../../he-thong/dich-vu/du-lieu.service';
 import { SanPham } from '../../shared/mo-hinh/du-lieu.model';
+import { trichXuatThongBaoLoi } from '../../he-thong/tien-ich/loi-api.helper';
 
 // NG-ZORRO Modules
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzInputModule } from 'ng-zorro-antd/input';
+import { NzInputNumberModule } from 'ng-zorro-antd/input-number';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzModalModule } from 'ng-zorro-antd/modal';
 import { NzFormModule } from 'ng-zorro-antd/form';
@@ -32,6 +34,7 @@ import { NzMessageService } from 'ng-zorro-antd/message';
     NzTableModule,
     NzButtonModule,
     NzInputModule,
+    NzInputNumberModule,
     NzSelectModule,
     NzModalModule,
     NzFormModule,
@@ -64,6 +67,7 @@ export class SanPhamComponent implements OnInit, OnDestroy {
   sanPhamIdDangSua: string | null = null;
   sanPhamDangXoa: SanPham | null = null;
   hienModalXacNhanXoa: boolean = false;
+  dangXuLy: boolean = false;
 
   // Stream danh sách sản phẩm sau lọc/tìm kiếm
   sanPhamHienThi$!: Observable<SanPham[]>;
@@ -126,7 +130,7 @@ export class SanPhamComponent implements OnInit, OnDestroy {
     this.dangChinhSua = false;
     this.sanPhamIdDangSua = null;
     this.formSanPham.reset({
-      maSp: 'SP' + Math.floor(100 + Math.random() * 900),
+      maSp: 'SP' + Math.floor(100000 + Math.random() * 900000),
       gia: null,
       soLuongTon: 1,
       danhMuc: 'Điện thoại',
@@ -151,9 +155,14 @@ export class SanPhamComponent implements OnInit, OnDestroy {
 
   dongModal(): void {
     this.hienModal = false;
+    this.dangXuLy = false;
   }
 
   luuSanPham(): void {
+    if (this.dangXuLy) {
+      return;
+    }
+
     if (this.formSanPham.invalid) {
       Object.values(this.formSanPham.controls).forEach(control => {
         if (control.invalid) {
@@ -164,11 +173,22 @@ export class SanPhamComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.dangXuLy = true;
     const giaTri = this.formSanPham.value;
 
     if (this.dangChinhSua && this.sanPhamIdDangSua) {
-      this.duLieuService.capNhatThongTinSanPham(this.sanPhamIdDangSua, giaTri);
-      this.msg.success(`Đã cập nhật sản phẩm "${giaTri.ten}" thành công!`);
+      this.duLieuService.capNhatThongTinSanPham(this.sanPhamIdDangSua, giaTri).subscribe({
+        next: () => {
+          this.dangXuLy = false;
+          this.msg.success(`Đã cập nhật sản phẩm "${giaTri.ten}" thành công!`);
+          this.dongModal();
+        },
+        error: (err) => {
+          this.dangXuLy = false;
+          const msg = trichXuatThongBaoLoi(err, 'Có lỗi xảy ra khi cập nhật thông tin sản phẩm!');
+          this.msg.error(msg);
+        }
+      });
     } else {
       this.duLieuService.themSanPham({
         maSp: giaTri.maSp,
@@ -177,11 +197,19 @@ export class SanPhamComponent implements OnInit, OnDestroy {
         soLuongTon: Number(giaTri.soLuongTon),
         danhMuc: giaTri.danhMuc,
         moTa: giaTri.moTa
+      }).subscribe({
+        next: () => {
+          this.dangXuLy = false;
+          this.msg.success(`Đã tạo mới sản phẩm "${giaTri.ten}" thành công!`);
+          this.dongModal();
+        },
+        error: (err) => {
+          this.dangXuLy = false;
+          const msg = trichXuatThongBaoLoi(err, 'Có lỗi xảy ra khi tạo sản phẩm mới!');
+          this.msg.error(msg);
+        }
       });
-      this.msg.success(`Đã tạo mới sản phẩm "${giaTri.ten}" thành công!`);
     }
-
-    this.dongModal();
   }
 
   // === DELETE HANDLERS ===
@@ -192,17 +220,69 @@ export class SanPhamComponent implements OnInit, OnDestroy {
 
   xacNhanXoa(sp?: SanPham): void {
     const spXoa = sp || this.sanPhamDangXoa;
-    if (spXoa) {
-      this.duLieuService.xoaSanPham(spXoa.id);
-      this.msg.success(`Đã xóa sản phẩm "${spXoa.ten}" (${spXoa.maSp})!`);
-      this.sanPhamDangXoa = null;
-      this.hienModalXacNhanXoa = false;
+    if (spXoa && !this.dangXuLy) {
+      this.dangXuLy = true;
+      this.duLieuService.xoaSanPham(spXoa.id).subscribe({
+        next: () => {
+          this.dangXuLy = false;
+          this.msg.success(`Đã xóa sản phẩm "${spXoa.ten}" (${spXoa.maSp})!`);
+          this.sanPhamDangXoa = null;
+          this.hienModalXacNhanXoa = false;
+        },
+        error: (err) => {
+          this.dangXuLy = false;
+          const msg = trichXuatThongBaoLoi(err, 'Có lỗi xảy ra khi xóa sản phẩm!');
+          this.msg.error(msg);
+        }
+      });
     }
   }
 
   dongModalXoa(): void {
     this.sanPhamDangXoa = null;
     this.hienModalXacNhanXoa = false;
+  }
+
+  dinhDangSo(val: number | string | null | undefined): string {
+    if (val === null || val === undefined || val === '') return '';
+    const num = typeof val === 'number' ? val : parseInt(String(val).replace(/\D/g, ''), 10);
+    if (isNaN(num)) return '';
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
+  onTienInput(event: Event, controlName: string): void {
+    const input = event.target as HTMLInputElement;
+    const originalValue = input.value;
+    const selectionStart = input.selectionStart || originalValue.length;
+
+    const digitsBeforeCursor = originalValue.slice(0, selectionStart).replace(/\D/g, '').length;
+
+    let raw = originalValue.replace(/\D/g, '');
+    if (raw.length > 1 && raw.startsWith('0')) {
+      raw = raw.replace(/^0+/, '');
+    }
+
+    const num = raw ? parseInt(raw, 10) : 0;
+    this.formSanPham.get(controlName)?.setValue(num, { emitEvent: false });
+    this.formSanPham.get(controlName)?.markAsDirty();
+
+    const formatted = raw ? raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
+    input.value = formatted;
+
+    let newCursorPos = formatted.length;
+    if (digitsBeforeCursor < raw.length) {
+      let digitCount = 0;
+      for (let i = 0; i < formatted.length; i++) {
+        if (/\d/.test(formatted[i])) {
+          digitCount++;
+        }
+        if (digitCount === digitsBeforeCursor) {
+          newCursorPos = i + 1;
+          break;
+        }
+      }
+    }
+    input.setSelectionRange(newCursorPos, newCursorPos);
   }
 
   formatTien(gia: number): string {

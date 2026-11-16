@@ -176,6 +176,21 @@
     background: #fee2e2;
     color: #b91c1c;
   }
+
+  &-yeu_cau_tra_hang {
+    background: #ffedd5;
+    color: #c2410c;
+  }
+
+  &-tra_hang {
+    background: #f3e8ff;
+    color: #7e22ce;
+  }
+
+  &-tu_choi_tra_hang {
+    background: #fee2e2;
+    color: #991b1b;
+  }
 }
 
 .empty-orders-card {
@@ -413,3 +428,221 @@
   cursor: pointer;
   font-weight: 600;
 }
+
+// === REVIEW BUTTON & MODAL ===
+.item-actions-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+
+  .item-price {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+  }
+
+  .btn-review {
+    background: #ffedd5;
+    border: 1px solid #fdba74;
+    color: #ea580c;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.3rem 0.65rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #ea580c;
+      color: #ffffff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(234, 88, 12, 0.25);
+    }
+  }
+
+  .badge-reviewed {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #059669;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
+  }
+}
+
+.review-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  .product-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg-app, #f8fafc);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color, #e2e8f0);
+
+    img {
+      width: 48px;
+      height: 48px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+
+    .prod-info {
+      .prod-title {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--text-primary, #1e293b);
+      }
+    }
+  }
+
+  .review-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    label {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text-primary, #1e293b);
+    }
+  }
+
+  .rating-stars-box {
+    .stars-control {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+
+      .rate-text {
+        font-weight: 700;
+        color: #f59e0b;
+        font-size: 0.875rem;
+      }
+    }
+  }
+}
+
+// === RETURN & REFUND STYLES ===
+.order-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  .btn-request-return {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0.4rem 0.85rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+      border-color: #94a3b8;
+    }
+  }
+}
+
+.return-info-box {
+  margin: 0.75rem 1.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  &.return-yeu_cau_tra_hang {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+  }
+
+  &.return-tra_hang {
+    background: #faf5ff;
+    border: 1px solid #e9d5ff;
+    color: #6b21a8;
+  }
+
+  &.return-tu_choi_tra_hang {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+  }
+
+  .return-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .return-time {
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+  }
+
+  .return-img {
+    margin-top: 0.35rem;
+    img {
+      max-width: 120px;
+      max-height: 80px;
+      border-radius: 6px;
+      object-fit: cover;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .return-shop-reply {
+    margin-top: 0.35rem;
+    padding-top: 0.35rem;
+    border-top: 1px dashed rgba(0, 0, 0, 0.15);
+  }
+}
+
+.refund-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  .refund-order-preview {
+    background: var(--bg-app, #f8fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+
+    .refund-amount {
+      color: #dc2626;
+      font-weight: 800;
+      font-size: 1rem;
+    }
+  }
+
+  .refund-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    label {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text-primary, #1e293b);
+    }
+  }
+}
+

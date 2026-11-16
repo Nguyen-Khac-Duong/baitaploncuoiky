@@ -12,6 +12,12 @@
     ".gemini/commands/speckit.checklist.toml": "5fc9c0b795d20bd1685553e1d8c5bcd2cafec424011fbd6a9dcade9fba8922a4",
     ".gemini/commands/speckit.specify.toml": "128ac8ce4c22657f6947824b21580321486d38de482796b971593bf4657f4fbd",
     ".gemini/commands/speckit.tasks.toml": "f3e8ffb6705e3f91e3b3508944471448b7edffb230cbaf496f5970bfc7639032",
-    ".gemini/commands/speckit.taskstoissues.toml": "ab8e4bd3395da6f8e5a0372b4ca20c06ac83b8b22a08b3a7d0bb929ffa47eb49"
+    ".gemini/commands/speckit.taskstoissues.toml": "ab8e4bd3395da6f8e5a0372b4ca20c06ac83b8b22a08b3a7d0bb929ffa47eb49",
+    ".specify/events.py": "af8e5daa02a87c4d49118ebcf45e76a5a6094e968074ded52aac7c475fa7c3e6",
+    ".gemini/settings.json": "4a8ccd798be82a359461efcc33d87eb8fcdd5ead7b4f8105861fb4d8d9dc18ee"
+  },
+  "ownership_modes": {
+    ".specify/events.py": "shared",
+    ".gemini/settings.json": "partial"
   }
 }

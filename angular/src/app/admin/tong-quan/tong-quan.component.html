@@ -3,105 +3,113 @@
     <div class="header-titles">
       <h1 class="page-title">
         <span nz-icon nzType="dashboard" nzTheme="outline" class="title-icon"></span>
-        Tổng Quan Kinh Doanh
+        Bảng Điều Khiển Quản Trị Hệ Thống Sàn (Platform Admin)
       </h1>
-      <p class="page-subtitle">Theo dõi các chỉ số quan trọng, đơn hàng và tình trạng kho hàng</p>
+      <p class="page-subtitle">Giám sát hoạt động toàn sàn, kiểm duyệt gian hàng và đối soát giải ngân tài chính</p>
     </div>
   </div>
 
   @if (thongKe$ | async; as thongKe) {
-    <!-- 4 KPI Cards using Ant Design Grid & Statistics -->
+    <!-- 4 KPI Cards for Platform -->
     <div nz-row [nzGutter]="[16, 16]" class="kpi-row">
       <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
-        <nz-card [nzBordered]="false" class="kpi-card card-blue">
-          <nz-statistic
-            [nzValue]="thongKe.tongSanPham"
-            [nzTitle]="'Tổng Sản Phẩm'"
-            [nzPrefix]="iconProduct"
-            [nzValueStyle]="{ color: '#1890ff', fontWeight: '700' }"
-          ></nz-statistic>
-          <ng-template #iconProduct>
-            <span nz-icon nzType="appstore" nzTheme="outline" class="kpi-icon"></span>
-          </ng-template>
-          <div class="kpi-extra">Đang quản lý trong kho</div>
-        </nz-card>
+        @if (danhSachShop$ | async; as shops) {
+          <nz-card [nzBordered]="false" class="kpi-card card-blue">
+            <nz-statistic
+              [nzValue]="shops.length"
+              [nzTitle]="'Tổng Gian Hàng Sàn'"
+              [nzPrefix]="iconShop"
+              [nzValueStyle]="{ color: '#1890ff', fontWeight: '700' }"
+            ></nz-statistic>
+            <ng-template #iconShop>
+              <span nz-icon nzType="shop" nzTheme="outline" class="kpi-icon"></span>
+            </ng-template>
+            <div class="kpi-extra">Gian hàng đăng ký trên sàn</div>
+          </nz-card>
+        }
       </div>
 
       <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
-        <nz-card [nzBordered]="false" class="kpi-card card-green">
-          <nz-statistic
-            [nzValue]="thongKe.tongDonHang"
-            [nzTitle]="'Tổng Đơn Hàng'"
-            [nzPrefix]="iconOrder"
-            [nzValueStyle]="{ color: '#52c41a', fontWeight: '700' }"
-          ></nz-statistic>
-          <ng-template #iconOrder>
-            <span nz-icon nzType="shopping-cart" nzTheme="outline" class="kpi-icon"></span>
-          </ng-template>
-          <div class="kpi-extra">Toàn bộ giao dịch hệ thống</div>
-        </nz-card>
+        @if (danhSachShop$ | async; as shops) {
+          <nz-card [nzBordered]="false" class="kpi-card card-orange">
+            <nz-statistic
+              [nzValue]="demShopChoDuyet(shops)"
+              [nzTitle]="'Hồ Sơ Chờ Duyệt'"
+              [nzPrefix]="iconPending"
+              [nzValueStyle]="{ color: '#fa8c16', fontWeight: '700' }"
+            ></nz-statistic>
+            <ng-template #iconPending>
+              <span nz-icon nzType="file-done" nzTheme="outline" class="kpi-icon"></span>
+            </ng-template>
+            <div class="kpi-extra">
+              <a routerLink="/admin/gian-hang" style="color: #fa8c16; font-weight: 600;">Xem & duyệt ngay ↗</a>
+            </div>
+          </nz-card>
+        }
+      </div>
+
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+        @if (danhSachRut$ | async; as payouts) {
+          <nz-card [nzBordered]="false" class="kpi-card card-green">
+            <nz-statistic
+              [nzValue]="demRutChoDuyet(payouts)"
+              [nzTitle]="'Lệnh Rút Chờ Duyệt'"
+              [nzPrefix]="iconPayout"
+              [nzValueStyle]="{ color: '#52c41a', fontWeight: '700' }"
+            ></nz-statistic>
+            <ng-template #iconPayout>
+              <span nz-icon nzType="bank" nzTheme="outline" class="kpi-icon"></span>
+            </ng-template>
+            <div class="kpi-extra">
+              <a routerLink="/admin/rut-tien" style="color: #52c41a; font-weight: 600;">Giải ngân doanh thu ↗</a>
+            </div>
+          </nz-card>
+        }
       </div>
 
       <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
         <nz-card [nzBordered]="false" class="kpi-card card-purple">
           <nz-statistic
-            [nzValue]="formatTien(thongKe.tongDoanhThu)"
-            [nzTitle]="'Tổng Doanh Thu'"
-            [nzPrefix]="iconRevenue"
+            [nzValue]="thongKe.tongDonHang"
+            [nzTitle]="'Tổng Đơn Toàn Sàn'"
+            [nzPrefix]="iconOrder"
             [nzValueStyle]="{ color: '#722ed1', fontWeight: '700' }"
           ></nz-statistic>
-          <ng-template #iconRevenue>
-            <span nz-icon nzType="dollar" nzTheme="outline" class="kpi-icon"></span>
+          <ng-template #iconOrder>
+            <span nz-icon nzType="shopping-cart" nzTheme="outline" class="kpi-icon"></span>
           </ng-template>
-          <div class="kpi-extra">Giá trị đơn hàng tích lũy</div>
-        </nz-card>
-      </div>
-
-      <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
-        <nz-card [nzBordered]="false" class="kpi-card card-red">
-          <nz-statistic
-            [nzValue]="thongKe.sanPhamHetHang"
-            [nzTitle]="'Sản Phẩm Hết Hàng'"
-            [nzPrefix]="iconAlert"
-            [nzValueStyle]="{ color: '#ff4d4f', fontWeight: '700' }"
-          ></nz-statistic>
-          <ng-template #iconAlert>
-            <span nz-icon nzType="alert" nzTheme="outline" class="kpi-icon"></span>
-          </ng-template>
-          <div class="kpi-extra">Cần bổ sung nhập kho</div>
+          <div class="kpi-extra">Giá trị: {{ formatTien(thongKe.tongDoanhThu) }}</div>
         </nz-card>
       </div>
     </div>
   }
 
+  <!-- Nội dung quản trị -->
   <div nz-row [nzGutter]="[20, 20]" class="content-row">
-    <!-- Đơn hàng gần đây -->
-    <div nz-col [nzXs]="24" [nzLg]="15">
+    <!-- Gian hàng chờ duyệt -->
+    <div nz-col [nzXs]="24" [nzLg]="12">
       <nz-card 
         [nzBordered]="false" 
-        [nzTitle]="orderHeaderTitle" 
-        [nzExtra]="orderHeaderExtra" 
+        [nzTitle]="shopHeaderTitle" 
+        [nzExtra]="shopHeaderExtra" 
         class="dashboard-card"
       >
-        <ng-template #orderHeaderTitle>
+        <ng-template #shopHeaderTitle>
           <div class="card-title-box">
-            <span nz-icon nzType="shopping" nzTheme="outline" style="color: #1890ff;"></span>
-            <span>Đơn Hàng Gần Đây</span>
-            @if (donHangMoi$ | async; as danhSach) {
-              <nz-badge [nzCount]="danhSach.length" [nzStyle]="{ backgroundColor: '#1890ff' }"></nz-badge>
-            }
+            <span nz-icon nzType="shop" nzTheme="outline" style="color: #1890ff;"></span>
+            <span>Gian Hàng Mới Đăng Ký (eKYC)</span>
           </div>
         </ng-template>
 
-        <ng-template #orderHeaderExtra>
-          <a routerLink="/admin/don-hang" nz-button nzType="link">
+        <ng-template #shopHeaderExtra>
+          <a routerLink="/admin/gian-hang" nz-button nzType="link">
             Xem tất cả <span nz-icon nzType="arrow-right"></span>
           </a>
         </ng-template>
 
-        @if (donHangMoi$ | async; as danhSach) {
+        @if (danhSachShop$ | async; as danhSach) {
           <nz-table 
-            #recentOrders 
+            #recentShops 
             [nzData]="danhSach" 
             [nzShowPagination]="false" 
             nzSize="middle"
@@ -109,30 +117,27 @@
           >
             <thead>
               <tr>
-                <th nzWidth="120px">Mã đơn</th>
-                <th>Khách hàng</th>
-                <th nzWidth="140px">Tổng tiền</th>
-                <th nzWidth="130px">Trạng thái</th>
-                <th nzWidth="110px">Thời gian</th>
+                <th>Gian Hàng</th>
+                <th>Liên Hệ</th>
+                <th>Trạng Thái</th>
               </tr>
             </thead>
             <tbody>
-              @for (dh of recentOrders.data.slice(0, 6); track dh.id) {
+              @for (shop of recentShops.data.slice(0, 5); track shop.id) {
                 <tr>
                   <td>
-                    <span class="sku-tag">{{ dh.maDon }}</span>
+                    <strong>🏬 {{ shop.ten }}</strong>
+                    <div><small class="text-muted">slug: {{ shop.slug }}</small></div>
                   </td>
                   <td>
-                    <div style="font-weight: 600; color: var(--text-primary);">{{ dh.tenKhachHang }}</div>
-                    <small class="text-muted">{{ dh.soDienThoai }}</small>
+                    <div>📞 {{ shop.soDienThoai }}</div>
+                    <small class="text-muted">{{ shop.email }}</small>
                   </td>
-                  <td class="price-cell">{{ formatTien(dh.tongTien) }}</td>
                   <td>
-                    <nz-tag [nzColor]="getTrangThaiColor(dh.trangThai)">
-                      {{ layTenTrangThai(dh.trangThai) }}
+                    <nz-tag [nzColor]="shop.trangThai === 'HoatDong' ? 'success' : (shop.trangThai === 'ChoDuyet' ? 'warning' : 'error')">
+                      {{ shop.trangThai === 'HoatDong' ? 'Đang Hoạt Động' : (shop.trangThai === 'ChoDuyet' ? 'Chờ Duyệt' : 'Tạm Khóa') }}
                     </nz-tag>
                   </td>
-                  <td class="text-muted">{{ dh.ngayTao }}</td>
                 </tr>
               }
             </tbody>
@@ -141,52 +146,61 @@
       </nz-card>
     </div>
 
-    <!-- Cảnh báo tồn kho -->
-    <div nz-col [nzXs]="24" [nzLg]="9">
+    <!-- Yêu cầu rút tiền chờ duyệt -->
+    <div nz-col [nzXs]="24" [nzLg]="12">
       <nz-card 
         [nzBordered]="false" 
-        [nzTitle]="stockHeaderTitle" 
-        [nzExtra]="stockHeaderExtra" 
+        [nzTitle]="payoutHeaderTitle" 
+        [nzExtra]="payoutHeaderExtra" 
         class="dashboard-card"
       >
-        <ng-template #stockHeaderTitle>
+        <ng-template #payoutHeaderTitle>
           <div class="card-title-box">
-            <span nz-icon nzType="warning" nzTheme="outline" style="color: #faad14;"></span>
-            <span>Tồn Kho Cần Lưu Ý</span>
+            <span nz-icon nzType="bank" nzTheme="outline" style="color: #52c41a;"></span>
+            <span>Yêu Cầu Rút Tiền Từ Shop</span>
           </div>
         </ng-template>
 
-        <ng-template #stockHeaderExtra>
-          <a routerLink="/admin/san-pham" nz-button nzType="link">
-            Quản lý kho <span nz-icon nzType="arrow-right"></span>
+        <ng-template #payoutHeaderExtra>
+          <a routerLink="/admin/rut-tien" nz-button nzType="link">
+            Xử lý giải ngân <span nz-icon nzType="arrow-right"></span>
           </a>
         </ng-template>
 
-        @if (sanPhamHetHang$ | async; as danhSachSp) {
-          <div class="stock-list-container">
-            @for (sp of danhSachSp.slice(0, 7); track sp.id) {
-              <div class="stock-item-row">
-                <div class="stock-item-info">
-                  <div class="stock-item-name">{{ sp.ten }}</div>
-                  <div class="stock-item-sub">
-                    <span class="sku-tag">{{ sp.maSp }}</span>
-                    <span>{{ sp.danhMuc }}</span>
-                    <span>•</span>
-                    <span class="price-cell">{{ formatTien(sp.gia) }}</span>
-                  </div>
-                </div>
-                <div class="stock-item-badge">
-                  @if (sp.soLuongTon === 0) {
-                    <nz-tag nzColor="error">Hết hàng (0)</nz-tag>
-                  } @else if (sp.soLuongTon <= 5) {
-                    <nz-tag nzColor="warning">Còn {{ sp.soLuongTon }}</nz-tag>
-                  } @else {
-                    <nz-tag nzColor="success">Còn {{ sp.soLuongTon }}</nz-tag>
-                  }
-                </div>
-              </div>
-            }
-          </div>
+        @if (danhSachRut$ | async; as payouts) {
+          <nz-table 
+            #recentPayouts 
+            [nzData]="payouts" 
+            [nzShowPagination]="false" 
+            nzSize="middle"
+            class="dashboard-table"
+          >
+            <thead>
+              <tr>
+                <th>Gian Hàng</th>
+                <th>Số Tiền Rút</th>
+                <th>Tài Khoản Nhận</th>
+                <th>Trạng Thái</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of recentPayouts.data.slice(0, 5); track item.id) {
+                <tr>
+                  <td><strong>🏪 {{ item.tenCuaHang }}</strong></td>
+                  <td class="price-cell font-bold" style="color: #52c41a;">{{ formatTien(item.soTien) }}</td>
+                  <td>
+                    <div>{{ item.tenNganHang }}</div>
+                    <small class="text-muted">{{ item.soTaiKhoan }} ({{ item.tenChuTaiKhoan }})</small>
+                  </td>
+                  <td>
+                    <nz-tag [nzColor]="item.trangThai === 'ChoDuyet' ? 'warning' : (item.trangThai === 'DaChuyenTien' ? 'success' : 'error')">
+                      {{ item.trangThai === 'ChoDuyet' ? 'Chờ Duyệt' : (item.trangThai === 'DaChuyenTien' ? 'Đã Giải Ngân' : 'Từ Chối') }}
+                    </nz-tag>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </nz-table>
         }
       </nz-card>
     </div>

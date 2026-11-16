@@ -1,28 +1,28 @@
-# Feature Specification: RM-005 — Giỏ Hàng & Đặt Hàng (Client)
+# Feature Specification: RM-005 — Giỏ Hàng & Tách Đơn Đa Gian Hàng (Multi-vendor Split Order)
 
 **Feature Branch**: `005-rm-005-gio-hang`  
-**Created**: 2026-10-14  
+**Updated**: 2026-11-16 (Upgraded to Split Orders & Escrow Holding)  
 **Status**: Completed  
-**Roadmap ID**: [RM-005](../../docs/roadmap.md#rm-005--giỏ-hàng--đặt-hàng-client-wave-2)  
+**Roadmap ID**: [RM-005](../../docs/roadmap.md#rm-005--giỏ-hàng--đặt-hàng-split-order-client-wave-2)  
 
 ---
 
 ## User Scenarios & Testing
 
-### User Story 1 - Xem & Điều Chỉnh Giỏ Hàng (Priority: P1)
-Khách hàng có thể tăng, giảm số lượng từng món trong giỏ hàng, xóa món hàng hoặc làm sạch toàn bộ giỏ. Tổng tiền và số lượng giỏ cập nhật theo thời gian thực (Realtime Computed Signal).
+### User Story 1 - Giỏ Hàng Đa Gian Hàng (Multi-Shop Cart) (Priority: P1)
+Khách hàng có thể thêm vào giỏ hàng các sản phẩm từ nhiều cửa hàng khác nhau cùng lúc. Màn hình `/gio-hang` hiển thị danh sách các món, tự động nhóm theo từng Gian hàng để khách hàng dễ theo dõi.
 
-### User Story 2 - Điền Thông Tin Nhận Hàng & Đặt Hàng (Priority: P1)
-Khách hàng điền thông tin người nhận (Họ tên, Số điện thoại, Địa chỉ giao hàng, Ghi chú). Hệ thống tự động điền thông tin nếu khách hàng đã đăng nhập. Bấm "Xác nhận Đặt Hàng" để tạo đơn.
-
-### User Story 3 - Xử Lý Sau Khi Đặt Hàng Thành Công (Priority: P1)
-- Xóa sạch giỏ hàng hiện tại.
-- Hiển thị Toast thông báo đặt hàng thành công kèm Mã Đơn Hàng.
-- Điều hướng người dùng đến màn hình "Đơn hàng của tôi" (`/don-hang-cua-toi`).
+### User Story 2 - Đặt Hàng & Tự Động Chia Đơn (Split Order) (Priority: P1)
+Khi khách hàng điền thông tin giao hàng (Tên, SĐT, Địa chỉ, Ghi chú) và bấm "Đặt hàng":
+1. Hệ thống tạo một **Đơn Hàng Tổng (Master Order - `DonHangTong`)** đại diện cho toàn bộ thanh toán của người mua.
+2. Tự động chia tách thành các **Đơn Hàng Con (Sub-Orders - `DonHang`)** theo từng gian hàng tương ứng.
+3. Tự động trừ tồn kho của từng sản phẩm.
+4. Số tiền của từng đơn con (sau khi trừ chiết khấu hoa hồng) được chuyển vào quỹ tạm giữ Escrow (`TienTamGiu`) của từng gian hàng tương ứng.
+5. Tự động bắn thông báo cho cả Người mua (Đặt hàng thành công) và từng Người bán (Có đơn hàng mới cần gói hàng).
 
 ---
 
 ## Requirements & Backend Integration
-- **FR-001**: Quản lý giỏ hàng bằng Signal `gioHang = signal<MonGioHang[]>()`, lưu trữ dự phòng `user_du_lieu_gio_hang`.
-- **FR-002**: Gửi request tạo đơn hàng đến Backend ABP `IDonHangAppService` (`POST /api/app/don-hang` với `CreateDonHangDto`).
-- **FR-003**: Kiểm tra validation bắt buộc SĐT nhận hàng (9-11 số), địa chỉ nhận hàng (tối thiểu 5 ký tự).
+- **FR-001**: API Backend ABP `IDonHangAppService.TaoDonHangTongAsync(CreateDonHangDto)`.
+- **FR-002**: Tự động tính tỷ lệ hoa hồng sàn (`PhanTramHoaHong`) cấu hình theo từng gian hàng.
+- **FR-003**: Đưa tiền vào `ViCuaHangManager.GhiNhanDonHangMoiAsync`.

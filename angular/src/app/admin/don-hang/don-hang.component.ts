@@ -5,6 +5,7 @@ import { Observable, combineLatest } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 import { DuLieuService } from '../../he-thong/dich-vu/du-lieu.service';
 import { DonHang, TrangThaiDonHang } from '../../shared/mo-hinh/du-lieu.model';
+import { trichXuatThongBaoLoi } from '../../he-thong/tien-ich/loi-api.helper';
 
 // NG-ZORRO Modules
 import { NzTableModule } from 'ng-zorro-antd/table';
@@ -92,8 +93,15 @@ export class DonHangComponent implements OnInit {
       this.msg.warning(`Đơn hàng #${dh.maDon} đã ở trạng thái kết thúc, không thể thay đổi.`);
       return;
     }
-    this.duLieuService.doiTrangThaiDonHang(dh.id, trangThaiMoi as TrangThaiDonHang);
-    this.msg.success(`Đã cập nhật trạng thái đơn #${dh.maDon} sang "${this.layTenTrangThai(trangThaiMoi as TrangThaiDonHang)}"`);
+    this.duLieuService.doiTrangThaiDonHang(dh.id, trangThaiMoi as TrangThaiDonHang).subscribe({
+      next: () => {
+        this.msg.success(`Đã cập nhật trạng thái đơn #${dh.maDon} sang "${this.layTenTrangThai(trangThaiMoi as TrangThaiDonHang)}"`);
+      },
+      error: (err) => {
+        const msg = trichXuatThongBaoLoi(err, 'Có lỗi xảy ra khi đổi trạng thái đơn hàng!');
+        this.msg.error(msg);
+      }
+    });
   }
 
   xemChiTiet(dh: DonHang): void {
@@ -115,7 +123,10 @@ export class DonHangComponent implements OnInit {
       cho_xu_ly: 'Chờ xử lý',
       dang_giao: 'Đang giao',
       hoan_thanh: 'Hoàn thành',
-      da_huy: 'Đã hủy'
+      da_huy: 'Đã hủy',
+      yeu_cau_tra_hang: 'Chờ duyệt trả hàng',
+      tra_hang: 'Đã hoàn tiền',
+      tu_choi_tra_hang: 'Từ chối trả hàng'
     };
     return mapTrangThai[trangThai] || trangThai;
   }
@@ -126,6 +137,9 @@ export class DonHangComponent implements OnInit {
       case 'dang_giao': return 'warning';
       case 'hoan_thanh': return 'success';
       case 'da_huy': return 'error';
+      case 'yeu_cau_tra_hang': return 'magenta';
+      case 'tra_hang': return 'purple';
+      case 'tu_choi_tra_hang': return 'error';
       default: return 'default';
     }
   }

@@ -1,9 +1,9 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { DuLieuService } from '../../he-thong/dich-vu/du-lieu.service';
-import { ThongKeDashboard, DonHang, SanPham } from '../../shared/mo-hinh/du-lieu.model';
+import { ThongKeDashboard, CuaHang, YeuCauRutTien } from '../../shared/mo-hinh/du-lieu.model';
 
 // NG-ZORRO Modules
 import { NzStatisticModule } from 'ng-zorro-antd/statistic';
@@ -37,30 +37,22 @@ export class TongQuanComponent {
   private readonly duLieuService = inject(DuLieuService);
 
   readonly thongKe$: Observable<ThongKeDashboard> = this.duLieuService.getThongKeDashboard();
-  readonly donHangMoi$: Observable<DonHang[]> = this.duLieuService.getDanhSachDonHang();
-  readonly sanPhamHetHang$: Observable<SanPham[]> = this.duLieuService.getDanhSachSanPham();
+  readonly danhSachShop$: Observable<CuaHang[]> = this.duLieuService.getDanhSachCuaHang().pipe(
+    map(res => res.items || [])
+  );
+  readonly danhSachRut$: Observable<YeuCauRutTien[]> = this.duLieuService.getAdminPayoutRequests().pipe(
+    map(res => res.items || [])
+  );
 
-  formatTien(gia: number): string {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(gia);
+  formatTien(gia: number | undefined | null): string {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(gia || 0);
   }
 
-  layTenTrangThai(trangThai: string): string {
-    const mapTrangThai: Record<string, string> = {
-      cho_xu_ly: 'Chờ xử lý',
-      dang_giao: 'Đang giao hàng',
-      hoan_thanh: 'Hoàn thành',
-      da_huy: 'Đã hủy'
-    };
-    return mapTrangThai[trangThai] || trangThai;
+  demShopChoDuyet(shops: CuaHang[]): number {
+    return (shops || []).filter(s => s.trangThai === 'ChoDuyet').length;
   }
 
-  getTrangThaiColor(trangThai: string): string {
-    switch (trangThai) {
-      case 'cho_xu_ly': return 'processing';
-      case 'dang_giao': return 'warning';
-      case 'hoan_thanh': return 'success';
-      case 'da_huy': return 'error';
-      default: return 'default';
-    }
+  demRutChoDuyet(payouts: YeuCauRutTien[]): number {
+    return (payouts || []).filter(p => p.trangThai === 'ChoDuyet').length;
   }
 }

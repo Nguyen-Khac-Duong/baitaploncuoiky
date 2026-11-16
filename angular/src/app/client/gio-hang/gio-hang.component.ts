@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { DuLieuService } from '../../he-thong/dich-vu/du-lieu.service';
 import { XacThucService } from '../../he-thong/dich-vu/xac-thuc.service';
 import { ThongBaoService } from '../../he-thong/dich-vu/thong-bao.service';
+import { trichXuatThongBaoLoi } from '../../he-thong/tien-ich/loi-api.helper';
 
 @Component({
   selector: 'app-gio-hang',
@@ -22,6 +23,7 @@ export class GioHangComponent implements OnInit {
 
   formDatHang!: FormGroup;
   datHangThanhCongDonHang: string | null = null;
+  dangDatHang: boolean = false;
 
   constructor() {
     effect(() => {
@@ -69,7 +71,17 @@ export class GioHangComponent implements OnInit {
   }
 
   tienHanhDatHang(): void {
-    // 1. Bắt buộc đăng nhập: Khách xem hàng chưa đăng nhập không thể đặt hàng
+    // 1. Chặn Admin hệ thống đặt hàng
+    if (this.xacThucService.laAdmin()) {
+      this.thongBaoService.canhBao(
+        'Tài khoản Quản Trị Viên Sàn (Admin) không tham gia mua hàng! Vui lòng đăng xuất và tạo tài khoản Người Mua riêng để đặt hàng.',
+        'Chặn mua hàng'
+      );
+      this.router.navigate(['/admin/tong-quan']);
+      return;
+    }
+
+    // 2. Bắt buộc đăng nhập: Khách xem hàng chưa đăng nhập không thể đặt hàng
     if (!this.xacThucService.daDangNhap()) {
       this.thongBaoService.canhBao(
         'Bạn cần đăng nhập hoặc tạo tài khoản Khách Hàng để tiến hành đặt hàng!',
@@ -91,22 +103,30 @@ export class GioHangComponent implements OnInit {
     const user = this.xacThucService.currentUser();
     const val = this.formDatHang.value;
 
-    // 3. Tiến hành đặt hàng liên kết chặt chẽ với tài khoản Khách Hàng
-    const donHang = this.duLieuService.datHang({
+    // 3. Tiến hành đặt hàng liên kết chặt chẽ với tài khoản Khách Hàng (🔴 F2)
+    this.dangDatHang = true;
+    this.duLieuService.datHang({
       nguoiDungId: user?.id,
       tenKhachHang: val.tenKhachHang,
       soDienThoai: val.soDienThoai,
       diaChi: val.diaChi,
       ghiChu: val.ghiChu
+    }).subscribe({
+      next: (donHangTong) => {
+        this.dangDatHang = false;
+        const maDonHienThi = donHangTong.maDonTong || (donHangTong as any).maDon || 'MALL-ORDER';
+        this.datHangThanhCongDonHang = maDonHienThi;
+        this.thongBaoService.thanhCong(
+          `Đơn hàng #${maDonHienThi} gồm các kiện hàng tương ứng từng shop đã được tạo thành công!`,
+          'Đặt hàng thành công'
+        );
+      },
+      error: (err) => {
+        this.dangDatHang = false;
+        const msg = trichXuatThongBaoLoi(err, 'Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại!');
+        this.thongBaoService.thatBai(msg, 'Đặt hàng thất bại');
+      }
     });
-
-    if (donHang) {
-      this.datHangThanhCongDonHang = donHang.maDon;
-      this.thongBaoService.thanhCong(
-        `Đơn hàng #${donHang.maDon} đã được tạo thành công! Bạn có thể xem ngay tại "Đơn Hàng Của Tôi".`,
-        'Đặt hàng thành công'
-      );
-    }
   }
 
   formatTien(gia: number): string {

@@ -13,6 +13,9 @@ public class DonHang : FullAuditedAggregateRoot<Guid>
     public const string TrangThaiDangGiao = "dang_giao";
     public const string TrangThaiHoanThanh = "hoan_thanh";
     public const string TrangThaiDaHuy = "da_huy";
+    public const string TrangThaiYeuCauTraHang = "yeu_cau_tra_hang";
+    public const string TrangThaiTraHang = "tra_hang";
+    public const string TrangThaiTuChoiTraHang = "tu_choi_tra_hang";
 
     public string MaDon { get; set; } = string.Empty;
     public string? NguoiDungId { get; set; }
@@ -23,6 +26,22 @@ public class DonHang : FullAuditedAggregateRoot<Guid>
     public decimal TongTien { get; set; }
     public string TrangThai { get; set; } = TrangThaiChoXuLy;
     public DateTime NgayTao { get; set; }
+
+    // Multi-vendor Split Order Fields
+    public Guid CuaHangId { get; set; }
+    public Guid? DonHangTongId { get; set; }
+    public decimal TienHang { get; set; }
+    public decimal PhiVanChuyen { get; set; }
+    public decimal TienHoaHongSan { get; set; }
+    public decimal ThucNhanCuaShop { get; set; }
+
+    // Thông tin Yêu cầu Trả hàng & Hoàn tiền (Return & Refund)
+    public string? LyDoTraHang { get; set; }
+    public string? GhiChuTraHang { get; set; }
+    public string? HinhAnhTraHang { get; set; }
+    public DateTime? ThoiGianYeuCauTraHang { get; set; }
+    public string? PhanHoiTraHang { get; set; }
+    public DateTime? ThoiGianXuLyTraHang { get; set; }
 
     public virtual ICollection<ChiTietDonHang> ChiTiet { get; set; }
 
@@ -40,7 +59,11 @@ public class DonHang : FullAuditedAggregateRoot<Guid>
         decimal tongTien = 0,
         string? nguoiDungId = null,
         string? ghiChu = null,
-        string trangThai = TrangThaiChoXuLy)
+        string trangThai = TrangThaiChoXuLy,
+        Guid cuaHangId = default,
+        Guid? donHangTongId = null,
+        decimal phiVanChuyen = 0,
+        decimal phanTramHoaHong = 5.0m)
         : base(id)
     {
         MaDon = Check.NotNullOrWhiteSpace(maDon, nameof(maDon));
@@ -51,6 +74,12 @@ public class DonHang : FullAuditedAggregateRoot<Guid>
         NguoiDungId = nguoiDungId;
         GhiChu = ghiChu;
         TrangThai = trangThai;
+        CuaHangId = cuaHangId;
+        DonHangTongId = donHangTongId;
+        PhiVanChuyen = phiVanChuyen;
+        TienHang = tongTien;
+        TienHoaHongSan = Math.Round(TienHang * (phanTramHoaHong / 100m), 0);
+        ThucNhanCuaShop = TienHang - TienHoaHongSan;
         ChiTiet = new Collection<ChiTietDonHang>();
     }
 
@@ -68,11 +97,11 @@ public class DonHang : FullAuditedAggregateRoot<Guid>
         Check.NotNullOrWhiteSpace(tenSanPham, nameof(tenSanPham));
         if (soLuong <= 0)
         {
-            throw new ArgumentException("Số lượng sản phẩm trong đơn phải lớn hơn 0.", nameof(soLuong));
+            throw new BusinessException(testtttt88DomainErrorCodes.SoLuongPhaiLonHon0);
         }
         if (donGia < 0)
         {
-            throw new ArgumentException("Đơn giá sản phẩm không được âm.", nameof(donGia));
+            throw new BusinessException(testtttt88DomainErrorCodes.GiaKhongDuocAm);
         }
 
         var thanhTien = donGia * soLuong;
@@ -88,7 +117,10 @@ public class DonHang : FullAuditedAggregateRoot<Guid>
         );
 
         ChiTiet.Add(chiTietItem);
-        TongTien = ChiTiet.Sum(x => x.ThanhTien);
+        TienHang = ChiTiet.Sum(x => x.ThanhTien);
+        TongTien = TienHang + PhiVanChuyen;
+        TienHoaHongSan = Math.Round(TienHang * 0.05m, 0);
+        ThucNhanCuaShop = TienHang - TienHoaHongSan;
     }
 
     /// <summary>
@@ -96,15 +128,27 @@ public class DonHang : FullAuditedAggregateRoot<Guid>
     /// </summary>
     public bool CoTheChuyenSang(string trangThaiMoi)
     {
-        if (TrangThai == TrangThaiHoanThanh || TrangThai == TrangThaiDaHuy)
+        if (TrangThai == TrangThaiDaHuy || TrangThai == TrangThaiTraHang)
         {
             return false;
+        }
+
+        if (trangThaiMoi == TrangThaiYeuCauTraHang)
+        {
+            return TrangThai == TrangThaiDangGiao || TrangThai == TrangThaiHoanThanh;
+        }
+
+        if (TrangThai == TrangThaiYeuCauTraHang)
+        {
+            return trangThaiMoi == TrangThaiTraHang || 
+                   trangThaiMoi == TrangThaiTuChoiTraHang || 
+                   trangThaiMoi == TrangThaiHoanThanh;
         }
 
         return trangThaiMoi switch
         {
             TrangThaiDangGiao => TrangThai == TrangThaiChoXuLy,
-            TrangThaiHoanThanh => TrangThai == TrangThaiDangGiao || TrangThai == TrangThaiChoXuLy,
+            TrangThaiHoanThanh => TrangThai == TrangThaiDangGiao || TrangThai == TrangThaiChoXuLy || TrangThai == TrangThaiTuChoiTraHang,
             TrangThaiDaHuy => TrangThai == TrangThaiChoXuLy || TrangThai == TrangThaiDangGiao,
             _ => false
         };
@@ -115,7 +159,7 @@ public class DonHang : FullAuditedAggregateRoot<Guid>
     /// </summary>
     public void ChuyenTrangThai(string trangThaiMoi)
     {
-        if (TrangThai == TrangThaiHoanThanh || TrangThai == TrangThaiDaHuy)
+        if (TrangThai == TrangThaiDaHuy || TrangThai == TrangThaiTraHang)
         {
             throw new BusinessException(testtttt88DomainErrorCodes.DonHangDaHoanThanhHoacHuy)
                 .WithData("TrangThai", TrangThai);
@@ -128,5 +172,34 @@ public class DonHang : FullAuditedAggregateRoot<Guid>
         }
 
         TrangThai = trangThaiMoi;
+    }
+
+    /// <summary>
+    /// Khách hàng gửi yêu cầu trả hàng / hoàn tiền
+    /// </summary>
+    public void GuiYeuCauTraHang(string lyDo, string? ghiChu, string? hinhAnh)
+    {
+        ChuyenTrangThai(TrangThaiYeuCauTraHang);
+        LyDoTraHang = lyDo;
+        GhiChuTraHang = ghiChu;
+        HinhAnhTraHang = hinhAnh;
+        ThoiGianYeuCauTraHang = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Shop hoặc Sàn xử lý duyệt / từ chối yêu cầu trả hàng
+    /// </summary>
+    public void XuLyTraHang(bool dongY, string? phanHoi)
+    {
+        if (dongY)
+        {
+            ChuyenTrangThai(TrangThaiTraHang);
+        }
+        else
+        {
+            ChuyenTrangThai(TrangThaiTuChoiTraHang);
+        }
+        PhanHoiTraHang = phanHoi;
+        ThoiGianXuLyTraHang = DateTime.UtcNow;
     }
 }

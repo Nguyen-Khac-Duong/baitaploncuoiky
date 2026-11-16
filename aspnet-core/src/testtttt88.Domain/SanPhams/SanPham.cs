@@ -11,9 +11,11 @@ public class SanPham : FullAuditedAggregateRoot<Guid>
     public decimal Gia { get; set; }
     public int SoLuongTon { get; set; }
     public string DanhMuc { get; set; } = string.Empty;
+    public Guid? DanhMucId { get; set; }
     public string? HinhAnh { get; set; }
     public string? MoTa { get; set; }
     public DateTime NgayTao { get; set; }
+    public Guid CuaHangId { get; set; }
 
     public SanPham()
     {
@@ -27,16 +29,18 @@ public class SanPham : FullAuditedAggregateRoot<Guid>
         int soLuongTon,
         string danhMuc,
         string? hinhAnh = null,
-        string? moTa = null)
+        string? moTa = null,
+        Guid cuaHangId = default)
         : base(id)
     {
         MaSp = Check.NotNullOrWhiteSpace(maSp, nameof(maSp));
         Ten = Check.NotNullOrWhiteSpace(ten, nameof(ten));
-        Gia = gia >= 0 ? gia : throw new ArgumentException("Giá sản phẩm không được âm.", nameof(gia));
-        SoLuongTon = soLuongTon >= 0 ? soLuongTon : throw new ArgumentException("Số lượng tồn không được âm.", nameof(soLuongTon));
+        Gia = gia >= 0 ? gia : throw new BusinessException(testtttt88DomainErrorCodes.GiaKhongDuocAm);
+        SoLuongTon = soLuongTon >= 0 ? soLuongTon : throw new BusinessException(testtttt88DomainErrorCodes.SoLuongTonKhongDuocAm);
         DanhMuc = Check.NotNullOrWhiteSpace(danhMuc, nameof(danhMuc));
         HinhAnh = hinhAnh;
         MoTa = moTa;
+        CuaHangId = cuaHangId;
     }
 
     /// <summary>
@@ -46,7 +50,7 @@ public class SanPham : FullAuditedAggregateRoot<Guid>
     {
         if (soLuong <= 0)
         {
-            throw new ArgumentException("Số lượng trừ kho phải lớn hơn 0.", nameof(soLuong));
+            throw new BusinessException(testtttt88DomainErrorCodes.SoLuongPhaiLonHon0);
         }
 
         if (SoLuongTon < soLuong)
@@ -67,7 +71,7 @@ public class SanPham : FullAuditedAggregateRoot<Guid>
     {
         if (soLuong <= 0)
         {
-            throw new ArgumentException("Số lượng hoàn kho phải lớn hơn 0.", nameof(soLuong));
+            throw new BusinessException(testtttt88DomainErrorCodes.SoLuongPhaiLonHon0);
         }
 
         SoLuongTon += soLuong;
@@ -87,8 +91,8 @@ public class SanPham : FullAuditedAggregateRoot<Guid>
     {
         MaSp = Check.NotNullOrWhiteSpace(maSp, nameof(maSp));
         Ten = Check.NotNullOrWhiteSpace(ten, nameof(ten));
-        Gia = gia >= 0 ? gia : throw new ArgumentException("Giá sản phẩm không được âm.", nameof(gia));
-        SoLuongTon = soLuongTon >= 0 ? soLuongTon : throw new ArgumentException("Số lượng tồn không được âm.", nameof(soLuongTon));
+        Gia = gia >= 0 ? gia : throw new BusinessException(testtttt88DomainErrorCodes.GiaKhongDuocAm);
+        SoLuongTon = soLuongTon >= 0 ? soLuongTon : throw new BusinessException(testtttt88DomainErrorCodes.SoLuongTonKhongDuocAm);
         DanhMuc = Check.NotNullOrWhiteSpace(danhMuc, nameof(danhMuc));
         HinhAnh = hinhAnh;
         MoTa = moTa;

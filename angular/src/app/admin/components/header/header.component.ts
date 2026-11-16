@@ -78,8 +78,8 @@ export class HeaderComponent implements OnInit {
     this.capNhatTieuDe(this.router.url);
 
     this.router.events
-      .pipe(filter(e => e instanceof NavigationEnd))
-      .subscribe((e: any) => {
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe((e: NavigationEnd) => {
         this.capNhatTieuDe(e.urlAfterRedirects || e.url);
       });
   }

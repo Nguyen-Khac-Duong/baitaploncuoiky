@@ -28,7 +28,9 @@ public class SanPhamManager : DomainService
         int soLuongTon,
         string danhMuc,
         string? hinhAnh = null,
-        string? moTa = null)
+        string? moTa = null,
+        Guid cuaHangId = default,
+        Guid? danhMucId = null)
     {
         Check.NotNullOrWhiteSpace(maSp, nameof(maSp));
         Check.NotNullOrWhiteSpace(ten, nameof(ten));
@@ -36,8 +38,7 @@ public class SanPhamManager : DomainService
         var existing = await _sanPhamRepository.FirstOrDefaultAsync(x => x.MaSp == maSp);
         if (existing != null)
         {
-            throw new BusinessException(testtttt88DomainErrorCodes.SanPhamDaTonTai)
-                .WithData("MaSp", maSp);
+            throw new UserFriendlyException($"Mã sản phẩm '{maSp}' đã tồn tại trên hệ thống. Vui lòng chọn mã sản phẩm khác!");
         }
 
         var sanPham = new SanPham(
@@ -48,8 +49,10 @@ public class SanPhamManager : DomainService
             soLuongTon,
             danhMuc,
             hinhAnh,
-            moTa
+            moTa,
+            cuaHangId
         );
+        sanPham.DanhMucId = danhMucId;
 
         return await _sanPhamRepository.InsertAsync(sanPham);
     }
@@ -65,7 +68,8 @@ public class SanPhamManager : DomainService
         int soLuongTon,
         string danhMuc,
         string? hinhAnh = null,
-        string? moTa = null)
+        string? moTa = null,
+        Guid? danhMucId = null)
     {
         Check.NotNullOrWhiteSpace(maSp, nameof(maSp));
         Check.NotNullOrWhiteSpace(ten, nameof(ten));
@@ -75,8 +79,7 @@ public class SanPhamManager : DomainService
         var existing = await _sanPhamRepository.FirstOrDefaultAsync(x => x.MaSp == maSp && x.Id != id);
         if (existing != null)
         {
-            throw new BusinessException(testtttt88DomainErrorCodes.SanPhamDaTonTai)
-                .WithData("MaSp", maSp);
+            throw new UserFriendlyException($"Mã sản phẩm '{maSp}' đã tồn tại trên hệ thống. Vui lòng chọn mã sản phẩm khác!");
         }
 
         sanPham.CapNhatThongTin(
@@ -88,6 +91,10 @@ public class SanPhamManager : DomainService
             hinhAnh: hinhAnh,
             moTa: moTa
         );
+        if (danhMucId.HasValue)
+        {
+            sanPham.DanhMucId = danhMucId;
+        }
 
         return await _sanPhamRepository.UpdateAsync(sanPham);
     }

@@ -24,9 +24,11 @@ export class SidebarComponent {
   @Input() thuGon: boolean = false;
 
   menuItems = [
-    { label: 'Tổng Quan', icon: 'dashboard', route: '/admin/tong-quan' },
-    { label: 'Sản Phẩm', icon: 'appstore', route: '/admin/san-pham' },
-    { label: 'Đơn Hàng', icon: 'shopping-cart', route: '/admin/don-hang' }
+    { label: 'Tổng Quan Sàn', icon: 'dashboard', route: '/admin/tong-quan' },
+    { label: 'Quản Lý Danh Mục', icon: 'appstore', route: '/admin/danh-muc' },
+    { label: 'Duyệt Gian Hàng', icon: 'shop', route: '/admin/gian-hang' },
+    { label: 'Duyệt Rút Tiền', icon: 'bank', route: '/admin/rut-tien' },
+    { label: 'Quản Lý Tài Khoản', icon: 'user', route: '/admin/tai-khoan' }
   ];
 
   dangXuat(): void {

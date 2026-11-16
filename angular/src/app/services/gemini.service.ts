@@ -221,9 +221,9 @@ QUY TẮC CỐT LÕI:
         parts: [{ text: userMessage }]
       });
 
-      // Gọi trực tiếp Gemini 3.6 Flash
+      // Gọi trực tiếp Gemini model (sử dụng model chuẩn gemini-2.5-flash - 🟠 F5)
       const apiCall = ai.models.generateContent({
-        model: 'gemini-3.6-flash',
+        model: 'gemini-2.5-flash',
         contents,
         config: {
           systemInstruction,
@@ -250,8 +250,9 @@ QUY TẮC CỐT LÕI:
         text: replyText,
         sanPhamGoiY: sanPhamGoiY.length > 0 ? sanPhamGoiY : undefined
       };
-    } catch (error: any) {
-      console.warn('Gemini API call failed, using fallback:', error?.message);
+    } catch (error: unknown) {
+      const errMessage = error instanceof Error ? error.message : String(error);
+      console.warn('Gemini API call failed, using fallback:', errMessage);
       return this.generateSmartFallbackResponse(userMessage, productList);
     }
   }

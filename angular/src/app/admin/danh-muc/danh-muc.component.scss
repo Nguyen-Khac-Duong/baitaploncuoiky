@@ -1,0 +1,398 @@
+.admin-danh-muc-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+
+    .header-content {
+      .title-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+
+        .header-icon-badge {
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          font-size: 24px;
+          box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+        }
+
+        .page-title {
+          font-size: 24px;
+          font-weight: 700;
+          color: #1f2937;
+          margin: 0;
+          line-height: 1.2;
+        }
+
+        .page-subtitle {
+          font-size: 14px;
+          color: #6b7280;
+          margin: 4px 0 0;
+        }
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+
+      .btn-refresh {
+        border-radius: 8px;
+        font-weight: 500;
+      }
+
+      .btn-create {
+        border-radius: 8px;
+        font-weight: 600;
+        background: #1890ff;
+        box-shadow: 0 4px 12px rgba(24, 144, 255, 0.25);
+      }
+    }
+  }
+
+  // Summary Stats Grid
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+
+    .stat-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      border: 1px solid #f0f0f0;
+      transition: all 0.2s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+      }
+
+      .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+
+        &.bg-blue {
+          background: #e6f7ff;
+        }
+        &.bg-green {
+          background: #f6ffed;
+        }
+        &.bg-purple {
+          background: #f9f0ff;
+        }
+      }
+
+      .stat-info {
+        display: flex;
+        flex-direction: column;
+
+        .stat-label {
+          font-size: 13px;
+          color: #8c8c8c;
+          font-weight: 500;
+        }
+
+        .stat-value {
+          font-size: 22px;
+          font-weight: 700;
+          color: #262626;
+          line-height: 1.2;
+        }
+      }
+    }
+  }
+
+  // Table Card
+  .main-card {
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+
+    .card-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+
+      .toolbar-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #262626;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .toolbar-note {
+        font-size: 13px;
+        color: #595959;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        .badge-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #52c41a;
+          display: inline-block;
+        }
+      }
+    }
+
+    .custom-category-table {
+      .cap-1-row {
+        background-color: #fafafa;
+      }
+
+      .cap-2-row {
+        background-color: #ffffff;
+      }
+
+      .category-name-cell {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        &.child-indent {
+          padding-left: 28px;
+        }
+
+        .tree-line {
+          color: #8c8c8c;
+          font-weight: bold;
+          font-size: 16px;
+        }
+
+        .category-emoji {
+          font-size: 18px;
+          width: 28px;
+          text-align: center;
+        }
+
+        .category-info {
+          display: flex;
+          flex-direction: column;
+
+          .name-text {
+            font-size: 14px;
+            color: #262626;
+
+            &.bold-name {
+              font-weight: 600;
+              color: #1890ff;
+            }
+          }
+
+          .desc-text {
+            font-size: 12px;
+            color: #8c8c8c;
+            max-width: 220px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+        }
+
+        .cap-tag {
+          font-size: 11px;
+          border-radius: 4px;
+          margin-left: auto;
+
+          &.cap-2 {
+            background: #f0f5ff;
+            color: #2f54eb;
+            border-color: #adc6ff;
+          }
+        }
+      }
+
+      .slug-badge {
+        font-size: 12px;
+        padding: 2px 6px;
+        background: #f5f5f5;
+        border-radius: 4px;
+        color: #595959;
+        font-family: monospace;
+      }
+
+      .root-badge {
+        font-size: 12px;
+        color: #fa8c16;
+        font-weight: 500;
+      }
+
+      .parent-tag {
+        font-size: 12px;
+        border-radius: 4px;
+      }
+
+      .order-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        background: #f0f0f0;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #595959;
+      }
+
+      .product-count-badge {
+        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        background: #f5f5f5;
+        color: #8c8c8c;
+
+        &.has-products {
+          background: #e6f7ff;
+          color: #1890ff;
+          font-weight: 600;
+        }
+      }
+
+      .action-buttons {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+
+        .btn-action {
+          padding: 0 4px;
+          font-size: 13px;
+
+          &.btn-add-child {
+            color: #52c41a;
+          }
+          &.btn-edit {
+            color: #1890ff;
+          }
+          &.btn-delete {
+            color: #ff4d4f;
+          }
+        }
+      }
+    }
+  }
+
+  // Modal styles
+  .modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+
+      .form-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #262626;
+
+        &.required::after {
+          content: ' *';
+          color: #ff4d4f;
+        }
+      }
+
+      .field-hint {
+        font-size: 12px;
+        color: #8c8c8c;
+      }
+
+      .field-error {
+        font-size: 12px;
+        color: #ff4d4f;
+      }
+
+      .emoji-input-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+
+        .emoji-input {
+          width: 70px;
+          text-align: center;
+          font-size: 18px;
+        }
+
+        .emoji-suggestions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+
+          .emoji-btn {
+            border: 1px solid #d9d9d9;
+            background: #fff;
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+
+            &:hover,
+            &.active {
+              border-color: #1890ff;
+              background: #e6f7ff;
+              transform: scale(1.1);
+            }
+          }
+        }
+      }
+
+      .full-width-select {
+        width: 100%;
+      }
+    }
+
+    .form-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+
+      .switch-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 4px;
+
+        .switch-label {
+          font-size: 13px;
+          font-weight: 500;
+          color: #262626;
+        }
+      }
+    }
+  }
+}
+

@@ -46,6 +46,20 @@ public class DonHangManager : DomainService
             throw new BusinessException(testtttt88DomainErrorCodes.DonHangPhaiCoSanPham);
         }
 
+        // Gộp các dòng chi tiết trùng sản phẩm (🟠 B3) và kiểm tra số lượng hợp lệ
+        foreach (var item in chiTietInputs)
+        {
+            if (item.soLuong <= 0)
+            {
+                throw new BusinessException(testtttt88DomainErrorCodes.SoLuongPhaiLonHon0);
+            }
+        }
+
+        var gopChiTiet = chiTietInputs
+            .GroupBy(x => x.sanPhamId)
+            .Select(g => (sanPhamId: g.Key, soLuong: g.Sum(x => x.soLuong)))
+            .ToList();
+
         // Tự sinh mã đơn hàng không trùng lặp và có timestamp (BE #24)
         string maDon;
         do
@@ -67,14 +81,9 @@ public class DonHangManager : DomainService
             NgayTao = Clock.Now
         };
 
-        // Duyệt từng sản phẩm: Lấy thông tin giá gốc từ server, kiểm tra tồn kho và trừ kho (BE #1 & BE #2)
-        foreach (var item in chiTietInputs)
+        // Duyệt từng sản phẩm đã gộp: Lấy thông tin giá gốc từ server, kiểm tra tồn kho và trừ kho (BE #1 & BE #2)
+        foreach (var item in gopChiTiet)
         {
-            if (item.soLuong <= 0)
-            {
-                throw new ArgumentException("Số lượng sản phẩm đặt mua phải lớn hơn 0.", nameof(item.soLuong));
-            }
-
             var sanPham = await _sanPhamRepository.FindAsync(item.sanPhamId);
             if (sanPham == null)
             {
@@ -82,7 +91,7 @@ public class DonHangManager : DomainService
                     .WithData("Id", item.sanPhamId);
             }
 
-            // Trừ tồn kho và bảo toàn invariant (ném ngoại lệ nếu kho không đủ)
+            // Trừ tồn kho và bảo toàn invariant (ném ngoại lệ BusinessException nếu kho không đủ)
             sanPham.GiamSoLuongTon(item.soLuong);
             await _sanPhamRepository.UpdateAsync(sanPham);
 

@@ -185,14 +185,26 @@
           <nz-form-item class="form-col">
             <nz-form-label nzRequired>Giá bán (VNĐ)</nz-form-label>
             <nz-form-control nzErrorTip="Giá bán phải lớn hơn 1,000 VNĐ">
-              <input nz-input type="number" formControlName="gia" placeholder="VD: 25000000" />
+              <input
+                nz-input
+                type="text"
+                [value]="dinhDangSo(formSanPham.get('gia')?.value)"
+                (input)="onTienInput($event, 'gia')"
+                placeholder="VD: 25.000.000"
+              />
             </nz-form-control>
           </nz-form-item>
 
           <nz-form-item class="form-col">
             <nz-form-label nzRequired>Số lượng tồn kho</nz-form-label>
             <nz-form-control nzErrorTip="Số lượng tồn kho không được âm">
-              <input nz-input type="number" formControlName="soLuongTon" placeholder="VD: 15" />
+              <input
+                nz-input
+                type="text"
+                [value]="dinhDangSo(formSanPham.get('soLuongTon')?.value)"
+                (input)="onTienInput($event, 'soLuongTon')"
+                placeholder="VD: 15"
+              />
             </nz-form-control>
           </nz-form-item>
         </div>
@@ -207,8 +219,8 @@
     </ng-template>
 
     <ng-template #modalFooterTemplate>
-      <button nz-button nzType="default" (click)="dongModal()">Hủy bỏ</button>
-      <button nz-button nzType="primary" (click)="luuSanPham()" [disabled]="formSanPham.invalid">
+      <button nz-button nzType="default" (click)="dongModal()" [disabled]="dangXuLy">Hủy bỏ</button>
+      <button nz-button nzType="primary" (click)="luuSanPham()" [nzLoading]="dangXuLy" [disabled]="formSanPham.invalid || dangXuLy">
         <span nz-icon [nzType]="dangChinhSua ? 'check' : 'save'"></span>
         {{ dangChinhSua ? 'Cập Nhật Thay Đổi' : 'Xác Nhận Tạo' }}
       </button>

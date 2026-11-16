@@ -8,11 +8,11 @@
     <!-- Header Branding -->
     <div class="auth-header">
       <div class="brand-badge">🛍️ ShopTech</div>
-      <h2>{{ tabHienTai === 'dang-nhap' ? 'Đăng Nhập Hệ Thống' : 'Đăng Ký Tài Khoản Người Mua' }}</h2>
+      <h2>{{ tabHienTai === 'dang-nhap' ? 'Đăng Nhập Hệ Thống' : 'Đăng Ký Tài Khoản Thành Viên' }}</h2>
       <p class="subtitle">
         {{ tabHienTai === 'dang-nhap' 
-          ? 'Đăng nhập Người Mua (Cửa hàng) hoặc Người Bán (Quản trị)' 
-          : 'Dành riêng cho khách mua hàng tạo tài khoản (Shop chỉ có duy nhất 1 tài khoản Quản trị dành cho chủ shop)' }}
+          ? 'Cổng đăng nhập dành cho Quản Trị Viên Sàn, Chủ Gian Hàng và Khách Hàng' 
+          : 'Đăng ký tài khoản để mua sắm công nghệ và tham gia mở gian hàng trên sàn ShopTech' }}
       </p>
     </div>
 
@@ -44,40 +44,18 @@
 
     <!-- TAB 1: FORM ĐĂNG NHẬP -->
     @if (tabHienTai === 'dang-nhap') {
-      <!-- Quick Account Selectors -->
-      <div class="mock-accounts-card">
-        <span class="mock-title">⚡ Chọn nhanh tài khoản mẫu:</span>
-        <div class="account-buttons">
-          <button type="button" class="btn-mock admin" (click)="chonTaiKhoanMau('admin@gmail.com', '123456')">
-            <div class="mock-info">
-              <strong>💼 Người Bán (Admin duy nhất)</strong>
-              <small>admin@gmail.com / 123456</small>
-            </div>
-            <span class="role-tag admin">Chủ Shop</span>
-          </button>
-          <button type="button" class="btn-mock user" (click)="chonTaiKhoanMau('khachhang@gmail.com', '123456')">
-            <div class="mock-info">
-              <strong>🛍️ Người Mua (Khách Hàng)</strong>
-              <small>khachhang@gmail.com / 123456</small>
-            </div>
-            <span class="role-tag buyer">Mua sắm</span>
-          </button>
-        </div>
-      </div>
-
       <form [formGroup]="formDangNhap" (ngSubmit)="xuLyDangNhap()">
         <div class="form-group">
-          <label for="login-email">Email đăng nhập:</label>
+          <label for="login-email">Tài khoản hoặc Email đăng nhập:</label>
           <input 
             id="login-email" 
-            type="email" 
+            type="text" 
             formControlName="email" 
-            placeholder="Ví dụ: admin@gmail.com..." 
+            placeholder="Nhập tên tài khoản (admin) hoặc email..." 
           />
           @if (emailControl?.touched && emailControl?.invalid) {
             <span class="error-msg">
-              @if (emailControl?.hasError('required')) { Email là bắt buộc. }
-              @else if (emailControl?.hasError('email')) { Email không đúng định dạng. }
+              @if (emailControl?.hasError('required')) { Tên đăng nhập hoặc Email là bắt buộc. }
             </span>
           }
         </div>

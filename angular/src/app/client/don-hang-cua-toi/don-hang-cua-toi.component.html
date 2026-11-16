@@ -59,6 +59,11 @@
                 <div class="order-id-group">
                   <span class="label">Mã đơn:</span>
                   <span class="order-id">#{{ dh.maDon }}</span>
+                  @if (dh.tenCuaHang) {
+                    <span style="background: #eff6ff; color: #2563eb; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-left: 8px;">
+                      🏪 {{ dh.tenCuaHang }}
+                    </span>
+                  }
                   <span class="order-date">• Ngày đặt: {{ dh.ngayTao }}</span>
                 </div>
                 <div class="order-status-badge">
@@ -103,10 +108,48 @@
                       <span class="item-name">{{ item.tenSanPham }}</span>
                       <span class="item-qty">Số lượng: x{{ item.soLuong }}</span>
                     </div>
-                    <span class="item-price">{{ formatTien(item.thanhTien) }}</span>
+                    <div class="item-actions-price">
+                      <span class="item-price">{{ formatTien(item.thanhTien) }}</span>
+                      
+                      @if (getDanhGia(dh.id, item.sanPhamId); as dg) {
+                        <span class="badge-reviewed" title="Nội dung: {{ dg.noiDung }}">
+                          ⭐ Đã đánh giá ({{ dg.soSao }}★)
+                        </span>
+                      } @else if (choPhepDanhGia(dh.trangThai)) {
+                        <button class="btn-review" (click)="moModalDanhGia(dh, item)">
+                          ⭐ Viết Đánh Giá
+                        </button>
+                      }
+                    </div>
                   </div>
                 }
               </div>
+
+              <!-- Thông tin Trả hàng & Hoàn tiền (nếu có) -->
+              @if (dh.trangThai === 'yeu_cau_tra_hang' || dh.trangThai === 'tra_hang' || dh.trangThai === 'tu_choi_tra_hang') {
+                <div class="return-info-box" [class]="'return-' + dh.trangThai">
+                  <div class="return-header">
+                    <strong>↩️ Thông tin yêu cầu trả hàng & hoàn tiền:</strong>
+                    @if (dh.thoiGianYeuCauTraHang) {
+                      <span class="return-time">{{ dh.thoiGianYeuCauTraHang | date:'dd/MM/yyyy HH:mm' }}</span>
+                    }
+                  </div>
+                  <div class="return-reason">Lý do: <em>{{ dh.lyDoTraHang }}</em></div>
+                  @if (dh.ghiChuTraHang) {
+                    <div class="return-note">Mô tả: {{ dh.ghiChuTraHang }}</div>
+                  }
+                  @if (dh.hinhAnhTraHang) {
+                    <div class="return-img">
+                      <img [src]="dh.hinhAnhTraHang" alt="Ảnh bằng chứng" />
+                    </div>
+                  }
+                  @if (dh.phanHoiTraHang) {
+                    <div class="return-shop-reply">
+                      <strong>💬 Phản hồi của Shop:</strong> {{ dh.phanHoiTraHang }}
+                    </div>
+                  }
+                </div>
+              }
 
               <!-- Footer: Thông Tin Nhận Hàng & Tổng Tiền -->
               <div class="order-footer">
@@ -117,9 +160,16 @@
                     <span class="order-note">Ghi chú: "{{ dh.ghiChu }}"</span>
                   }
                 </div>
-                <div class="order-total">
-                  <span class="total-label">Tổng thanh toán:</span>
-                  <span class="total-val">{{ formatTien(dh.tongTien) }}</span>
+                <div class="order-footer-actions">
+                  @if (choPhepTraHang(dh.trangThai)) {
+                    <button class="btn-request-return" (click)="moModalTraHang(dh)">
+                      ↩️ Yêu Cầu Trả Hàng / Hoàn Tiền
+                    </button>
+                  }
+                  <div class="order-total">
+                    <span class="total-label">Tổng thanh toán:</span>
+                    <span class="total-val">{{ formatTien(dh.tongTien) }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -141,4 +191,116 @@
       }
     }
   }
+
+  <!-- MODAL ĐÁNH GIÁ SẢN PHẨM -->
+  <nz-modal
+    [(nzVisible)]="hienModalDanhGia"
+    nzTitle="⭐ Đánh Giá & Nhận Xét Sản Phẩm"
+    (nzOnCancel)="hienModalDanhGia = false"
+    (nzOnOk)="guiDanhGia()"
+    [nzOkLoading]="dangGuiDanhGia"
+    nzOkText="Gửi Đánh Giá"
+    nzCancelText="Hủy"
+  >
+    <ng-container *nzModalContent>
+      @if (spDangDanhGia) {
+        <div class="review-modal-body">
+          <div class="product-preview">
+            <img [src]="spDangDanhGia.chiTiet.hinhAnh || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=80'" [alt]="spDangDanhGia.chiTiet.tenSanPham" />
+            <div class="prod-info">
+              <div class="prod-title">{{ spDangDanhGia.chiTiet.tenSanPham }}</div>
+              <small class="text-muted">Đơn hàng #{{ spDangDanhGia.donHang.maDon }}</small>
+            </div>
+          </div>
+
+          <div class="review-form-group rating-stars-box">
+            <label>Chất lượng sản phẩm:</label>
+            <div class="stars-control">
+              <nz-rate [(ngModel)]="soSao"></nz-rate>
+              <span class="rate-text">
+                @switch (soSao) {
+                  @case (5) { Tuyệt vời ⭐⭐⭐⭐⭐ }
+                  @case (4) { Hài lòng ⭐⭐⭐⭐ }
+                  @case (3) { Bình thường ⭐⭐⭐ }
+                  @case (2) { Không hài lòng ⭐⭐ }
+                  @case (1) { Rất tệ ⭐ }
+                }
+              </span>
+            </div>
+          </div>
+
+          <div class="review-form-group">
+            <label>Chia sẻ trải nghiệm thực tế *</label>
+            <textarea
+              nz-input
+              rows="4"
+              [(ngModel)]="noiDung"
+              placeholder="Hãy chia sẻ cảm nhận về chất lượng sản phẩm, độ hoàn thiện, quy cách đóng gói và thái độ phục vụ của Shop nhé..."
+            ></textarea>
+          </div>
+
+          <div class="review-form-group">
+            <label>Hình ảnh thực tế (URL ảnh)</label>
+            <input
+              nz-input
+              [(ngModel)]="hinhAnh"
+              placeholder="https://..."
+            />
+          </div>
+        </div>
+      }
+    </ng-container>
+  </nz-modal>
+
+  <!-- Modal Yêu Cầu Trả Hàng / Hoàn Tiền -->
+  <nz-modal
+    [(nzVisible)]="hienModalTraHang"
+    nzTitle="↩️ Yêu Cầu Trả Hàng & Hoàn Tiền"
+    (nzOnCancel)="hienModalTraHang = false"
+    (nzOnOk)="guiYeuCauTraHang()"
+    [nzOkLoading]="dangGuiTraHang"
+    nzOkText="Gửi Yêu Cầu Cho Shop"
+    nzCancelText="Hủy"
+    [nzWidth]="520"
+  >
+    <ng-container *nzModalContent>
+      @if (donHangDangTra) {
+        <div class="refund-modal-body">
+          <div class="refund-order-preview">
+            <div><strong>Mã đơn hàng:</strong> #{{ donHangDangTra.maDon }}</div>
+            <div><strong>Gian hàng:</strong> {{ donHangDangTra.tenCuaHang || 'Shop' }}</div>
+            <div><strong>Số tiền hoàn trả:</strong> <span class="refund-amount">{{ formatTien(donHangDangTra.tongTien) }}</span></div>
+          </div>
+
+          <div class="refund-form-group">
+            <label>Lý do yêu cầu trả hàng <span class="text-danger">*</span></label>
+            <nz-select [(ngModel)]="lyDoTraHang" style="width: 100%;">
+              @for (lyDo of danhSachLyDo; track lyDo) {
+                <nz-option [nzValue]="lyDo" [nzLabel]="lyDo"></nz-option>
+              }
+            </nz-select>
+          </div>
+
+          <div class="refund-form-group">
+            <label>Mô tả chi tiết sự cố gặp phải (không bắt buộc)</label>
+            <textarea
+              nz-input
+              rows="3"
+              [(ngModel)]="ghiChuTraHang"
+              placeholder="Ví dụ: Vợt bị trầy xước khung, giao nhầm mã SP..."
+            ></textarea>
+          </div>
+
+          <div class="refund-form-group">
+            <label>Đường dẫn hình ảnh thực tế / bằng chứng (URL)</label>
+            <input
+              nz-input
+              [(ngModel)]="hinhAnhTraHang"
+              placeholder="https://... dán link ảnh tình trạng hàng thực tế"
+            />
+          </div>
+        </div>
+      }
+    </ng-container>
+  </nz-modal>
 </div>

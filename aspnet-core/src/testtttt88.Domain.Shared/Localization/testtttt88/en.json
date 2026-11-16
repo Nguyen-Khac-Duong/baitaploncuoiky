@@ -8,9 +8,15 @@
     "testtttt88:SanPhams:0001": "Product code '{MaSp}' already exists in the system. Please choose another code!",
     "testtttt88:SanPhams:0002": "Product with ID '{Id}' was not found!",
     "testtttt88:SanPhams:0003": "Product '{TenSanPham}' only has {SoLuongTon} item(s) in stock, not enough for requested quantity ({SoLuongYeuCau})!",
+    "testtttt88:SanPhams:0004": "Product quantity must be greater than 0!",
+    "testtttt88:SanPhams:0005": "Product unit price cannot be negative!",
+    "testtttt88:SanPhams:0006": "Stock quantity cannot be negative!",
     "testtttt88:DonHangs:0001": "An order must contain at least one valid product!",
     "testtttt88:DonHangs:0002": "Order is already in a terminal state ({TrangThai}) and cannot be changed!",
     "testtttt88:DonHangs:0003": "Status transition to '{TrangThai}' is invalid for this order!",
-    "testtttt88:DonHangs:0004": "Requested order was not found!"
+    "testtttt88:DonHangs:0004": "Requested order was not found!",
+    "testtttt88:DonHangs:0005": "Stock quantity changed concurrently by another order. Please try again!",
+    "testtttt88:DonHangs:0006": "You do not have permission to access or modify this order!",
+    "testtttt88:General:0001": "Provided information is invalid or empty!"
   }
 }

@@ -1,0 +1,73 @@
+<div class="shop-detail-page">
+  @if (dangTai()) {
+  <div class="loading-state">
+    <div class="spinner"></div>
+    <p>Đang tải thông tin gian hàng...</p>
+  </div>
+  } @else {
+  @if (cuaHang(); as shop) {
+  <!-- SHOP BANNER & PROFILE -->
+  <div class="shop-banner-header">
+    <div class="shop-card-main">
+      <div class="shop-avatar-box">
+        @if (shop.logo) {
+        <img [src]="shop.logo" [alt]="shop.ten" />
+        } @else {
+        <span class="avatar-fallback">🏪</span>
+        }
+      </div>
+      <div class="shop-info-box">
+        <div class="title-row">
+          <h1>{{ shop.ten }}</h1>
+          <nz-tag nzColor="success">Gian Hàng Chính Hãng</nz-tag>
+        </div>
+        <p class="desc">{{ shop.moTa || 'Chào mừng bạn đến với gian hàng chính thức trên ShopTech Marketplace!' }}</p>
+        <div class="meta-row">
+          <span>📍 {{ shop.diaChi }}</span>
+          <span>📞 Hotline: {{ shop.soDienThoai }}</span>
+          <span>📦 {{ sanPhams().length }} Sản phẩm</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCTS SECTION -->
+  <div class="products-section">
+    <div class="section-header">
+      <h2>Tất Cả Sản Phẩm Của Gian Hàng ({{ sanPhams().length }})</h2>
+    </div>
+
+    @if (sanPhams().length === 0) {
+    <div class="empty-products">
+      <p>Gian hàng hiện chưa đăng sản phẩm nào.</p>
+    </div>
+    } @else {
+    <div class="products-grid">
+      @for (sp of sanPhams(); track sp.id) {
+      <div class="product-card" [routerLink]="['/san-pham', sp.id]" style="cursor: pointer;">
+        <div class="card-thumb">
+          <img [src]="sp.hinhAnh || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=300'"
+            [alt]="sp.ten" />
+          <span class="category-tag">{{ sp.danhMuc }}</span>
+        </div>
+        <div class="card-content">
+          <h3 class="product-title">{{ sp.ten }}</h3>
+          <div class="price-row">
+            <span class="price">{{ formatTien(sp.gia) }}</span>
+            <span class="stock" [class.out-of-stock]="sp.soLuongTon <= 0">
+              {{ sp.soLuongTon > 0 ? 'Còn ' + sp.soLuongTon : 'Hết hàng' }}
+            </span>
+          </div>
+          <button class="btn-add-cart" [disabled]="sp.soLuongTon <= 0"
+            (click)="$event.stopPropagation(); themVaoGio(sp)">
+            🛒 {{ sp.soLuongTon > 0 ? 'Thêm Vào Giỏ' : 'Tạm Hết Hàng' }}
+          </button>
+        </div>
+      </div>
+      }
+    </div>
+    }
+  </div>
+  }
+  }
+</div>

@@ -1,0 +1,392 @@
+<div class="product-detail-page">
+  <!-- BREADCRUMB NAVIGATION -->
+  <nav class="breadcrumb-bar animate-fade-in">
+    <a routerLink="/cua-hang" class="crumb-link">🏠 Trang Chủ</a>
+    <span class="crumb-sep">/</span>
+    <a routerLink="/cua-hang" class="crumb-link">Cửa Hàng</a>
+    @if (sanPham(); as sp) {
+      <span class="crumb-sep">/</span>
+      <span class="crumb-category">{{ sp.danhMuc }}</span>
+      <span class="crumb-sep">/</span>
+      <span class="crumb-current">{{ sp.ten }}</span>
+    }
+  </nav>
+
+  @if (dangTai()) {
+    <div class="loading-state animate-fade-in">
+      <div class="spinner"></div>
+      <p>Đang tải thông tin chi tiết sản phẩm...</p>
+    </div>
+  } @else if (sanPham(); as sp) {
+    <!-- MAIN PRODUCT SHOWCASE -->
+    <div class="product-showcase-card animate-fade-in">
+      <!-- LEFT: PRODUCT IMAGE & TRUST BADGES -->
+      <div class="gallery-column">
+        <div class="main-image-frame">
+          <img 
+            [src]="sp.hinhAnh || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600'" 
+            [alt]="sp.ten" 
+          />
+          <span class="category-badge">{{ sp.danhMuc }}</span>
+          <span class="sku-badge">Mã: {{ sp.maSp }}</span>
+          @if (sp.soLuongTon === 0) {
+            <div class="sold-out-overlay">Tạm Hết Hàng</div>
+          }
+        </div>
+
+        <!-- TRUST BADGES -->
+        <div class="trust-features-grid">
+          <div class="feature-item">
+            <span class="feat-icon">🛡️</span>
+            <div>
+              <strong>Chính hãng 100%</strong>
+              <p>Bảo hành chính thức</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <span class="feat-icon">⚡</span>
+            <div>
+              <strong>Giao hàng 2h</strong>
+              <p>Nhanh chóng tiện lợi</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <span class="feat-icon">🔄</span>
+            <div>
+              <strong>Đổi trả 7 ngày</strong>
+              <p>Nếu có lỗi sản xuất</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: PRODUCT METADATA & PURCHASE ACTIONS -->
+      <div class="details-column">
+        <div class="meta-tags-row">
+          <span class="sku-pill">MÃ SẢN PHẨM: <strong>{{ sp.maSp }}</strong></span>
+          <span class="rating-stars">⭐⭐⭐⭐⭐ <span>(5.0 • 120 đánh giá)</span></span>
+        </div>
+
+        <h1 class="product-heading">{{ sp.ten }}</h1>
+
+        <!-- PRICE & STOCK BOX -->
+        <div class="pricing-card">
+          <div class="price-value">{{ formatTien(sp.gia) }}</div>
+          <div class="stock-badge" [class.in-stock]="sp.soLuongTon > 0" [class.out-stock]="sp.soLuongTon <= 0">
+            @if (sp.soLuongTon > 0) {
+              <span>🟢 Còn hàng ({{ sp.soLuongTon }} sản phẩm có sẵn)</span>
+            } @else {
+              <span>🔴 Tạm thời hết hàng trong kho</span>
+            }
+          </div>
+        </div>
+
+        <!-- SHORT DESCRIPTION -->
+        <div class="short-desc">
+          <p>{{ sp.moTa || 'Sản phẩm công nghệ chính hãng thế hệ mới, đáp ứng tiêu chuẩn chất lượng cao và hiệu năng vượt trội.' }}</p>
+        </div>
+
+        <!-- PURCHASE CONTROLS -->
+        @if (sp.soLuongTon > 0) {
+          <div class="purchase-action-panel">
+            <div class="quantity-control-row">
+              <span class="label">Số lượng:</span>
+              <div class="stepper">
+                <button type="button" class="btn-step" (click)="giamSoLuong()" [disabled]="soLuongMua() <= 1">−</button>
+                <span class="step-value">{{ soLuongMua() }}</span>
+                <button type="button" class="btn-step" (click)="tangSoLuong()" [disabled]="soLuongMua() >= sp.soLuongTon">+</button>
+              </div>
+              <div class="calc-subtotal">
+                Tạm tính: <strong>{{ formatTien(sp.gia * soLuongMua()) }}</strong>
+              </div>
+            </div>
+
+            <div class="action-buttons-group">
+              <button type="button" class="btn-add-cart-main" (click)="themVaoGio()">
+                <span>🛒 Thêm Vào Giỏ Hàng</span>
+              </button>
+              <button type="button" class="btn-buy-now-main" (click)="muaNgay()">
+                <span>⚡ Mua Ngay</span>
+              </button>
+            </div>
+          </div>
+        } @else {
+          <div class="alert-sold-out">
+            ⚠️ Sản phẩm này hiện tại đã hết hàng tại gian hàng. Vui lòng quay lại sau hoặc liên hệ gian hàng để nhận thông báo khi có hàng.
+          </div>
+        }
+
+        <!-- STORE PROFILE BANNER (VÀO XEM SHOP) -->
+        <div class="shop-profile-card" (click)="diDenShop()">
+          <div class="shop-avatar-wrap">
+            <div class="shop-avatar">🏪</div>
+          </div>
+          <div class="shop-info-content">
+            <div class="shop-name-row">
+              <h3>{{ sp.tenCuaHang || 'Gian Hàng ShopTech' }}</h3>
+              <span class="official-badge">✓ Gian Hàng Chính Hãng</span>
+            </div>
+            @if (cuaHang(); as shop) {
+              <div class="shop-meta-line">
+                @if (shop.diaChi) {
+                  <span>📍 {{ shop.diaChi }}</span>
+                }
+                @if (shop.soDienThoai) {
+                  <span>📞 Hotline: {{ shop.soDienThoai }}</span>
+                }
+              </div>
+              @if (shop.moTa) {
+                <p class="shop-slogan">"{{ shop.moTa }}"</p>
+              }
+            } @else {
+              <span class="loading-store-text">Đang kết nối dữ liệu gian hàng...</span>
+            }
+          </div>
+          <div class="shop-action-wrap">
+            <button type="button" class="btn-visit-store" (click)="diDenShop()">
+              <span>🏬 Vào Xem Gian Hàng Này</span>
+              <span class="arrow">➔</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS: CHI TIẾT & BẢO HÀNH & ĐÁNH GIÁ -->
+    <div class="product-tabs-container animate-fade-in">
+      <div class="tabs-header">
+        <button 
+          class="tab-btn" 
+          [class.active]="tabHienTai() === 'mota'"
+          (click)="tabHienTai.set('mota')"
+        >
+          📄 Mô Tả Chi Tiết
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="tabHienTai() === 'baohanh'"
+          (click)="tabHienTai.set('baohanh')"
+        >
+          🛡️ Chính Sách Bảo Hành & Vận Chuyển
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="tabHienTai() === 'danhgia'"
+          (click)="tabHienTai.set('danhgia')"
+        >
+          ⭐ Đánh Giá & Nhận Xét ({{ thongKeDanhGia()?.tongSoDanhGia || 0 }})
+        </button>
+      </div>
+
+      <div class="tab-body">
+        @if (tabHienTai() === 'mota') {
+          <div class="tab-content-mota">
+            <h3>Thông tin sản phẩm: {{ sp.ten }}</h3>
+            <p>{{ sp.moTa || 'Sản phẩm công nghệ chính hãng, cam kết chất lượng đỉnh cao từ nhà phân phối.' }}</p>
+            
+            <div class="spec-table-wrap">
+              <table class="spec-table">
+                <tbody>
+                  <tr>
+                    <td class="lbl">Tên sản phẩm</td>
+                    <td>{{ sp.ten }}</td>
+                  </tr>
+                  <tr>
+                    <td class="lbl">Mã sản phẩm (SKU)</td>
+                    <td>{{ sp.maSp }}</td>
+                  </tr>
+                  <tr>
+                    <td class="lbl">Danh mục công nghệ</td>
+                    <td>{{ sp.danhMuc }}</td>
+                  </tr>
+                  <tr>
+                    <td class="lbl">Gian hàng cung ứng</td>
+                    <td>{{ sp.tenCuaHang || 'ShopTech Marketplace' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="lbl">Tình trạng lưu kho</td>
+                    <td>{{ sp.soLuongTon > 0 ? 'Còn hàng (' + sp.soLuongTon + ' chiếc)' : 'Hết hàng' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        } @else if (tabHienTai() === 'baohanh') {
+          <div class="tab-content-baohanh">
+            <div class="policy-card">
+              <h4>🛡️ Chính sách bảo hành</h4>
+              <ul>
+                <li>Bảo hành chính hãng 12 - 24 tháng theo tiêu chuẩn nhà sản xuất.</li>
+                <li>1 đổi 1 trong vòng 30 ngày nếu phát sinh lỗi từ phần cứng thiết bị.</li>
+                <li>Hỗ trợ tiếp nhận bảo hành trực tiếp tại gian hàng hoặc gửi bảo hành toàn quốc.</li>
+              </ul>
+            </div>
+            <div class="policy-card">
+              <h4>🚚 Chính sách vận chuyển & giao nhận</h4>
+              <ul>
+                <li>Giao hàng nhanh nội thành trong 2 giờ làm việc.</li>
+                <li>Miễn phí vận chuyển cho đơn hàng có giá trị cao.</li>
+                <li>Khách hàng được kiểm tra ngoại quan sản phẩm trước khi thanh toán (Đồng kiểm).</li>
+              </ul>
+            </div>
+          </div>
+        } @else if (tabHienTai() === 'danhgia') {
+          <div class="tab-content-danhgia">
+            <!-- Thống kê điểm số tổng quan -->
+            <div class="rating-overview-box">
+              <div class="rating-score-side">
+                <span class="big-score">{{ thongKeDanhGia()?.diemTrungBinh || 5.0 }}</span>
+                <div class="score-stars">
+                  <span class="stars">⭐⭐⭐⭐⭐</span>
+                  <span class="out-of">trên 5</span>
+                </div>
+                <div class="score-count">{{ thongKeDanhGia()?.tongSoDanhGia || 0 }} lượt đánh giá thực tế</div>
+              </div>
+
+              <!-- Bộ lọc sao nhanh -->
+              <div class="rating-filters-side">
+                <button
+                  class="filter-tag"
+                  [class.active]="locSoSao() === 'all'"
+                  (click)="locSoSao.set('all')"
+                >
+                  Tất Cả ({{ thongKeDanhGia()?.tongSoDanhGia || 0 }})
+                </button>
+                <button
+                  class="filter-tag"
+                  [class.active]="locSoSao() === 5"
+                  (click)="locSoSao.set(5)"
+                >
+                  5 Sao ({{ thongKeDanhGia()?.soLuong5Sao || 0 }})
+                </button>
+                <button
+                  class="filter-tag"
+                  [class.active]="locSoSao() === 4"
+                  (click)="locSoSao.set(4)"
+                >
+                  4 Sao ({{ thongKeDanhGia()?.soLuong4Sao || 0 }})
+                </button>
+                <button
+                  class="filter-tag"
+                  [class.active]="locSoSao() === 3"
+                  (click)="locSoSao.set(3)"
+                >
+                  3 Sao ({{ thongKeDanhGia()?.soLuong3Sao || 0 }})
+                </button>
+                <button
+                  class="filter-tag"
+                  [class.active]="locSoSao() === 1"
+                  (click)="locSoSao.set(1)"
+                >
+                  1-2 Sao ({{ (thongKeDanhGia()?.soLuong1Sao || 0) + (thongKeDanhGia()?.soLuong2Sao || 0) }})
+                </button>
+                <button
+                  class="filter-tag"
+                  [class.active]="locSoSao() === 'anh'"
+                  (click)="locSoSao.set('anh')"
+                >
+                  📷 Có Hình Ảnh ({{ thongKeDanhGia()?.soLuongCoHinhAnh || 0 }})
+                </button>
+              </div>
+            </div>
+
+            <!-- Danh sách review thực tế -->
+            <div class="reviews-list">
+              @if (danhGiaHienThi().length > 0) {
+                @for (dg of danhGiaHienThi(); track dg.id) {
+                  <div class="review-card">
+                    <div class="review-header">
+                      <div class="user-meta">
+                        <div class="user-avatar-circle">
+                          {{ dg.tenNguoiDung.charAt(0).toUpperCase() }}
+                        </div>
+                        <div>
+                          <div class="user-name">
+                            <strong>{{ dg.tenNguoiDung }}</strong>
+                            <span class="verified-tag">✓ Đã mua hàng từ Shop</span>
+                            @if (dg.donHangCoHoanTra) {
+                              <span class="refund-tag">⚠️ Đơn có hoàn/đổi hàng</span>
+                            }
+                          </div>
+                          <div class="review-date">{{ dg.creationTime | date:'dd/MM/yyyy HH:mm' }}</div>
+                        </div>
+                      </div>
+                      <div class="stars-row">
+                        @for (i of [1,2,3,4,5]; track i) {
+                          <span [style.color]="i <= dg.soSao ? '#f59e0b' : '#cbd5e1'">★</span>
+                        }
+                      </div>
+                    </div>
+
+                    <div class="review-body">
+                      <p class="review-text">{{ dg.noiDung }}</p>
+                      @if (dg.hinhAnh) {
+                        <div class="review-img-box">
+                          <img [src]="dg.hinhAnh" [alt]="dg.tenSanPham" class="review-thumb" />
+                        </div>
+                      }
+                    </div>
+
+                    <!-- Phản hồi từ chủ gian hàng -->
+                    @if (dg.phanHoiShop) {
+                      <div class="seller-reply-box">
+                        <div class="seller-reply-header">
+                          <span class="badge-seller">Phản hồi của Người Bán</span>
+                          @if (dg.thoiGianPhanHoi) {
+                            <span class="reply-time">{{ dg.thoiGianPhanHoi | date:'dd/MM/yyyy HH:mm' }}</span>
+                          }
+                        </div>
+                        <p class="seller-reply-text">{{ dg.phanHoiShop }}</p>
+                      </div>
+                    }
+                  </div>
+                }
+              } @else {
+                <div class="empty-reviews-box">
+                  <div class="empty-icon">⭐</div>
+                  <p>Chưa có đánh giá nào phù hợp với bộ lọc đã chọn.</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- RELATED PRODUCTS SECTION -->
+    @if (sanPhamLienQuan().length > 0) {
+      <div class="related-products-section animate-fade-in">
+        <div class="section-title-wrap">
+          <h2>Gợi Ý Sản Phẩm Tương Tự</h2>
+          <p>Có thể bạn cũng quan tâm đến các sản phẩm này</p>
+        </div>
+
+        <div class="related-grid">
+          @for (item of sanPhamLienQuan(); track item.id) {
+            <a [routerLink]="['/san-pham', item.id]" class="related-card">
+              <div class="related-thumb">
+                <img [src]="item.hinhAnh || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=300'" [alt]="item.ten" />
+                <span class="tag">{{ item.danhMuc }}</span>
+              </div>
+              <div class="related-info">
+                <h4>{{ item.ten }}</h4>
+                <div class="price-row">
+                  <span class="price">{{ formatTien(item.gia) }}</span>
+                  <span class="stock-txt">Còn {{ item.soLuongTon }}</span>
+                </div>
+              </div>
+            </a>
+          }
+        </div>
+      </div>
+    }
+  } @else {
+    <div class="not-found-card animate-fade-in">
+      <div class="empty-icon">🔍</div>
+      <h2>Không tìm thấy sản phẩm!</h2>
+      <p>Sản phẩm bạn đang tìm kiếm có thể đã bị gỡ bỏ hoặc không tồn tại.</p>
+      <a routerLink="/cua-hang" class="btn-back">Quay lại Cửa Hàng</a>
+    </div>
+  }
+</div>
+

@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractContro
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { XacThucService } from '../../he-thong/dich-vu/xac-thuc.service';
 import { ThongBaoService } from '../../he-thong/dich-vu/thong-bao.service';
+import { SellerStateService } from '../../seller/services/seller-state.service';
 import { VaiTroNguoiDung } from '../../shared/mo-hinh/du-lieu.model';
 
 @Component({
@@ -18,15 +19,16 @@ export class DangNhapComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly xacThucService = inject(XacThucService);
   private readonly thongBaoService = inject(ThongBaoService);
+  private readonly sellerState = inject(SellerStateService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
   tabHienTai: 'dang-nhap' | 'dang-ky' = 'dang-nhap';
 
-  // Form Đăng Nhập
+  // Form Đăng Nhập (Hỗ trợ cả Username 'admin' và Email - 🔴 F1)
   readonly formDangNhap: FormGroup = this.fb.group({
-    email: ['admin@gmail.com', [Validators.required, Validators.email]],
-    matKhau: ['123456', [Validators.required, Validators.minLength(6)]]
+    email: ['', [Validators.required]],
+    matKhau: ['', [Validators.required, Validators.minLength(6)]]
   });
 
   // Form Đăng Ký Khách Hàng (Người Mua)
@@ -41,6 +43,7 @@ export class DangNhapComponent implements OnInit {
 
   loiDangNhap: boolean = false;
   thongBaoLoiDangNhap: string = '';
+  dangXuLy: boolean = false;
 
   ngOnInit(): void {
     // Đọc query param từ URL để tự động chuyển tab
@@ -49,12 +52,6 @@ export class DangNhapComponent implements OnInit {
         this.tabHienTai = 'dang-ky';
       } else if (params['tab'] === 'dang-nhap') {
         this.tabHienTai = 'dang-nhap';
-      }
-
-      if (params['vaiTro'] === 'admin') {
-        this.chonTaiKhoanMau('admin@gmail.com', '123456');
-      } else if (params['vaiTro'] === 'khach_hang') {
-        this.chonTaiKhoanMau('khachhang@gmail.com', '123456');
       }
     });
   }
@@ -78,12 +75,6 @@ export class DangNhapComponent implements OnInit {
     return this.formDangNhap.get('matKhau');
   }
 
-  chonTaiKhoanMau(email: string, matKhau: string): void {
-    this.tabHienTai = 'dang-nhap';
-    this.formDangNhap.patchValue({ email, matKhau });
-    this.loiDangNhap = false;
-  }
-
   xuLyDangNhap(): void {
     if (this.formDangNhap.invalid) {
       this.formDangNhap.markAllAsTouched();
@@ -92,28 +83,60 @@ export class DangNhapComponent implements OnInit {
     }
 
     const { email, matKhau } = this.formDangNhap.value;
-    const user = this.xacThucService.dangNhap(email, matKhau);
+    this.dangXuLy = true;
+    this.loiDangNhap = false;
 
-    if (user) {
-      this.loiDangNhap = false;
-      const vaiTroText = user.vaiTro === 'admin' ? 'Người Bán (Admin)' : 'Người Mua (Khách Hàng)';
-      this.thongBaoService.thanhCong(
-        `Chào mừng ${user.hoTen} (${vaiTroText}) đã đăng nhập thành công!`,
-        'Đăng nhập thành công'
-      );
+    this.xacThucService.dangNhap(email, matKhau).subscribe({
+      next: (user) => {
+        this.dangXuLy = false;
+        if (user) {
+          this.loiDangNhap = false;
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'];
 
-      // Phân quyền điều hướng rõ ràng, ưu tiên returnUrl nếu có
-      const returnUrl = this.route.snapshot.queryParams['returnUrl'];
-      if (user.vaiTro === 'admin') {
-        this.router.navigateByUrl(returnUrl && returnUrl.startsWith('/admin') ? returnUrl : '/admin/tong-quan');
-      } else {
-        this.router.navigateByUrl(returnUrl && !returnUrl.startsWith('/admin') ? returnUrl : '/cua-hang');
+          // 1. Phân quyền Platform Admin
+          if (user.vaiTro === 'admin') {
+            this.thongBaoService.thanhCong(
+              `Chào mừng ${user.hoTen} (Quản Trị Viên Sàn)!`,
+              'Đăng nhập thành công'
+            );
+            this.router.navigateByUrl('/admin/tong-quan');
+            return;
+          }
+
+          // 2. Người dùng thông thường (Khách hàng / Chủ shop)
+          this.sellerState.taiThongTinShop().subscribe({
+            next: (shop) => {
+              if (shop && shop.trangThai === 'HoatDong' && (!returnUrl || returnUrl === '/seller')) {
+                this.thongBaoService.thanhCong(
+                  `Chào mừng Shop "${shop.ten}" vào Kênh Người Bán!`,
+                  'Đăng nhập thành công'
+                );
+                this.router.navigateByUrl('/seller/tong-quan');
+              } else {
+                this.thongBaoService.thanhCong(
+                  `Chào mừng ${user.hoTen} đã đăng nhập!`,
+                  'Đăng nhập thành công'
+                );
+                this.router.navigateByUrl(returnUrl && !returnUrl.startsWith('/admin') ? returnUrl : '/cua-hang');
+              }
+            },
+            error: () => {
+              this.router.navigateByUrl(returnUrl && !returnUrl.startsWith('/admin') ? returnUrl : '/cua-hang');
+            }
+          });
+        } else {
+          this.loiDangNhap = true;
+          this.thongBaoLoiDangNhap = 'Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại!';
+          this.thongBaoService.thatBai(this.thongBaoLoiDangNhap, 'Đăng nhập thất bại');
+        }
+      },
+      error: () => {
+        this.dangXuLy = false;
+        this.loiDangNhap = true;
+        this.thongBaoLoiDangNhap = 'Không thể kết nối đến máy chủ xác thực. Vui lòng thử lại!';
+        this.thongBaoService.thatBai(this.thongBaoLoiDangNhap, 'Lỗi kết nối');
       }
-    } else {
-      this.loiDangNhap = true;
-      this.thongBaoLoiDangNhap = 'Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại!';
-      this.thongBaoService.thatBai(this.thongBaoLoiDangNhap, 'Đăng nhập thất bại');
-    }
+    });
   }
 
   // === ĐĂNG KÝ ===
@@ -129,24 +152,33 @@ export class DangNhapComponent implements OnInit {
     }
 
     const val = this.formDangKy.value;
-    const ketQua = this.xacThucService.dangKy({
+    this.dangXuLy = true;
+
+    this.xacThucService.dangKy({
       hoTen: val.hoTen,
       email: val.email,
       matKhau: val.matKhau,
       soDienThoai: val.soDienThoai,
       diaChi: val.diaChi
+    }).subscribe({
+      next: (ketQua) => {
+        this.dangXuLy = false;
+        if (ketQua.thanhCong) {
+          this.thongBaoService.thanhCong(ketQua.thongBao, 'Đăng ký thành công');
+          this.formDangKy.reset();
+          this.doiTab('dang-nhap');
+        } else {
+          this.loiDangNhap = true;
+          this.thongBaoLoiDangNhap = ketQua.thongBao;
+          this.thongBaoService.thatBai(ketQua.thongBao, 'Đăng ký thất bại');
+        }
+      },
+      error: (err) => {
+        this.dangXuLy = false;
+        const msg = err.error?.error?.message || 'Có lỗi xảy ra khi tạo tài khoản!';
+        this.thongBaoService.thatBai(msg, 'Đăng ký thất bại');
+      }
     });
-
-    if (ketQua.thanhCong && ketQua.user) {
-      this.thongBaoService.thanhCong(ketQua.thongBao, 'Đăng ký thành công');
-      // Tài khoản khách hàng điều hướng về returnUrl (ví dụ /gio-hang) hoặc /cua-hang
-      const returnUrl = this.route.snapshot.queryParams['returnUrl'];
-      this.router.navigateByUrl(returnUrl && !returnUrl.startsWith('/admin') ? returnUrl : '/cua-hang');
-    } else {
-      this.loiDangNhap = true;
-      this.thongBaoLoiDangNhap = ketQua.thongBao;
-      this.thongBaoService.thatBai(ketQua.thongBao, 'Đăng ký thất bại');
-    }
   }
 
   private kiemTraKhopMatKhau(control: AbstractControl): { [key: string]: boolean } | null {

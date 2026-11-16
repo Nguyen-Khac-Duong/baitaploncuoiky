@@ -13,6 +13,8 @@ public interface ISanPhamAppService : IApplicationService
 {
     Task<SanPhamDto> GetAsync(Guid id);
     Task<PagedResultDto<SanPhamDto>> GetListAsync(PagedAndSortedResultRequestDto input);
+    Task<PagedResultDto<SanPhamDto>> GetListByShopAsync(Guid shopId, PagedAndSortedResultRequestDto input);
+    Task<PagedResultDto<SanPhamDto>> GetMyProductsAsync(PagedAndSortedResultRequestDto input);
     Task<List<SanPhamDto>> GetAllListAsync();
     Task<SanPhamDto> CreateAsync(CreateUpdateSanPhamDto input);
     Task<SanPhamDto> UpdateAsync(Guid id, CreateUpdateSanPhamDto input);
