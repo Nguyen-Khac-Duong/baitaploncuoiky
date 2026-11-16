@@ -1,17 +1,6 @@
-# 🛒 Hệ Thống Quản Lý Cửa Hàng & Bán Hàng Trực Tuyến (testtttt88)
-> **Dự án Bài Tập Lớn Môn Học - Trường Đại Học Công Nghệ Giao Thông Vận Tải (UTT)**  
-> **Sinh viên:** Nguyễn Khắc Dương | **MSV:** 74DCTT22184 | **Lớp:** 74DCTT27  
-> **Giảng viên hướng dẫn:** Thầy Tô Hải Thiên (`thienth@utt.edu.vn`)  
-> **Công nghệ:** ASP.NET Core ABP Framework (DDD) + Angular 18+ (Standalone) + Google Gemini AI
-
----
-
-## 📑 BÁO CÁO TIẾN ĐỘ BÀI TẬP LỚN (MILESTONES)
-
-* 🎯 **Đợt 1 (Ngày 04/10/2026):** Đã hoàn thành toàn diện kiến trúc nền tảng, các phân hệ Khách hàng, Quản trị và Trợ lý Gemini AI.  
-  👉 **Xem báo cáo chi tiết đợt 1 tại:** [**README_4_11.md**](README_4_11.md)
-* 🎯 **Đợt 2 (Ngày 11/10/2026):** Báo cáo ý hiểu hệ thống, kỹ năng kiểm soát mã nguồn, toàn bộ 8 luồng sự kiện, kỹ năng Graphify, Log, Diff, tiêu chí Leader và kiểm thử nâng cao theo phản hồi của Thầy Tô Hải Thiên.  
-  👉 **Xem báo cáo chi tiết đợt 2 tại:** [**README_11_11.md**](README_11_11.md)
+# 🛒 Hệ Thống Quản Lý Cửa Hàng & Bán Hàng Trực Tuyến Đa Gian Hàng (testtttt88)
+> **Giải pháp Sàn Thương Mại Điện Tử & Quản Trị Gian Hàng (Multi-vendor Marketplace)**  
+> **Công nghệ:** ASP.NET Core ABP Framework (DDD 4 Tầng) + Angular 18+ Signals (Standalone) + Google Gemini AI
 
 ---
 

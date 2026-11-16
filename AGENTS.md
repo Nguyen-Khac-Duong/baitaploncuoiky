@@ -1,8 +1,6 @@
 # AGENTS.MD - HƯỚNG DẪN KIẾN TRÚC & QUY TẮC RÀNG BUỘC CHO AI AGENT (testtttt88)
 
-> **Dự án:** Hệ thống Quản lý Cửa hàng & Bán hàng trực tuyến  
-> **Sinh viên thực hiện:** Nguyễn Khắc Dương | **MSV:** 74DCTT22184 | **Lớp:** 74DCTT27  
-> **Giảng viên hướng dẫn:** Thầy Tô Hải Thiên (`thienth@utt.edu.vn`)  
+> **Dự án:** Hệ thống Quản lý Cửa hàng & Bán hàng trực tuyến Đa Gian Hàng (Multi-vendor Marketplace)  
 > **Mục đích:** Định hình hành vi, bắt buộc AI Agent tuân thủ nghiêm ngặt các quy chuẩn kỹ thuật khi sinh mã (Code Generation) và tái cấu trúc (Refactoring).
 
 ---
