@@ -31,6 +31,10 @@ yarn-error.log*
 *.mdf
 *.ldf
 
+# AI Tooling & Local IDE Assistants
+.specify/
+.gemini/
+
 # OS Files
 .DS_Store
 Thumbs.db

@@ -1,0 +1,6 @@
+# Ignore AI tooling & local scripts from GitHub Language Statistics (Linguist)
+.specify/** linguist-vendored
+.agents/** linguist-vendored
+.gemini/** linguist-vendored
+*.py linguist-vendored
+*.py linguist-detectable=false
