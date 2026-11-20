@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Observable, combineLatest, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
 import { DuLieuService } from '../../he-thong/dich-vu/du-lieu.service';
 import { XacThucService } from '../../he-thong/dich-vu/xac-thuc.service';
 import { DonHang, ChiTietDonHang, DanhGiaSanPham } from '../../shared/mo-hinh/du-lieu.model';
@@ -47,6 +47,7 @@ export class DonHangCuaToiComponent implements OnInit {
   readonly danhGiaMap = signal<Record<string, DanhGiaSanPham>>({});
   hienModalDanhGia: boolean = false;
   dangGuiDanhGia: boolean = false;
+  dangUploadDanhGia: boolean = false;
   spDangDanhGia: { donHang: DonHang; chiTiet: ChiTietDonHang } | null = null;
   soSao: number = 5;
   noiDung: string = '';
@@ -55,6 +56,7 @@ export class DonHangCuaToiComponent implements OnInit {
   // Quản lý trạng thái Yêu cầu Trả hàng / Hoàn tiền
   hienModalTraHang: boolean = false;
   dangGuiTraHang: boolean = false;
+  dangUploadTraHang: boolean = false;
   donHangDangTra: DonHang | null = null;
   lyDoTraHang: string = 'Hàng bị hư hỏng / móp méo khi nhận';
   ghiChuTraHang: string = '';
@@ -157,6 +159,50 @@ export class DonHangCuaToiComponent implements OnInit {
     this.hienModalDanhGia = true;
   }
 
+  onFileSelectedDanhGia(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      this.message.warning('Dung lượng ảnh tối đa là 10MB!');
+      return;
+    }
+    this.dangUploadDanhGia = true;
+    this.duLieuService.uploadHinhAnh(file).subscribe({
+      next: (res) => {
+        this.dangUploadDanhGia = false;
+        this.hinhAnh = res.url;
+        this.message.success('Tải ảnh thực tế thành công!');
+      },
+      error: (err) => {
+        this.dangUploadDanhGia = false;
+        this.message.error(trichXuatThongBaoLoi(err, 'Lỗi tải ảnh lên máy chủ!'));
+      }
+    });
+  }
+
+  onFileSelectedTraHang(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      this.message.warning('Dung lượng ảnh tối đa là 10MB!');
+      return;
+    }
+    this.dangUploadTraHang = true;
+    this.duLieuService.uploadHinhAnh(file).subscribe({
+      next: (res) => {
+        this.dangUploadTraHang = false;
+        this.hinhAnhTraHang = res.url;
+        this.message.success('Tải ảnh bằng chứng thành công!');
+      },
+      error: (err) => {
+        this.dangUploadTraHang = false;
+        this.message.error(trichXuatThongBaoLoi(err, 'Lỗi tải ảnh lên máy chủ!'));
+      }
+    });
+  }
+
   guiDanhGia(): void {
     if (!this.spDangDanhGia) return;
     if (!this.noiDung.trim()) {
@@ -187,9 +233,10 @@ export class DonHangCuaToiComponent implements OnInit {
 
   taiDanhSachDonHang(): void {
     const tuKhoa = this.tuKhoaTraCuu.trim().toLowerCase();
+    const user = this.xacThucService.currentUser();
 
-    // Gọi trực tiếp API bảo mật từ server (🔴 B1, 🔴 F3)
-    this.donHangList$ = this.duLieuService.getDonHangCuaKhachHang().pipe(
+    // Gọi trực tiếp API lấy đơn hàng theo tài khoản hoặc số điện thoại của người dùng
+    this.donHangList$ = this.duLieuService.getDonHangCuaKhachHang(user?.id, user?.soDienThoai).pipe(
       map(danhSach => {
         let danhSachDonCuaToi = danhSach || [];
 
@@ -202,6 +249,10 @@ export class DonHangCuaToiComponent implements OnInit {
         }
 
         return danhSachDonCuaToi;
+      }),
+      catchError(err => {
+        console.warn('Lỗi tải danh sách đơn hàng:', err);
+        return of([]);
       })
     );
   }
@@ -217,8 +268,9 @@ export class DonHangCuaToiComponent implements OnInit {
     this.taiDanhSachDonHang();
   }
 
-  formatTien(gia: number): string {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(gia);
+  formatTien(gia: number | undefined | null): string {
+    const val = Number(gia || 0);
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(isNaN(val) ? 0 : val);
   }
 
   layTenTrangThai(trangThai: string): string {

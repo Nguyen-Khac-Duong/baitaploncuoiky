@@ -64,6 +64,7 @@ export class KhungSellerComponent implements OnInit {
     { label: 'Tổng Quan Shop', icon: 'dashboard', route: '/seller/tong-quan' },
     { label: 'Sản Phẩm Của Tôi', icon: 'appstore', route: '/seller/san-pham' },
     { label: 'Đơn Hàng Của Shop', icon: 'shopping-cart', route: '/seller/don-hang' },
+    { label: 'Khuyến Mãi & Voucher', icon: 'tag', route: '/seller/voucher' },
     { label: 'Đánh Giá & Phản Hồi', icon: 'star', route: '/seller/danh-gia' },
     { label: 'Ví Tiền & Rút Tiền', icon: 'wallet', route: '/seller/vi-tien' },
     { label: 'Cài Đặt Gian Hàng', icon: 'setting', route: '/seller/cai-dat' }
@@ -114,6 +115,8 @@ export class KhungSellerComponent implements OnInit {
   capNhatTieuDe(url: string): void {
     if (url.includes('san-pham')) this.tieuDeTrang = 'Quản Lý Kho Hàng & Sản Phẩm';
     else if (url.includes('don-hang')) this.tieuDeTrang = 'Quản Lý Đơn Hàng Cần Giao';
+    else if (url.includes('voucher')) this.tieuDeTrang = 'Quản Lý Khuyến Mãi & Voucher';
+    else if (url.includes('danh-gia')) this.tieuDeTrang = 'Đánh Giá & Phản Hồi Khách Hàng';
     else if (url.includes('vi-tien')) this.tieuDeTrang = 'Ví Doanh Thu & Quyết Toán Escrow';
     else if (url.includes('cai-dat')) this.tieuDeTrang = 'Cài Đặt Thông Tin Gian Hàng';
     else if (url.includes('dang-ky')) this.tieuDeTrang = 'Hồ Sơ Đăng Ký Mở Gian Hàng';

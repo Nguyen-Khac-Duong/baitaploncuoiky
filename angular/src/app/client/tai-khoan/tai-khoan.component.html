@@ -1,0 +1,804 @@
+<div class="tai-khoan-container">
+  <!-- BREADCRUMB & HEADER -->
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a routerLink="/" class="crumb-link"><i class="bi bi-house-door"></i> Trang Chủ</a>
+      <span class="crumb-sep">/</span>
+      <span class="crumb-current">Cài Đặt Tài Khoản</span>
+    </div>
+    <h1 class="page-title">⚙️ Quản Lý Tài Khoản & Cài Đặt</h1>
+  </div>
+
+  <div class="tai-khoan-layout">
+    <!-- SIDEBAR BÊN TRÁI -->
+    <aside class="tai-khoan-sidebar">
+      <div class="user-brief-card">
+        <div class="avatar-wrapper">
+          @if (xacThucService.currentUser()?.avatar || avatarTamThoi) {
+            <img [src]="avatarTamThoi || xacThucService.currentUser()?.avatar" alt="Avatar" class="user-avatar-img">
+          } @else {
+            <div class="user-avatar-placeholder">
+              {{ (xacThucService.currentUser()?.hoTen || 'U').charAt(0).toUpperCase() }}
+            </div>
+          }
+        </div>
+        <div class="user-brief-meta">
+          <div class="user-fullname" [title]="xacThucService.currentUser()?.hoTen">
+            {{ xacThucService.currentUser()?.hoTen || 'Người dùng' }}
+          </div>
+          <div class="user-username">&#64;{{ xacThucService.currentUser()?.tenDangNhap || xacThucService.currentUser()?.email }}</div>
+          <div class="user-badges">
+            <span class="badge-role buyer"><i class="bi bi-person-check-fill"></i> Khách Hàng</span>
+            @if (duLieuService.myStoreSignal()) {
+              <span class="badge-role seller"><i class="bi bi-shop"></i> Chủ Shop</span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- NAVIGATION TABS -->
+      <nav class="nav-menu">
+        <button type="button" class="nav-item" [class.active]="tabHienTai() === 'hoso'" (click)="doiTab('hoso')">
+          <span class="nav-icon">👤</span>
+          <span class="nav-text">Hồ Sơ Cá Nhân</span>
+        </button>
+
+        <button type="button" class="nav-item" [class.active]="tabHienTai() === 'diachi'" (click)="doiTab('diachi')">
+          <span class="nav-icon">📍</span>
+          <span class="nav-text">Sổ Địa Chỉ Nhận Hàng</span>
+          @if (danhSachDiaChi().length > 0) {
+            <span class="nav-badge">{{ danhSachDiaChi().length }}</span>
+          }
+        </button>
+
+        <button type="button" class="nav-item" [class.active]="tabHienTai() === 'matkhau'" (click)="doiTab('matkhau')">
+          <span class="nav-icon">🔒</span>
+          <span class="nav-text">Đổi Mật Khẩu</span>
+        </button>
+
+        <button type="button" class="nav-item" [class.active]="tabHienTai() === 'voucher'" (click)="doiTab('voucher')">
+          <span class="nav-icon">🎟️</span>
+          <span class="nav-text">Kho Voucher Của Tôi</span>
+          @if (voucherHienThi().length > 0) {
+            <span class="nav-badge voucher">{{ voucherHienThi().length }}</span>
+          }
+        </button>
+
+        <button type="button" class="nav-item" [class.active]="tabHienTai() === 'shop'" (click)="doiTab('shop')">
+          <span class="nav-icon">🏪</span>
+          <span class="nav-text">
+            @if (duLieuService.myStoreSignal()) {
+              Gian Hàng Của Tôi
+            } @else {
+              Kích Hoạt Mở Shop
+            }
+          </span>
+          @if (duLieuService.myStoreSignal()) {
+            <span class="nav-badge store">Active</span>
+          }
+        </button>
+
+        <div class="nav-divider"></div>
+
+        <a routerLink="/don-hang-cua-toi" class="nav-item secondary">
+          <span class="nav-icon">📦</span>
+          <span class="nav-text">Đơn Hàng Của Tôi</span>
+        </a>
+
+        @if (duLieuService.myStoreSignal()) {
+          <a routerLink="/seller" class="nav-item seller-direct">
+            <span class="nav-icon">🚀</span>
+            <span class="nav-text">Vào Kênh Người Bán</span>
+          </a>
+        }
+      </nav>
+    </aside>
+
+    <!-- MAIN CONTENT BÊN PHẢI -->
+    <main class="tai-khoan-content">
+      <!-- ================= 1. TAB HỒ SƠ CÁ NHÂN ================= -->
+      @if (tabHienTai() === 'hoso') {
+        <section class="panel-section">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">Hồ Sơ Của Tôi</h2>
+              <p class="section-desc">Quản lý thông tin hồ sơ để bảo mật tài khoản và mua sắm thuận tiện hơn</p>
+            </div>
+          </div>
+
+          <div class="hoso-grid">
+            <!-- Form thông tin -->
+            <form [formGroup]="formHoSo" (ngSubmit)="luuHoSo()" class="hoso-form">
+              <div class="form-group">
+                <label class="form-label">Tên đăng nhập</label>
+                <div class="readonly-value">
+                  <span class="code-badge">&#64;{{ xacThucService.currentUser()?.tenDangNhap || xacThucService.currentUser()?.email }}</span>
+                  <span class="badge-immutable"><i class="bi bi-lock-fill"></i> Không thể thay đổi</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="txtHoTen">Họ và tên <span class="req">*</span></label>
+                <input
+                  type="text"
+                  id="txtHoTen"
+                  formControlName="hoTen"
+                  class="form-control"
+                  placeholder="Nhập họ và tên đầy đủ của bạn"
+                  [class.is-invalid]="formHoSo.get('hoTen')?.touched && formHoSo.get('hoTen')?.invalid"
+                >
+                @if (formHoSo.get('hoTen')?.touched && formHoSo.get('hoTen')?.errors?.['required']) {
+                  <span class="error-msg">Vui lòng nhập họ và tên!</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="txtEmail">Địa chỉ Email</label>
+                <div class="readonly-value">
+                  <span>{{ xacThucService.currentUser()?.email }}</span>
+                  <span class="badge-verified"><i class="bi bi-patch-check-fill"></i> Đã xác thực</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="txtPhone">Số điện thoại <span class="req">*</span></label>
+                <input
+                  type="text"
+                  id="txtPhone"
+                  formControlName="soDienThoai"
+                  class="form-control"
+                  placeholder="VD: 0988776655"
+                  [class.is-invalid]="formHoSo.get('soDienThoai')?.touched && formHoSo.get('soDienThoai')?.invalid"
+                >
+                <span class="help-text">Số điện thoại dùng để nhận hàng và khôi phục tài khoản.</span>
+                @if (formHoSo.get('soDienThoai')?.touched && formHoSo.get('soDienThoai')?.errors?.['pattern']) {
+                  <span class="error-msg">Số điện thoại không hợp lệ (gồm 9-11 chữ số)!</span>
+                }
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn-primary" [disabled]="dangLuuHoSo">
+                  @if (dangLuuHoSo) {
+                    <span class="spinner"></span> Đang lưu...
+                  } @else {
+                    <i class="bi bi-floppy2-fill"></i> Lưu Thay Đổi
+                  }
+                </button>
+              </div>
+            </form>
+
+            <!-- Khối Avatar -->
+            <div class="avatar-upload-zone">
+              <div class="avatar-preview-box">
+                @if (avatarTamThoi) {
+                  <img [src]="avatarTamThoi" alt="Preview Avatar" class="avatar-large">
+                } @else {
+                  <div class="avatar-large-placeholder">
+                    {{ (formHoSo.get('hoTen')?.value || 'U').charAt(0).toUpperCase() }}
+                  </div>
+                }
+              </div>
+
+              <div class="avatar-controls">
+                <label class="btn-upload" for="fileAvatar">
+                  @if (dangTaiAvatar) {
+                    <span class="spinner dark"></span> Đang tải ảnh...
+                  } @else {
+                    <i class="bi bi-camera-fill"></i> Chọn Ảnh Đại Diện
+                  }
+                </label>
+                <input
+                  type="file"
+                  id="fileAvatar"
+                  accept="image/png, image/jpeg, image/webp"
+                  (change)="chonFileAvatar($event)"
+                  style="display: none;"
+                >
+                <p class="avatar-hint">
+                  Dung lượng tối đa 5 MB<br>
+                  Định dạng: .JPEG, .PNG, .WEBP
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      }
+
+      <!-- ================= 2. TAB SỔ ĐỊA CHỈ NHẬN HÀNG ================= -->
+      @if (tabHienTai() === 'diachi') {
+        <section class="panel-section">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">Sổ Địa Chỉ Nhận Hàng</h2>
+              <p class="section-desc">Quản lý danh sách địa chỉ giao nhận để tự động điền nhanh chóng khi thanh toán</p>
+            </div>
+            <button type="button" class="btn-primary-sm" (click)="moModalThemDiaChi()">
+              <i class="bi bi-plus-lg"></i> Thêm Địa Chỉ Mới
+            </button>
+          </div>
+
+          <!-- Danh sách địa chỉ -->
+          <div class="address-list">
+            @if (danhSachDiaChi().length === 0) {
+              <div class="empty-state">
+                <div class="empty-icon">📍</div>
+                <h3>Chưa có địa chỉ nhận hàng nào</h3>
+                <p>Hãy thêm địa chỉ giao hàng để hệ thống tự động điền khi bạn tiến hành thanh toán giỏ hàng!</p>
+                <button type="button" class="btn-primary-sm" (click)="moModalThemDiaChi()">
+                  <i class="bi bi-plus-lg"></i> Thêm địa chỉ đầu tiên
+                </button>
+              </div>
+            } @else {
+              @for (addr of danhSachDiaChi(); track addr.id) {
+                <div class="address-card" [class.is-default]="addr.laMacDinh">
+                  <div class="address-card-body">
+                    <div class="address-meta-row">
+                      <strong class="receiver-name">{{ addr.hoTen }}</strong>
+                      <span class="address-divider">|</span>
+                      <span class="receiver-phone">{{ addr.soDienThoai }}</span>
+                    </div>
+
+                    <p class="address-detail-text">
+                      <i class="bi bi-geo-alt-fill text-danger"></i> {{ addr.diaChiChiTiet }}
+                    </p>
+
+                    <div class="address-tags">
+                      @if (addr.laMacDinh) {
+                        <span class="badge-addr-default"><i class="bi bi-check-circle-fill"></i> Mặc định</span>
+                      }
+                      <span class="badge-addr-type">
+                        @if (addr.loaiDiaChi === 'VanPhong') {
+                          🏢 Văn Phòng
+                        } @else {
+                          🏠 Nhà Riêng
+                        }
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="address-card-actions">
+                    <div class="action-buttons">
+                      <button type="button" class="btn-link-action" (click)="moModalSuaDiaChi(addr)">
+                        <i class="bi bi-pencil-square"></i> Cập nhật
+                      </button>
+                      <button type="button" class="btn-link-action delete" (click)="xoaDiaChi(addr.id)">
+                        <i class="bi bi-trash3"></i> Xóa
+                      </button>
+                    </div>
+
+                    @if (!addr.laMacDinh) {
+                      <button type="button" class="btn-outline-default" (click)="datLamMacDinh(addr.id)">
+                        Thiết lập mặc định
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </section>
+      }
+
+      <!-- ================= 3. TAB ĐỔI MẬT KHẨU ================= -->
+      @if (tabHienTai() === 'matkhau') {
+        <section class="panel-section">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">Đổi Mật Khẩu</h2>
+              <p class="section-desc">Để bảo mật tài khoản, vui lòng không chia sẻ mật khẩu của bạn cho người khác</p>
+            </div>
+          </div>
+
+          <form [formGroup]="formDoiMatKhau" (ngSubmit)="xuLyDoiMatKhau()" class="matkhau-form">
+            <div class="form-group">
+              <label class="form-label" for="txtPassOld">Mật khẩu hiện tại <span class="req">*</span></label>
+              <input
+                type="password"
+                id="txtPassOld"
+                formControlName="matKhauHienTai"
+                class="form-control"
+                placeholder="Nhập mật khẩu bạn đang dùng"
+                [class.is-invalid]="formDoiMatKhau.get('matKhauHienTai')?.touched && formDoiMatKhau.get('matKhauHienTai')?.invalid"
+              >
+              @if (formDoiMatKhau.get('matKhauHienTai')?.touched && formDoiMatKhau.get('matKhauHienTai')?.errors?.['required']) {
+                <span class="error-msg">Vui lòng nhập mật khẩu hiện tại!</span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="txtPassNew">Mật khẩu mới <span class="req">*</span></label>
+              <input
+                type="password"
+                id="txtPassNew"
+                formControlName="matKhauMoi"
+                class="form-control"
+                placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"
+                [class.is-invalid]="formDoiMatKhau.get('matKhauMoi')?.touched && formDoiMatKhau.get('matKhauMoi')?.invalid"
+              >
+              @if (formDoiMatKhau.get('matKhauMoi')?.touched && formDoiMatKhau.get('matKhauMoi')?.errors?.['minlength']) {
+                <span class="error-msg">Mật khẩu mới phải có ít nhất 6 ký tự!</span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="txtPassConfirm">Xác nhận mật khẩu mới <span class="req">*</span></label>
+              <input
+                type="password"
+                id="txtPassConfirm"
+                formControlName="xacNhanMatKhau"
+                class="form-control"
+                placeholder="Nhập lại mật khẩu mới"
+                [class.is-invalid]="formDoiMatKhau.errors?.['matKhauKhongKhop'] && formDoiMatKhau.get('xacNhanMatKhau')?.touched"
+              >
+              @if (formDoiMatKhau.errors?.['matKhauKhongKhop'] && formDoiMatKhau.get('xacNhanMatKhau')?.touched) {
+                <span class="error-msg">Mật khẩu xác nhận không khớp với mật khẩu mới!</span>
+              }
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" [disabled]="dangDoiMatKhau">
+                @if (dangDoiMatKhau) {
+                  <span class="spinner"></span> Đang xử lý...
+                } @else {
+                  <i class="bi bi-shield-lock-fill"></i> Xác Nhận Đổi Mật Khẩu
+                }
+              </button>
+            </div>
+          </form>
+        </section>
+      }
+
+      <!-- ================= 4. TAB KHO VOUCHER ================= -->
+      @if (tabHienTai() === 'voucher') {
+        <section class="panel-section">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">Kho Voucher & Ưu Đãi Của Bạn</h2>
+              <p class="section-desc">Mã giảm giá từ Sàn Thương Mại Điện Tử KD và các Gian Hàng đối tác</p>
+            </div>
+
+            <!-- Bộ lọc loại voucher -->
+            <div class="voucher-filter-buttons">
+              <button
+                type="button"
+                class="filter-tab-btn"
+                [class.active]="boLocVoucher() === 'all'"
+                (click)="boLocVoucher.set('all')"
+              >
+                Tất cả ({{ danhSachVoucherSan().length + danhSachVoucherShop().length }})
+              </button>
+              <button
+                type="button"
+                class="filter-tab-btn"
+                [class.active]="boLocVoucher() === 'san'"
+                (click)="boLocVoucher.set('san')"
+              >
+                🌐 Voucher Sàn ({{ danhSachVoucherSan().length }})
+              </button>
+              <button
+                type="button"
+                class="filter-tab-btn"
+                [class.active]="boLocVoucher() === 'shop'"
+                (click)="boLocVoucher.set('shop')"
+              >
+                🏪 Voucher Shop ({{ danhSachVoucherShop().length }})
+              </button>
+            </div>
+          </div>
+
+          <!-- Grid hiển thị Voucher -->
+          <div class="voucher-grid">
+            @if (voucherHienThi().length === 0) {
+              <div class="empty-state">
+                <div class="empty-icon">🎟️</div>
+                <h3>Không tìm thấy mã giảm giá nào</h3>
+                <p>Hiện chưa có voucher khả dụng trong danh mục này. Hãy quay lại sau nhé!</p>
+              </div>
+            } @else {
+              @for (v of voucherHienThi(); track v.id) {
+                <div class="voucher-ticket" [class.is-san]="!v.cuaHangId">
+                  <!-- Cuống vé bên trái -->
+                  <div class="ticket-stub">
+                    <div class="stub-badge">
+                      @if (!v.cuaHangId) {
+                        🌐 KD Sàn
+                      } @else {
+                        🏪 Shop
+                      }
+                    </div>
+                    <div class="stub-discount">
+                      @if (v.loaiGiamGia === 'PhanTram') {
+                        <span class="val">{{ v.giaTriGiam }}%</span>
+                      } @else {
+                        <span class="val">{{ formatTien(v.giaTriGiam) }}</span>
+                      }
+                      <span class="lbl">GIẢM</span>
+                    </div>
+                  </div>
+
+                  <!-- Thân vé bên phải -->
+                  <div class="ticket-body">
+                    <div class="ticket-code-row">
+                      <span class="voucher-code-text">{{ v.maVoucher }}</span>
+                      <button type="button" class="btn-copy-code" (click)="saoChepMaVoucher(v.maVoucher)" title="Sao chép mã">
+                        <i class="bi bi-copy"></i> Sao chép
+                      </button>
+                    </div>
+
+                    <div class="ticket-desc">
+                      @if (v.giaTriDonToiThieu && v.giaTriDonToiThieu > 0) {
+                        <p class="rule-text">Đơn tối thiểu: <strong>{{ formatTien(v.giaTriDonToiThieu) }}</strong></p>
+                      } @else {
+                        <p class="rule-text">Áp dụng cho mọi giá trị đơn hàng</p>
+                      }
+
+                      @if (v.giamToiDa && v.giamToiDa > 0) {
+                        <p class="rule-text cap">Giảm tối đa: {{ formatTien(v.giamToiDa) }}</p>
+                      }
+                    </div>
+
+                    <div class="ticket-footer">
+                      <span class="expiry-text">
+                        <i class="bi bi-clock"></i> HSD: {{ v.ngayKetThuc ? (v.ngayKetThuc | date:'dd/MM/yyyy') : 'Vô thời hạn' }}
+                      </span>
+                      <a routerLink="/cua-hang" class="btn-use-voucher">
+                        Dùng Ngay <i class="bi bi-arrow-right-short"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </section>
+      }
+
+      <!-- ================= 5. TAB GIAN HÀNG / KÍCH HOẠT MỞ SHOP ================= -->
+      @if (tabHienTai() === 'shop') {
+        <section class="panel-section">
+          <!-- Trường hợp ĐÃ CÓ Shop -->
+          @if (duLieuService.myStoreSignal(); as shop) {
+            <div class="section-header">
+              <div>
+                <h2 class="section-title">Gian Hàng Của Bạn</h2>
+                <p class="section-desc">Bạn đang là đối tác bán hàng chính thức trên Hệ thống Thương Mại Điện Tử KD</p>
+              </div>
+              <a routerLink="/seller" class="btn-primary-sm">
+                <i class="bi bi-speedometer2"></i> Vào Kênh Quản Lý Người Bán
+              </a>
+            </div>
+
+            <div class="my-shop-card">
+              <div class="shop-badge-header">
+                <div class="shop-logo-box">🏪</div>
+                <div class="shop-title-meta">
+                  <h3>{{ shop.ten }}</h3>
+                  <div class="shop-sub-info">
+                    <span class="shop-slug">slug: /shop/{{ shop.slug }}</span>
+                    <span class="badge-status-active"><i class="bi bi-check-circle-fill"></i> Đang hoạt động</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="shop-details-grid">
+                <div class="detail-item">
+                  <span class="lbl"><i class="bi bi-telephone-fill"></i> Số điện thoại:</span>
+                  <span class="val">{{ shop.soDienThoai }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="lbl"><i class="bi bi-envelope-fill"></i> Email:</span>
+                  <span class="val">{{ shop.email }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="lbl"><i class="bi bi-geo-alt-fill"></i> Địa chỉ kho lấy hàng:</span>
+                  <span class="val">{{ shop.diaChi }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="lbl"><i class="bi bi-bank2"></i> Tài khoản ngân hàng:</span>
+                  <span class="val">{{ shop.soTaiKhoanNganHang }} - {{ shop.tenNganHang }} ({{ shop.tenChuTaiKhoan }})</span>
+                </div>
+              </div>
+
+              <div class="shop-cta-box">
+                <p>Quản lý sản phẩm, tồn kho, xử lý đơn hàng và theo dõi ví doanh thu quyết toán Escrow tại Kênh Người Bán:</p>
+                <div class="cta-buttons">
+                  <a routerLink="/seller" class="btn-primary">
+                    <i class="bi bi-arrow-up-right-square"></i> Mở Bảng Điều Khiển Seller Center
+                  </a>
+                  <a [routerLink]="['/shop', shop.slug]" class="btn-outline">
+                    <i class="bi bi-eye-fill"></i> Xem Gian Hàng Khách Xem
+                  </a>
+                </div>
+              </div>
+            </div>
+          } @else {
+            <!-- Trường hợp CHƯA CÓ Shop -> Form Đăng Ký Mở Gian Hàng -->
+            <div class="section-header">
+              <div>
+                <h2 class="section-title">Đăng Ký Trở Thành Người Bán Hàng</h2>
+                <p class="section-desc">Mở gian hàng kinh doanh hoàn toàn miễn phí, tiếp cận hàng triệu khách hàng</p>
+              </div>
+            </div>
+
+            <!-- Banner giới thiệu quyền lợi -->
+            <div class="seller-intro-banner">
+              <div class="intro-perk">
+                <span class="perk-icon">⚡</span>
+                <div>
+                  <strong>Mở Shop 3 Phút</strong>
+                  <p>Kích hoạt gian hàng tức thì, không rườm rà giấy tờ</p>
+                </div>
+              </div>
+              <div class="intro-perk">
+                <span class="perk-icon">💰</span>
+                <div>
+                  <strong>Phí Sàn Cực Thấp 5%</strong>
+                  <p>Quyết toán tự động qua Ví Escrow an toàn tuyệt đối</p>
+                </div>
+              </div>
+              <div class="intro-perk">
+                <span class="perk-icon">📦</span>
+                <div>
+                  <strong>Quản Lý Toàn Diện</strong>
+                  <p>Báo cáo doanh thu, kho bãi và tạo Voucher khuyến mãi riêng</p>
+                </div>
+              </div>
+            </div>
+
+            <form [formGroup]="formDangKyShop" (ngSubmit)="xuLyDangKyShop()" class="shop-register-form">
+              <div class="form-row">
+                <div class="form-group col-6">
+                  <label class="form-label" for="txtTenShop">Tên gian hàng / Thương hiệu <span class="req">*</span></label>
+                  <input
+                    type="text"
+                    id="txtTenShop"
+                    formControlName="ten"
+                    class="form-control"
+                    placeholder="VD: Cầu Lông Pro Shop"
+                    (input)="tuDongTaoSlug()"
+                    [class.is-invalid]="formDangKyShop.get('ten')?.touched && formDangKyShop.get('ten')?.invalid"
+                  >
+                  @if (formDangKyShop.get('ten')?.touched && formDangKyShop.get('ten')?.errors?.['required']) {
+                    <span class="error-msg">Vui lòng nhập tên gian hàng!</span>
+                  }
+                </div>
+
+                <div class="form-group col-6">
+                  <label class="form-label" for="txtSlugShop">Đường dẫn định danh (Slug URL) <span class="req">*</span></label>
+                  <div class="input-prefix-group">
+                    <span class="input-prefix">kd.vn/shop/</span>
+                    <input
+                      type="text"
+                      id="txtSlugShop"
+                      formControlName="slug"
+                      class="form-control"
+                      placeholder="cau-long-pro-shop"
+                      [class.is-invalid]="formDangKyShop.get('slug')?.touched && formDangKyShop.get('slug')?.invalid"
+                    >
+                  </div>
+                  @if (formDangKyShop.get('slug')?.touched && formDangKyShop.get('slug')?.errors?.['pattern']) {
+                    <span class="error-msg">Slug chỉ gồm chữ thường không dấu, số và dấu gạch ngang!</span>
+                  }
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group col-6">
+                  <label class="form-label" for="txtPhoneShop">Số điện thoại kinh doanh <span class="req">*</span></label>
+                  <input
+                    type="text"
+                    id="txtPhoneShop"
+                    formControlName="soDienThoai"
+                    class="form-control"
+                    placeholder="VD: 0988776655"
+                    [class.is-invalid]="formDangKyShop.get('soDienThoai')?.touched && formDangKyShop.get('soDienThoai')?.invalid"
+                  >
+                  @if (formDangKyShop.get('soDienThoai')?.touched && formDangKyShop.get('soDienThoai')?.invalid) {
+                    <span class="error-msg">Số điện thoại không hợp lệ!</span>
+                  }
+                </div>
+
+                <div class="form-group col-6">
+                  <label class="form-label" for="txtEmailShop">Email kinh doanh <span class="req">*</span></label>
+                  <input
+                    type="email"
+                    id="txtEmailShop"
+                    formControlName="email"
+                    class="form-control"
+                    placeholder="shop@domain.com"
+                    [class.is-invalid]="formDangKyShop.get('email')?.touched && formDangKyShop.get('email')?.invalid"
+                  >
+                  @if (formDangKyShop.get('email')?.touched && formDangKyShop.get('email')?.invalid) {
+                    <span class="error-msg">Email không đúng định dạng!</span>
+                  }
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="txtDiaChiShop">Địa chỉ kho hàng / Nơi lấy hàng cho Shipper <span class="req">*</span></label>
+                <input
+                  type="text"
+                  id="txtDiaChiShop"
+                  formControlName="diaChi"
+                  class="form-control"
+                  placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố"
+                  [class.is-invalid]="formDangKyShop.get('diaChi')?.touched && formDangKyShop.get('diaChi')?.invalid"
+                >
+                @if (formDangKyShop.get('diaChi')?.touched && formDangKyShop.get('diaChi')?.invalid) {
+                  <span class="error-msg">Vui lòng cung cấp địa chỉ kho hàng!</span>
+                }
+              </div>
+
+              <div class="bank-section-title">
+                <h4><i class="bi bi-bank2"></i> Thông Tin Tài Khoản Ngân Hàng (Nhận Tiền Quyết Toán Escrow)</h4>
+                <p>Doanh thu bán hàng sau khi khách nhận hàng thành công sẽ được rút về tài khoản này.</p>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group col-4">
+                  <label class="form-label" for="txtTenNganHang">Ngân hàng thụ hưởng <span class="req">*</span></label>
+                  <select id="txtTenNganHang" formControlName="tenNganHang" class="form-control">
+                    <option value="MBBank (Ngân hàng Quân Đội)">MBBank (Quân Đội)</option>
+                    <option value="Vietcombank (Ngoại Thương Việt Nam)">Vietcombank</option>
+                    <option value="Techcombank (Kỹ Thương Việt Nam)">Techcombank</option>
+                    <option value="VietinBank (Công Thương Việt Nam)">VietinBank</option>
+                    <option value="BIDV (Đầu Tư & Phát Triển)">BIDV</option>
+                    <option value="ACB (Á Châu)">ACB</option>
+                    <option value="VPBank (Việt Nam Thịnh Vượng)">VPBank</option>
+                    <option value="TPBank (Tiên Phong)">TPBank</option>
+                  </select>
+                </div>
+
+                <div class="form-group col-4">
+                  <label class="form-label" for="txtStk">Số tài khoản ngân hàng <span class="req">*</span></label>
+                  <input
+                    type="text"
+                    id="txtStk"
+                    formControlName="soTaiKhoanNganHang"
+                    class="form-control"
+                    placeholder="VD: 0988776655001"
+                    [class.is-invalid]="formDangKyShop.get('soTaiKhoanNganHang')?.touched && formDangKyShop.get('soTaiKhoanNganHang')?.invalid"
+                  >
+                  @if (formDangKyShop.get('soTaiKhoanNganHang')?.touched && formDangKyShop.get('soTaiKhoanNganHang')?.invalid) {
+                    <span class="error-msg">Vui lòng nhập số tài khoản ngân hàng!</span>
+                  }
+                </div>
+
+                <div class="form-group col-4">
+                  <label class="form-label" for="txtChuTk">Tên chủ tài khoản (Viết hoa không dấu) <span class="req">*</span></label>
+                  <input
+                    type="text"
+                    id="txtChuTk"
+                    formControlName="tenChuTaiKhoan"
+                    class="form-control"
+                    placeholder="VD: NGUYEN VAN A"
+                    [class.is-invalid]="formDangKyShop.get('tenChuTaiKhoan')?.touched && formDangKyShop.get('tenChuTaiKhoan')?.invalid"
+                  >
+                  @if (formDangKyShop.get('tenChuTaiKhoan')?.touched && formDangKyShop.get('tenChuTaiKhoan')?.invalid) {
+                    <span class="error-msg">Vui lòng nhập tên chủ tài khoản!</span>
+                  }
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="txtMoTaShop">Giới thiệu ngắn về Gian Hàng</label>
+                <textarea
+                  id="txtMoTaShop"
+                  formControlName="moTa"
+                  rows="3"
+                  class="form-control"
+                  placeholder="Mô tả ngành hàng, cam kết uy tín hoặc thông điệp gửi tới khách hàng..."
+                ></textarea>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn-primary-lg" [disabled]="dangMoShop">
+                  @if (dangMoShop) {
+                    <span class="spinner"></span> Đang xử lý đăng ký...
+                  } @else {
+                    <i class="bi bi-rocket-takeoff-fill"></i> Hoàn Tất Đăng Ký & Mở Gian Hàng Ngay
+                  }
+                </button>
+              </div>
+            </form>
+          }
+        </section>
+      }
+    </main>
+  </div>
+
+  <!-- MODAL THÊM / CẬP NHẬT ĐỊA CHỈ NHẬN HÀNG -->
+  @if (hienModalDiaChi) {
+    <div class="modal-backdrop" (click)="dongModalDiaChi()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            {{ diaChiDangSuaId ? 'Cập Nhật Địa Chỉ Nhận Hàng' : 'Địa Chỉ Mới' }}
+          </h3>
+          <button type="button" class="btn-close-modal" (click)="dongModalDiaChi()">&times;</button>
+        </div>
+
+        <form [formGroup]="formDiaChi" (ngSubmit)="luuDiaChi()" class="modal-body">
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="txtDiaChiHoTen">Họ và tên người nhận <span class="req">*</span></label>
+              <input
+                type="text"
+                id="txtDiaChiHoTen"
+                formControlName="hoTen"
+                class="form-control"
+                placeholder="VD: Nguyễn Văn A"
+                [class.is-invalid]="formDiaChi.get('hoTen')?.touched && formDiaChi.get('hoTen')?.invalid"
+              >
+              @if (formDiaChi.get('hoTen')?.touched && formDiaChi.get('hoTen')?.invalid) {
+                <span class="error-msg">Vui lòng nhập họ tên!</span>
+              }
+            </div>
+
+            <div class="form-group col-6">
+              <label class="form-label" for="txtDiaChiPhone">Số điện thoại <span class="req">*</span></label>
+              <input
+                type="text"
+                id="txtDiaChiPhone"
+                formControlName="soDienThoai"
+                class="form-control"
+                placeholder="VD: 0988776655"
+                [class.is-invalid]="formDiaChi.get('soDienThoai')?.touched && formDiaChi.get('soDienThoai')?.invalid"
+              >
+              @if (formDiaChi.get('soDienThoai')?.touched && formDiaChi.get('soDienThoai')?.invalid) {
+                <span class="error-msg">Số điện thoại không hợp lệ!</span>
+              }
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="txtDiaChiChiTiet">Địa chỉ chi tiết <span class="req">*</span></label>
+            <textarea
+              id="txtDiaChiChiTiet"
+              formControlName="diaChiChiTiet"
+              rows="3"
+              class="form-control"
+              placeholder="Số nhà, tên ngõ/ngách/phố, thôn/ấp, Phường/Xã, Quận/Huyện, Tỉnh/Thành phố..."
+              [class.is-invalid]="formDiaChi.get('diaChiChiTiet')?.touched && formDiaChi.get('diaChiChiTiet')?.invalid"
+            ></textarea>
+            @if (formDiaChi.get('diaChiChiTiet')?.touched && formDiaChi.get('diaChiChiTiet')?.invalid) {
+              <span class="error-msg">Vui lòng nhập chi tiết địa chỉ nhận hàng!</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Loại địa chỉ</label>
+            <div class="radio-pill-group">
+              <label class="radio-pill" [class.selected]="formDiaChi.get('loaiDiaChi')?.value === 'NhaRieng'">
+                <input type="radio" formControlName="loaiDiaChi" value="NhaRieng">
+                <span>🏠 Nhà Riêng</span>
+              </label>
+              <label class="radio-pill" [class.selected]="formDiaChi.get('loaiDiaChi')?.value === 'VanPhong'">
+                <input type="radio" formControlName="loaiDiaChi" value="VanPhong">
+                <span>🏢 Văn Phòng</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group-checkbox">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="laMacDinh">
+              <span>Đặt làm địa chỉ nhận hàng mặc định</span>
+            </label>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="dongModalDiaChi()">Trở Lại</button>
+            <button type="submit" class="btn-primary" [disabled]="dangLuuDiaChi">
+              @if (dangLuuDiaChi) {
+                <span class="spinner"></span> Đang lưu...
+              } @else {
+                Hoàn Thành
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

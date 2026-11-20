@@ -14,12 +14,35 @@ export interface NguoiDungHeThong {
 export interface NguoiDung {
   id: string;
   email: string;
+  tenDangNhap?: string;
   matKhau?: string;
   hoTen: string;
   soDienThoai?: string;
   diaChi?: string;
   vaiTro: VaiTroNguoiDung;
   avatar?: string;
+}
+
+export interface DiaChiNhanHang {
+  id: string;
+  hoTen: string;
+  soDienThoai: string;
+  diaChiChiTiet: string;
+  loaiDiaChi?: 'NhaRieng' | 'VanPhong';
+  laMacDinh: boolean;
+  ghiChu?: string;
+}
+
+export interface CapNhatHoSoInput {
+  hoTen: string;
+  soDienThoai?: string;
+  avatar?: string;
+  email?: string;
+}
+
+export interface DoiMatKhauInput {
+  currentPassword: string;
+  newPassword: string;
 }
 
 export interface CuaHang {
@@ -204,6 +227,8 @@ export interface DonHangTong {
   diaChi: string;
   ghiChu?: string;
   tongTien: number;
+  maVoucher?: string;
+  tienGiamVoucher?: number;
   phuongThucThanhToan: string;
   trangThai: string;
   donHangCons: DonHang[];
@@ -220,6 +245,13 @@ export interface CreateDonHangInput {
   soDienThoai: string;
   diaChi: string;
   ghiChu?: string;
+  maVoucher?: string;
+  tienGiamVoucher?: number;
+  maVoucherSan?: string;
+  tienGiamVoucherSan?: number;
+  maVoucherShop?: string;
+  tienGiamVoucherShop?: number;
+  phuongThucThanhToan?: string;
   chiTiet?: CreateChiTietDonHangInput[];
 }
 
@@ -233,6 +265,7 @@ export interface ThongKeDashboard {
 export interface MonGioHang {
   sanPham: SanPham;
   soLuong: number;
+  daChon?: boolean;
 }
 
 export interface NhomGioHangShop {
@@ -240,6 +273,10 @@ export interface NhomGioHangShop {
   tenCuaHang: string;
   danhSachMon: MonGioHang[];
   tongTien: number;
+  daChonTatCa?: boolean;
+  soLuongDaChon?: number;
+  tongTienDaChon?: number;
+  laShopCuaToi?: boolean;
 }
 
 export interface DanhGiaSanPham {
@@ -302,4 +339,56 @@ export interface ThongBaoItem {
   daDoc: boolean;
   thoiGianDoc?: string;
   creationTime: string;
+}
+
+export interface TepTinUploadResult {
+  url: string;
+  relativeUrl: string;
+  fileName: string;
+  fileSizeBytes: number;
+}
+
+export interface VoucherItem {
+  id: string;
+  maVoucher: string;
+  tieuDe: string;
+  moTa?: string;
+  loaiGiamGia: 'PhanTram' | 'SoTien' | string;
+  giaTriGiam: number;
+  giaTriDonToiThieu: number;
+  giamToiDa?: number;
+  soLuong: number;
+  soLuongDaDung: number;
+  ngayBatDau: string;
+  ngayKetThuc: string;
+  cuaHangId?: string;
+  tenCuaHang?: string;
+  laVoucherSan?: boolean;
+  kichHoat: boolean;
+}
+
+export interface KetQuaKiemTraVoucher {
+  hopLe: boolean;
+  soTienGiam: number;
+  tienGiam?: number;
+  tongTienSauGiam: number;
+  thongBao: string;
+  laVoucherSan?: boolean;
+  cuaHangId?: string;
+  voucher?: VoucherItem;
+}
+
+export interface TaoCapNhatVoucherInput {
+  maVoucher: string;
+  tieuDe: string;
+  moTa?: string;
+  loaiGiamGia: 'PhanTram' | 'SoTien' | string;
+  giaTriGiam: number;
+  giaTriDonToiThieu: number;
+  giamToiDa?: number;
+  soLuong: number;
+  ngayBatDau: string;
+  ngayKetThuc: string;
+  cuaHangId?: string;
+  kichHoat?: boolean;
 }

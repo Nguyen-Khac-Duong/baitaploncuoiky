@@ -88,6 +88,22 @@ export class ChatBotComponent implements AfterViewChecked {
       event.stopPropagation();
     }
 
+    if (this.duLieuService.laSanPhamCuaShopToi(sp)) {
+      this.thongBaoService.canhBao(
+        `Bạn là chủ gian hàng này, không thể tự mua sản phẩm "${sp.ten}" của chính mình!`,
+        'Không thể mua hàng'
+      );
+      return;
+    }
+
+    if (sp.soLuongTon <= 0) {
+      this.thongBaoService.thatBai(
+        `Rất tiếc sản phẩm "${sp.ten}" hiện đã hết hàng trong kho.`,
+        'Hết hàng'
+      );
+      return;
+    }
+
     const thanhCong = this.duLieuService.themVaoGioHang(sp, 1);
     if (thanhCong) {
       this.thongBaoService.thanhCong(
@@ -95,9 +111,9 @@ export class ChatBotComponent implements AfterViewChecked {
         'Đã thêm vào giỏ 🛒'
       );
     } else {
-      this.thongBaoService.thatBai(
-        `Rất tiếc sản phẩm ${sp.ten} hiện đã hết hàng trong kho.`,
-        'Hết hàng'
+      this.thongBaoService.canhBao(
+        `Đã đạt giới hạn số lượng tồn kho khả dụng (${sp.soLuongTon})!`,
+        'Kho hàng'
       );
     }
   }

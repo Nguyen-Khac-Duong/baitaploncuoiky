@@ -1,3 +1,4 @@
+
 # Feature Specification: RM-008 — Kênh Người Bán & Quản Lý Gian Hàng (Seller Center)
 
 **Feature Branch**: `008-rm-008-kenh-nguoi-ban`  

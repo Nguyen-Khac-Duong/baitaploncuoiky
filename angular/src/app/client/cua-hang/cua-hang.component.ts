@@ -158,11 +158,25 @@ export class CuaHangComponent {
       return;
     }
 
+    // Chặn người bán tự thêm sản phẩm của gian hàng mình vào giỏ
+    if (this.duLieuService.laSanPhamCuaShopToi(sp)) {
+      this.thongBaoService.canhBao(
+        `Bạn là chủ gian hàng này, không thể tự mua sản phẩm "${sp.ten}" của chính mình!`,
+        'Không thể mua hàng'
+      );
+      return;
+    }
+
+    if (sp.soLuongTon <= 0) {
+      this.thongBaoService.canhBao(`Sản phẩm "${sp.ten}" đã hết hàng!`, 'Kho hàng');
+      return;
+    }
+
     const thanhCong = this.duLieuService.themVaoGioHang(sp, 1);
     if (thanhCong) {
       this.thongBaoService.thanhCong(`Đã thêm "${sp.ten}" vào giỏ hàng!`, 'Giỏ hàng');
     } else {
-      this.thongBaoService.canhBao(`Sản phẩm "${sp.ten}" đã hết hàng!`, 'Kho hàng');
+      this.thongBaoService.canhBao(`Đã đạt giới hạn số lượng tồn kho khả dụng (${sp.soLuongTon})!`, 'Kho hàng');
     }
   }
 

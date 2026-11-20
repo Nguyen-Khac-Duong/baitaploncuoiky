@@ -25,9 +25,18 @@ export const appRoutes: Routes = [
         loadComponent: () => import('./client/gio-hang/gio-hang.component').then(m => m.GioHangComponent)
       },
       {
+        path: 'thanh-toan',
+        loadComponent: () => import('./client/thanh-toan/thanh-toan.component').then(m => m.ThanhToanComponent)
+      },
+      {
         path: 'don-hang-cua-toi',
         canActivate: [khachHangGuard],
         loadComponent: () => import('./client/don-hang-cua-toi/don-hang-cua-toi.component').then(m => m.DonHangCuaToiComponent)
+      },
+      {
+        path: 'tai-khoan',
+        canActivate: [khachHangGuard],
+        loadComponent: () => import('./client/tai-khoan/tai-khoan.component').then(m => m.TaiKhoanComponent)
       },
       {
         path: 'shop/:slug',
@@ -54,6 +63,10 @@ export const appRoutes: Routes = [
       {
         path: 'don-hang',
         loadComponent: () => import('./seller/don-hang/seller-don-hang.component').then(m => m.SellerDonHangComponent)
+      },
+      {
+        path: 'voucher',
+        loadComponent: () => import('./seller/voucher/seller-voucher.component').then(m => m.SellerVoucherComponent)
       },
       {
         path: 'danh-gia',
@@ -92,6 +105,10 @@ export const appRoutes: Routes = [
       {
         path: 'gian-hang',
         loadComponent: () => import('./admin/gian-hang/gian-hang.component').then(m => m.AdminGianHangComponent)
+      },
+      {
+        path: 'voucher',
+        loadComponent: () => import('./admin/voucher/admin-voucher.component').then(m => m.AdminVoucherComponent)
       },
       {
         path: 'rut-tien',

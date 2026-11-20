@@ -60,11 +60,19 @@ export class ChiTietShopComponent implements OnInit {
   }
 
   themVaoGio(sp: SanPham): void {
+    if (this.duLieuService.laSanPhamCuaShopToi(sp)) {
+      this.message.warning(`Bạn là chủ gian hàng này, không thể tự mua sản phẩm "${sp.ten}" của chính mình!`);
+      return;
+    }
+    if (sp.soLuongTon <= 0) {
+      this.message.warning(`Sản phẩm "${sp.ten}" đã hết hàng!`);
+      return;
+    }
     const thanhCong = this.duLieuService.themVaoGioHang(sp, 1);
     if (thanhCong) {
       this.message.success(`Đã thêm "${sp.ten}" vào giỏ hàng!`);
     } else {
-      this.message.warning('Sản phẩm đã hết hàng hoặc đạt giới hạn số lượng tồn!');
+      this.message.warning(`Đã đạt giới hạn số lượng tồn kho khả dụng (${sp.soLuongTon})!`);
     }
   }
 

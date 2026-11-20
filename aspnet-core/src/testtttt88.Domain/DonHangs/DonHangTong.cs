@@ -24,6 +24,8 @@ public class DonHangTong : FullAuditedAggregateRoot<Guid>
     public string? GhiChu { get; set; }
 
     public decimal TongTien { get; set; }
+    public string? MaVoucher { get; set; }
+    public decimal TienGiamVoucher { get; set; }
     public string PhuongThucThanhToan { get; set; } = "COD"; // COD, ChuyenKhoan, ViDienTu
     public string TrangThai { get; set; } = TTChuaThanhToan;
 

@@ -9,6 +9,7 @@ using testtttt88.Permissions;
 using testtttt88.SanPhams;
 using testtttt88.ThongBaos;
 using testtttt88.ViCuaHangs;
+using testtttt88.Vouchers;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Data;
@@ -29,6 +30,7 @@ public class DonHangAppService : testtttt88AppService, IDonHangAppService
     private readonly IRepository<SanPham, Guid> _sanPhamRepository;
     private readonly IRepository<CuaHang, Guid> _cuaHangRepository;
     private readonly IRepository<ThongBao, Guid> _thongBaoRepository;
+    private readonly IRepository<Voucher, Guid> _voucherRepository;
     private readonly DonHangManager _donHangManager;
     private readonly ViCuaHangManager _viCuaHangManager;
 
@@ -38,6 +40,7 @@ public class DonHangAppService : testtttt88AppService, IDonHangAppService
         IRepository<SanPham, Guid> sanPhamRepository,
         IRepository<CuaHang, Guid> cuaHangRepository,
         IRepository<ThongBao, Guid> thongBaoRepository,
+        IRepository<Voucher, Guid> voucherRepository,
         DonHangManager donHangManager,
         ViCuaHangManager viCuaHangManager)
     {
@@ -46,6 +49,7 @@ public class DonHangAppService : testtttt88AppService, IDonHangAppService
         _sanPhamRepository = sanPhamRepository;
         _cuaHangRepository = cuaHangRepository;
         _thongBaoRepository = thongBaoRepository;
+        _voucherRepository = voucherRepository;
         _donHangManager = donHangManager;
         _viCuaHangManager = viCuaHangManager;
     }
@@ -97,6 +101,7 @@ public class DonHangAppService : testtttt88AppService, IDonHangAppService
             TienHoaHongSan = x.TienHoaHongSan,
             ThucNhanCuaShop = x.ThucNhanCuaShop,
             TongTien = x.TongTien,
+            TienGiamVoucher = x.TienGiamVoucher,
             TrangThai = x.TrangThai,
             GhiChu = x.GhiChu,
             NgayTao = x.CreationTime,
@@ -289,25 +294,33 @@ public class DonHangAppService : testtttt88AppService, IDonHangAppService
     /// <summary>
     /// Lấy danh sách đơn hàng con của khách hàng đang đăng nhập
     /// </summary>
-    [Authorize]
-    public async Task<List<DonHangDto>> GetByNguoiDungAsync(string? nguoiDungId = null)
+    public async Task<List<DonHangDto>> GetByNguoiDungAsync(string? nguoiDungId = null, string? soDienThoai = null)
     {
         var currentUserIdStr = CurrentUser.Id?.ToString();
-        var hasAdminPermission = await AuthorizationService.IsGrantedAsync(testtttt88Permissions.DonHangs.Default);
+        var targetUserId = !string.IsNullOrWhiteSpace(currentUserIdStr)
+            ? currentUserIdStr
+            : nguoiDungId;
 
-        var targetUserId = hasAdminPermission && !string.IsNullOrWhiteSpace(nguoiDungId)
-            ? nguoiDungId
-            : currentUserIdStr;
+        var query = await _donHangRepository.WithDetailsAsync(x => x.ChiTiet);
 
-        if (string.IsNullOrWhiteSpace(targetUserId))
+        List<DonHang> orders;
+        if (!string.IsNullOrWhiteSpace(targetUserId))
+        {
+            orders = await AsyncExecuter.ToListAsync(
+                query.Where(x => x.NguoiDungId == targetUserId).OrderByDescending(x => x.CreationTime)
+            );
+        }
+        else if (!string.IsNullOrWhiteSpace(soDienThoai))
+        {
+            var phone = soDienThoai.Trim();
+            orders = await AsyncExecuter.ToListAsync(
+                query.Where(x => x.SoDienThoai == phone).OrderByDescending(x => x.CreationTime)
+            );
+        }
+        else
         {
             return new List<DonHangDto>();
         }
-
-        var query = await _donHangRepository.WithDetailsAsync(x => x.ChiTiet);
-        var orders = await AsyncExecuter.ToListAsync(
-            query.Where(x => x.NguoiDungId == targetUserId).OrderByDescending(x => x.CreationTime)
-        );
 
         var storeDict = await GetStoreNamesAsync(orders.Select(x => x.CuaHangId));
         return orders.Select(x => MapToDto(x, storeDict.TryGetValue(x.CuaHangId, out var name) ? name : null)).ToList();
@@ -398,6 +411,28 @@ public class DonHangAppService : testtttt88AppService, IDonHangAppService
             throw new UserFriendlyException("Một hoặc nhiều sản phẩm trong giỏ hàng không tồn tại!");
         }
 
+        // KIỂM TRA CHẶN CHỦ GIAN HÀNG TỰ MUA HÀNG CỦA CHÍNH MÌNH (SELF-PURCHASE PROHIBITION)
+        Guid? currentUserId = CurrentUser.IsAuthenticated && CurrentUser.Id.HasValue
+            ? CurrentUser.Id.Value
+            : (Guid.TryParse(input.NguoiDungId, out var parsedUid) ? parsedUid : null);
+
+        if (currentUserId.HasValue)
+        {
+            var myShops = await _cuaHangRepository.GetListAsync(x => x.ChuSoHuuId == currentUserId.Value);
+            if (myShops.Any())
+            {
+                var myShopIds = myShops.Select(x => x.Id).ToHashSet();
+                foreach (var sp in sanPhams)
+                {
+                    if (myShopIds.Contains(sp.CuaHangId))
+                    {
+                        var shop = myShops.First(x => x.Id == sp.CuaHangId);
+                        throw new UserFriendlyException($"Bạn là chủ gian hàng '{shop.Ten}', không được phép tự đặt mua sản phẩm '{sp.Ten}' của chính mình!");
+                    }
+                }
+            }
+        }
+
         // Lấy danh sách default shop nếu sản phẩm chưa gán shop
         var defaultShop = await _cuaHangRepository.FirstOrDefaultAsync();
         var defaultShopId = defaultShop?.Id ?? Guid.Empty;
@@ -416,6 +451,34 @@ public class DonHangAppService : testtttt88AppService, IDonHangAppService
             sanPhamTheoShop[shopId].Add((sp, item.soLuong));
         }
 
+        // Phân giải Voucher của Shop và Voucher của Sàn
+        string? maVoucherShop = !string.IsNullOrWhiteSpace(input.MaVoucherShop) ? input.MaVoucherShop.Trim().ToUpper() : null;
+        string? maVoucherSan = !string.IsNullOrWhiteSpace(input.MaVoucherSan) ? input.MaVoucherSan.Trim().ToUpper() : null;
+
+        // Tương thích ngược: nếu client truyền input.MaVoucher đơn lẻ
+        if (string.IsNullOrWhiteSpace(maVoucherShop) && string.IsNullOrWhiteSpace(maVoucherSan) && !string.IsNullOrWhiteSpace(input.MaVoucher))
+        {
+            var singleCode = input.MaVoucher.Trim().ToUpper();
+            var singleVoucher = await _voucherRepository.FirstOrDefaultAsync(x => x.MaVoucher == singleCode);
+            if (singleVoucher != null)
+            {
+                if (singleVoucher.CuaHangId.HasValue)
+                {
+                    maVoucherShop = singleVoucher.MaVoucher;
+                }
+                else
+                {
+                    maVoucherSan = singleVoucher.MaVoucher;
+                }
+            }
+        }
+
+        Voucher? shopVoucherEntity = null;
+        if (!string.IsNullOrWhiteSpace(maVoucherShop))
+        {
+            shopVoucherEntity = await _voucherRepository.FirstOrDefaultAsync(x => x.MaVoucher == maVoucherShop && x.CuaHangId.HasValue);
+        }
+
         // Tạo mã đơn tổng
         var maDonTong = $"MALL{Clock.Now:yyMMddHHmmss}{Random.Shared.Next(100, 999)}";
         var donHangTong = new DonHangTong(
@@ -430,6 +493,8 @@ public class DonHangAppService : testtttt88AppService, IDonHangAppService
         );
 
         decimal tongTienTatCa = 0;
+        decimal tongGiamShop = 0;
+        string? maVoucherShopThanhCong = null;
         var createdSubOrders = new List<DonHang>();
 
         // Duyệt từng shop và tạo Sub-Order
@@ -474,11 +539,25 @@ public class DonHangAppService : testtttt88AppService, IDonHangAppService
                 );
             }
 
+            // Áp dụng Voucher của Shop nếu đơn hàng con này thuộc shop phát hành voucher
+            if (shopVoucherEntity != null && shopVoucherEntity.CuaHangId == shopId)
+            {
+                if (shopVoucherEntity.KiemTraHopLe(donHangCon.TienHang, out _))
+                {
+                    decimal tienGiamShop = shopVoucherEntity.TinhTienGiam(donHangCon.TienHang);
+                    donHangCon.ApDungVoucherShop(tienGiamShop, hoaHongShop);
+                    shopVoucherEntity.SuDung();
+                    await _voucherRepository.UpdateAsync(shopVoucherEntity);
+                    tongGiamShop += tienGiamShop;
+                    maVoucherShopThanhCong = shopVoucherEntity.MaVoucher;
+                }
+            }
+
             var insertedSub = await _donHangRepository.InsertAsync(donHangCon);
             createdSubOrders.Add(insertedSub);
             tongTienTatCa += donHangCon.TongTien;
 
-            // Ghi nhận vào ví Escrow của Shop
+            // Ghi nhận vào ví Escrow của Shop (tính trên số tiền thực của đơn con)
             if (shopId != Guid.Empty)
             {
                 await _viCuaHangManager.GhiNhanDonHangMoiAsync(shopId, donHangCon.TongTien, donHangCon.MaDon);
@@ -510,7 +589,26 @@ public class DonHangAppService : testtttt88AppService, IDonHangAppService
             }
         }
 
-        donHangTong.TongTien = tongTienTatCa;
+        // Áp dụng Voucher của SÀN (Platform Voucher)
+        decimal tienGiamSan = 0;
+        string? maVoucherSanThanhCong = null;
+        if (!string.IsNullOrWhiteSpace(maVoucherSan))
+        {
+            var sanVoucher = await _voucherRepository.FirstOrDefaultAsync(x => x.MaVoucher == maVoucherSan && !x.CuaHangId.HasValue);
+            if (sanVoucher != null && sanVoucher.KiemTraHopLe(tongTienTatCa, out _))
+            {
+                tienGiamSan = sanVoucher.TinhTienGiam(tongTienTatCa);
+                sanVoucher.SuDung();
+                await _voucherRepository.UpdateAsync(sanVoucher);
+                maVoucherSanThanhCong = sanVoucher.MaVoucher;
+            }
+        }
+
+        decimal tongGiamTatCa = tongGiamShop + tienGiamSan;
+        donHangTong.MaVoucher = maVoucherSanThanhCong ?? maVoucherShopThanhCong;
+        donHangTong.TienGiamVoucher = tongGiamTatCa;
+        donHangTong.TongTien = Math.Max(0, tongTienTatCa - tienGiamSan);
+        donHangTong.PhuongThucThanhToan = string.IsNullOrWhiteSpace(input.PhuongThucThanhToan) ? "COD" : input.PhuongThucThanhToan;
         donHangTong.TrangThai = DonHangTong.TTDangXuLy;
         await _donHangTongRepository.InsertAsync(donHangTong);
 
@@ -525,6 +623,12 @@ public class DonHangAppService : testtttt88AppService, IDonHangAppService
             DiaChi = donHangTong.DiaChi,
             GhiChu = donHangTong.GhiChu,
             TongTien = donHangTong.TongTien,
+            MaVoucher = donHangTong.MaVoucher,
+            TienGiamVoucher = donHangTong.TienGiamVoucher,
+            MaVoucherSan = maVoucherSanThanhCong,
+            TienGiamVoucherSan = tienGiamSan,
+            MaVoucherShop = maVoucherShopThanhCong,
+            TienGiamVoucherShop = tongGiamShop,
             PhuongThucThanhToan = donHangTong.PhuongThucThanhToan,
             TrangThai = donHangTong.TrangThai,
             DonHangCons = createdSubOrders.Select(x => MapToDto(x, storeDict.TryGetValue(x.CuaHangId, out var name) ? name : null)).ToList()

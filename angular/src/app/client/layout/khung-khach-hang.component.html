@@ -37,9 +37,6 @@
         <a routerLink="/don-hang-cua-toi" routerLinkActive="active" class="nav-item">
           <span>📦 Đơn Hàng Của Tôi</span>
         </a>
-        <a routerLink="/seller" routerLinkActive="active" class="nav-item">
-          <span>🏪 Kênh Người Bán</span>
-        </a>
         } @else {
         <a routerLink="/admin/tong-quan" class="nav-item text-primary font-bold">
           <span>⚙️ Cổng Quản Trị Hệ Thống (Admin Portal)</span>
@@ -151,14 +148,93 @@
         </button>
 
         @if (xacThucService.currentUser(); as user) {
-        <div class="user-info">
-          <div class="user-avatar">{{ user.avatar || 'KH' }}</div>
-          <div class="user-details">
-            <span class="user-name">{{ user.hoTen }}</span>
-            <span class="user-role">{{ user.vaiTro === 'admin' ? 'Quản Trị Viên Sàn' : 'Khách Hàng' }}</span>
-          </div>
-          <button class="btn-logout" (click)="dangXuat()" title="Đăng xuất">🚪 Đăng xuất</button>
+        <!-- User Dropdown Menu (Chuẩn sàn E-Commerce hiện đại) -->
+        <div class="user-menu-wrapper" nz-dropdown [nzDropdownMenu]="userAccountDropdown" [(nzVisible)]="hienDropdownUser" nzTrigger="click" nzPlacement="bottomRight">
+          <button type="button" class="btn-user-pill" title="Tài khoản & Cài đặt">
+            @if (user.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('/'))) {
+              <img [src]="user.avatar" alt="Avatar" class="user-avatar-pill-img" />
+            } @else {
+              <div class="user-avatar-pill-initial">{{ (user.hoTen || 'U').substring(0, 1).toUpperCase() }}</div>
+            }
+            <span class="user-pill-name">{{ user.hoTen }}</span>
+            <span class="user-pill-arrow">▾</span>
+          </button>
         </div>
+
+        <nz-dropdown-menu #userAccountDropdown="nzDropdownMenu">
+          <div class="user-popover-card">
+            <!-- Header thông tin user -->
+            <div class="popover-user-brief">
+              <div class="popover-avatar">
+                @if (user.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('/'))) {
+                  <img [src]="user.avatar" alt="Avatar" class="avatar-large-popover" />
+                } @else {
+                  <div class="avatar-initial-popover">{{ (user.hoTen || 'U').substring(0, 1).toUpperCase() }}</div>
+                }
+              </div>
+              <div class="popover-meta">
+                <div class="popover-fullname" [title]="user.hoTen">{{ user.hoTen }}</div>
+                <div class="popover-username">&#64;{{ user.tenDangNhap || user.email?.split('@')[0] }}</div>
+                <div class="popover-role-tag">
+                  <span class="role-badge" [class.admin]="user.vaiTro === 'admin'">
+                    {{ user.vaiTro === 'admin' ? '👑 Quản Trị Viên' : '🛍️ Khách Hàng' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="popover-sep"></div>
+
+            <!-- Danh sách menu con -->
+            <div class="popover-nav-list">
+              <a routerLink="/tai-khoan" [queryParams]="{ tab: 'hoso' }" class="popover-nav-item" (click)="hienDropdownUser = false">
+                <span class="p-icon">👤</span>
+                <span class="p-text">Hồ Sơ Của Tôi</span>
+              </a>
+
+              <a routerLink="/tai-khoan" [queryParams]="{ tab: 'diachi' }" class="popover-nav-item" (click)="hienDropdownUser = false">
+                <span class="p-icon">📍</span>
+                <span class="p-text">Sổ Địa Chỉ Nhận Hàng</span>
+              </a>
+
+              <a routerLink="/don-hang-cua-toi" class="popover-nav-item" (click)="hienDropdownUser = false">
+                <span class="p-icon">📦</span>
+                <span class="p-text">Đơn Mua Của Tôi</span>
+              </a>
+
+              <a routerLink="/tai-khoan" [queryParams]="{ tab: 'voucher' }" class="popover-nav-item" (click)="hienDropdownUser = false">
+                <span class="p-icon">🎟️</span>
+                <span class="p-text">Kho Voucher Của Tôi</span>
+              </a>
+
+              <a routerLink="/tai-khoan" [queryParams]="{ tab: 'matkhau' }" class="popover-nav-item" (click)="hienDropdownUser = false">
+                <span class="p-icon">🔒</span>
+                <span class="p-text">Đổi Mật Khẩu</span>
+              </a>
+
+              <div class="popover-sep inner"></div>
+
+              @if (duLieuService.myStoreSignal()) {
+                <a routerLink="/seller" class="popover-nav-item seller" (click)="hienDropdownUser = false">
+                  <span class="p-icon">🏪</span>
+                  <span class="p-text">Kênh Người Bán (Shop của bạn)</span>
+                </a>
+              } @else {
+                <a routerLink="/tai-khoan" [queryParams]="{ tab: 'shop' }" class="popover-nav-item seller-signup" (click)="hienDropdownUser = false">
+                  <span class="p-icon">🚀</span>
+                  <span class="p-text">Đăng Ký Mở Gian Hàng</span>
+                </a>
+              }
+
+              <div class="popover-sep inner"></div>
+
+              <button type="button" class="popover-nav-item logout" (click)="hienDropdownUser = false; dangXuat()">
+                <span class="p-icon">🚪</span>
+                <span class="p-text">Đăng Xuất</span>
+              </button>
+            </div>
+          </div>
+        </nz-dropdown-menu>
         } @else {
         <div class="auth-buttons">
           <a routerLink="/dang-nhap" [queryParams]="{ tab: 'dang-nhap' }" class="btn-login">Đăng Nhập</a>

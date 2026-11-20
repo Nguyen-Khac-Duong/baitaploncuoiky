@@ -1,63 +1,30 @@
-import { Component, inject, OnInit, effect } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { DuLieuService } from '../../he-thong/dich-vu/du-lieu.service';
 import { XacThucService } from '../../he-thong/dich-vu/xac-thuc.service';
 import { ThongBaoService } from '../../he-thong/dich-vu/thong-bao.service';
-import { trichXuatThongBaoLoi } from '../../he-thong/tien-ich/loi-api.helper';
 
 @Component({
   selector: 'app-gio-hang',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './gio-hang.component.html',
   styleUrl: './gio-hang.component.scss'
 })
-export class GioHangComponent implements OnInit {
+export class GioHangComponent {
   readonly duLieuService = inject(DuLieuService);
   readonly xacThucService = inject(XacThucService);
   private readonly thongBaoService = inject(ThongBaoService);
-  private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
 
-  formDatHang!: FormGroup;
-  datHangThanhCongDonHang: string | null = null;
-  dangDatHang: boolean = false;
-
-  constructor() {
-    effect(() => {
-      const user = this.xacThucService.currentUser();
-      if (user && this.formDatHang) {
-        this.formDatHang.patchValue({
-          tenKhachHang: user.hoTen || '',
-          soDienThoai: user.soDienThoai || '',
-          diaChi: user.diaChi || ''
-        });
-      }
-    });
-  }
-
-  ngOnInit(): void {
-    this.khoiTaoForm();
-  }
-
-  private khoiTaoForm(): void {
-    const user = this.xacThucService.currentUser();
-
-    this.formDatHang = this.fb.group({
-      tenKhachHang: [user?.hoTen || '', [Validators.required, Validators.minLength(2)]],
-      soDienThoai: [user?.soDienThoai || '', [Validators.required, Validators.pattern(/^[0-9]{9,11}$/)]],
-      diaChi: [user?.diaChi || '', [Validators.required, Validators.minLength(5)]],
-      ghiChu: ['']
-    });
-  }
-
+  // === THAO TÁC SỐ LƯỢNG VÀ XÓA ===
   tangSoLuong(sanPhamId: string, soLuongHienTai: number, soLuongTon: number): void {
     if (soLuongHienTai < soLuongTon) {
       this.duLieuService.capNhatSoLuongGioHang(sanPhamId, soLuongHienTai + 1);
     } else {
-      this.thongBaoService.canhBao('Đã đạt số lượng tồn kho tối đa!', 'Giỏ hàng');
+      this.thongBaoService.canhBao('Đã đạt số lượng tồn kho tối đa của sản phẩm!', 'Giỏ hàng');
     }
   }
 
@@ -67,69 +34,90 @@ export class GioHangComponent implements OnInit {
 
   xoaMon(sanPhamId: string): void {
     this.duLieuService.xoaKhoiGioHang(sanPhamId);
-    this.thongBaoService.thongTin('Đã xóa sản phẩm khỏi giỏ hàng', 'Giỏ hàng');
+    this.thongBaoService.thongTin('Đã xóa sản phẩm khỏi giỏ hàng.', 'Giỏ hàng');
   }
 
-  tienHanhDatHang(): void {
-    // 1. Chặn Admin hệ thống đặt hàng
+  xoaCacMonDaChon(): void {
+    const count = this.duLieuService.tongSoLuongDaChon();
+    if (count === 0) {
+      this.thongBaoService.canhBao('Bạn chưa chọn sản phẩm nào để xóa!', 'Giỏ hàng');
+      return;
+    }
+    this.duLieuService.xoaCacMonDaChon();
+    this.thongBaoService.thongTin(`Đã xóa ${count} sản phẩm được chọn khỏi giỏ hàng.`, 'Giỏ hàng');
+  }
+
+  // === THAO TÁC CHECKBOX CHỌN MUA (SHOPEE FLOW) ===
+  toggleChonMon(sanPhamId: string): void {
+    const item = this.duLieuService.gioHang().find(x => x.sanPham.id === sanPhamId);
+    if (item && this.duLieuService.laSanPhamCuaShopToi(item.sanPham)) {
+      this.thongBaoService.canhBao('Đây là sản phẩm thuộc gian hàng của bạn! Người bán không thể tự mua hàng của chính mình.', 'Chặn mua hàng');
+      return;
+    }
+    this.duLieuService.toggleChonMon(sanPhamId);
+  }
+
+  datChonMon(sanPhamId: string, event: Event): void {
+    const item = this.duLieuService.gioHang().find(x => x.sanPham.id === sanPhamId);
+    if (item && this.duLieuService.laSanPhamCuaShopToi(item.sanPham)) {
+      (event.target as HTMLInputElement).checked = false;
+      this.thongBaoService.canhBao('Đây là sản phẩm thuộc gian hàng của bạn! Người bán không thể tự mua hàng của chính mình.', 'Chặn mua hàng');
+      return;
+    }
+    const checked = (event.target as HTMLInputElement).checked;
+    this.duLieuService.datChonMon(sanPhamId, checked);
+  }
+
+  chonTatCa(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.duLieuService.chonTatCaGioHang(checked);
+  }
+
+  chonNhomShop(cuaHangId: string, event: Event): void {
+    const myShop = this.duLieuService.myStoreSignal();
+    if (myShop && myShop.id.toLowerCase() === cuaHangId.toLowerCase()) {
+      (event.target as HTMLInputElement).checked = false;
+      this.thongBaoService.canhBao('Đây là gian hàng của bạn! Người bán không thể tự mua hàng của chính mình.', 'Chặn mua hàng');
+      return;
+    }
+    const checked = (event.target as HTMLInputElement).checked;
+    this.duLieuService.chonNhomShop(cuaHangId, checked);
+  }
+
+  // === CHUYỂN HƯỚNG SANG TRANG THANH TOÁN ===
+  tienHanhThanhToan(): void {
+    // 1. Kiểm tra xem đã chọn sản phẩm chưa
+    if (this.duLieuService.cacMonDaChon().length === 0) {
+      this.thongBaoService.canhBao('Vui lòng đánh dấu chọn ít nhất 1 sản phẩm để thanh toán!', 'Giỏ hàng');
+      return;
+    }
+
+    // 2. Chặn Quản Trị Viên (Admin) mua hàng
     if (this.xacThucService.laAdmin()) {
       this.thongBaoService.canhBao(
-        'Tài khoản Quản Trị Viên Sàn (Admin) không tham gia mua hàng! Vui lòng đăng xuất và tạo tài khoản Người Mua riêng để đặt hàng.',
+        'Tài khoản Quản Trị Viên (Admin) không thực hiện mua hàng! Vui lòng đăng nhập tài khoản Khách Hàng.',
         'Chặn mua hàng'
       );
-      this.router.navigate(['/admin/tong-quan']);
       return;
     }
 
-    // 2. Bắt buộc đăng nhập: Khách xem hàng chưa đăng nhập không thể đặt hàng
-    if (!this.xacThucService.daDangNhap()) {
-      this.thongBaoService.canhBao(
-        'Bạn cần đăng nhập hoặc tạo tài khoản Khách Hàng để tiến hành đặt hàng!',
-        'Yêu cầu đăng nhập'
+    // 3. Chặn chủ gian hàng mua hàng của chính mình
+    const items = this.duLieuService.cacMonDaChon();
+    const hasOwnItem = items.some(item => this.duLieuService.laSanPhamCuaShopToi(item.sanPham));
+    if (hasOwnItem) {
+      this.thongBaoService.thatBai(
+        'Trong các mục đã chọn có sản phẩm thuộc gian hàng của bạn! Người bán không được phép tự mua hàng của chính mình.',
+        'Chặn mua hàng'
       );
-      this.router.navigate(['/dang-nhap'], {
-        queryParams: { tab: 'dang-nhap', returnUrl: '/gio-hang' }
-      });
       return;
     }
 
-    // 2. Kiểm tra tính hợp lệ của thông tin nhận hàng
-    if (this.formDatHang.invalid) {
-      this.formDatHang.markAllAsTouched();
-      this.thongBaoService.thatBai('Vui lòng kiểm tra lại thông tin nhận hàng!', 'Đặt hàng');
-      return;
-    }
-
-    const user = this.xacThucService.currentUser();
-    const val = this.formDatHang.value;
-
-    // 3. Tiến hành đặt hàng liên kết chặt chẽ với tài khoản Khách Hàng (🔴 F2)
-    this.dangDatHang = true;
-    this.duLieuService.datHang({
-      nguoiDungId: user?.id,
-      tenKhachHang: val.tenKhachHang,
-      soDienThoai: val.soDienThoai,
-      diaChi: val.diaChi,
-      ghiChu: val.ghiChu
-    }).subscribe({
-      next: (donHangTong) => {
-        this.dangDatHang = false;
-        const maDonHienThi = donHangTong.maDonTong || (donHangTong as any).maDon || 'MALL-ORDER';
-        this.datHangThanhCongDonHang = maDonHienThi;
-        this.thongBaoService.thanhCong(
-          `Đơn hàng #${maDonHienThi} gồm các kiện hàng tương ứng từng shop đã được tạo thành công!`,
-          'Đặt hàng thành công'
-        );
-      },
-      error: (err) => {
-        this.dangDatHang = false;
-        const msg = trichXuatThongBaoLoi(err, 'Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại!');
-        this.thongBaoService.thatBai(msg, 'Đặt hàng thất bại');
-      }
-    });
+    // 4. Chuyển sang trang thanh toán riêng biệt
+    this.router.navigate(['/thanh-toan']);
   }
 
-  formatTien(gia: number): string {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(gia);
+  formatTien(gia: number | undefined | null): string {
+    const val = Number(gia || 0);
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(isNaN(val) ? 0 : val);
   }
 }

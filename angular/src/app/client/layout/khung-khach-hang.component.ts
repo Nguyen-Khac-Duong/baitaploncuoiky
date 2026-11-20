@@ -37,6 +37,7 @@ export class KhungKhachHangComponent implements OnInit {
   readonly soChuaDoc = computed(() => this.danhSachThongBao().filter(x => !x.daDoc).length);
   readonly locTabThongBao = signal<'all' | 'unread'>('all');
   hienDropdownThongBao: boolean = false;
+  hienDropdownUser: boolean = false;
 
   readonly thongBaoHienThi = computed(() => {
     const list = this.danhSachThongBao();

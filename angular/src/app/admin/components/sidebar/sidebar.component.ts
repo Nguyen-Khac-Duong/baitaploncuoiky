@@ -27,6 +27,7 @@ export class SidebarComponent {
     { label: 'Tổng Quan Sàn', icon: 'dashboard', route: '/admin/tong-quan' },
     { label: 'Quản Lý Danh Mục', icon: 'appstore', route: '/admin/danh-muc' },
     { label: 'Duyệt Gian Hàng', icon: 'shop', route: '/admin/gian-hang' },
+    { label: 'Voucher Sàn', icon: 'gift', route: '/admin/voucher' },
     { label: 'Duyệt Rút Tiền', icon: 'bank', route: '/admin/rut-tien' },
     { label: 'Quản Lý Tài Khoản', icon: 'user', route: '/admin/tai-khoan' }
   ];

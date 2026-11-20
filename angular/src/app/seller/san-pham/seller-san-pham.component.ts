@@ -145,8 +145,21 @@ import { trichXuatThongBaoLoi } from '../../he-thong/tien-ich/loi-api.helper';
             </div>
 
             <div class="form-group">
-              <label>Đường Dẫn Hình Ảnh (URL)</label>
-              <input nz-input formControlName="hinhAnh" placeholder="https://..." />
+              <label>Hình Ảnh Sản Phẩm</label>
+              <div style="display: flex; gap: 8px;">
+                <input nz-input formControlName="hinhAnh" placeholder="Dán URL ảnh hoặc tải ảnh từ máy tính..." style="flex: 1;" />
+                <input type="file" #fileInput accept="image/*" (change)="onFileSelected($event)" style="display: none" />
+                <button nz-button type="button" [nzLoading]="dangUpload" (click)="fileInput.click()">
+                  <span nz-icon nzType="upload"></span> Tải Ảnh Lên
+                </button>
+              </div>
+              @if (form.get('hinhAnh')?.value) {
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 6px; padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+                  <img [src]="form.get('hinhAnh')?.value" alt="Preview" style="width: 48px; height: 48px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1;" />
+                  <span style="font-size: 12px; color: #10b981; font-weight: 500;">✓ Đã chọn ảnh sản phẩm</span>
+                  <button nz-button nzType="text" nzDanger (click)="form.patchValue({ hinhAnh: '' })" style="margin-left: auto;">✕ Xóa</button>
+                </div>
+              }
             </div>
 
             <div class="form-group">
@@ -232,7 +245,30 @@ export class SellerSanPhamComponent implements OnInit {
   hienModal: boolean = false;
   dangSua: SanPham | null = null;
   dangLuu: boolean = false;
+  dangUpload: boolean = false;
   form!: FormGroup;
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      this.message.warning('Dung lượng ảnh tối đa là 10MB!');
+      return;
+    }
+    this.dangUpload = true;
+    this.duLieuService.uploadHinhAnh(file).subscribe({
+      next: (res) => {
+        this.dangUpload = false;
+        this.form.patchValue({ hinhAnh: res.url });
+        this.message.success('Tải ảnh sản phẩm lên thành công!');
+      },
+      error: (err) => {
+        this.dangUpload = false;
+        this.message.error(trichXuatThongBaoLoi(err, 'Lỗi tải ảnh lên máy chủ!'));
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.khoiTaoForm();

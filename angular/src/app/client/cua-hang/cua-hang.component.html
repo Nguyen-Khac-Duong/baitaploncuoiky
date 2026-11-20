@@ -115,13 +115,19 @@
 
             <div class="card-footer">
               <span class="price">{{ formatTien(sp.gia) }}</span>
-              <button 
-                class="btn-add-cart" 
-                [disabled]="sp.soLuongTon === 0"
-                (click)="themVaoGio(sp, $event)"
-              >
-                🛒 Thêm Giỏ
-              </button>
+              @if (duLieuService.laSanPhamCuaShopToi(sp)) {
+                <span class="badge-my-shop" style="font-size: 11px; font-weight: 700; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 6px 10px; border-radius: 8px;">
+                  🏪 Shop của bạn
+                </span>
+              } @else {
+                <button 
+                  class="btn-add-cart" 
+                  [disabled]="sp.soLuongTon === 0"
+                  (click)="themVaoGio(sp, $event)"
+                >
+                  🛒 Thêm Giỏ
+                </button>
+              }
             </div>
           </div>
         </div>

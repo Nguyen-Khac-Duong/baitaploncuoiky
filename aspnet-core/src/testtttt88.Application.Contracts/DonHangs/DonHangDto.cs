@@ -22,6 +22,8 @@ public class DonHangDto : FullAuditedEntityDto<Guid>
     public decimal TienHoaHongSan { get; set; }
     public decimal ThucNhanCuaShop { get; set; }
     public decimal TongTien { get; set; }
+    public string? MaVoucherShop { get; set; }
+    public decimal TienGiamVoucher { get; set; }
     public string TrangThai { get; set; } = string.Empty;
     public DateTime NgayTao { get; set; }
     public List<ChiTietDonHangDto> ChiTiet { get; set; } = new();
@@ -44,6 +46,12 @@ public class DonHangTongDto : FullAuditedEntityDto<Guid>
     public string DiaChi { get; set; } = string.Empty;
     public string? GhiChu { get; set; }
     public decimal TongTien { get; set; }
+    public string? MaVoucher { get; set; }
+    public decimal TienGiamVoucher { get; set; }
+    public string? MaVoucherSan { get; set; }
+    public decimal TienGiamVoucherSan { get; set; }
+    public string? MaVoucherShop { get; set; }
+    public decimal TienGiamVoucherShop { get; set; }
     public string PhuongThucThanhToan { get; set; } = string.Empty;
     public string TrangThai { get; set; } = string.Empty;
     public List<DonHangDto> DonHangCons { get; set; } = new();
@@ -67,6 +75,14 @@ public class CreateDonHangDto
 
     [MaxLength(1024)]
     public string? GhiChu { get; set; }
+
+    public string? MaVoucher { get; set; }
+    public decimal TienGiamVoucher { get; set; }
+    public string? MaVoucherSan { get; set; }
+    public decimal TienGiamVoucherSan { get; set; }
+    public string? MaVoucherShop { get; set; }
+    public decimal TienGiamVoucherShop { get; set; }
+    public string PhuongThucThanhToan { get; set; } = "COD"; // COD hoặc ChuyenKhoan
 
     [Required]
     [MinLength(1, ErrorMessage = "Đơn hàng phải có ít nhất một sản phẩm.")]

@@ -12,7 +12,7 @@ public interface IDonHangAppService : IApplicationService
     Task<PagedResultDto<DonHangDto>> GetPagedListAsync(GetDonHangListFilterDto input);
     Task<PagedResultDto<DonHangDto>> GetMyStoreOrdersAsync(GetDonHangListFilterDto input);
     Task<DonHangDto> GetAsync(Guid id);
-    Task<List<DonHangDto>> GetByNguoiDungAsync(string? nguoiDungId = null);
+    Task<List<DonHangDto>> GetByNguoiDungAsync(string? nguoiDungId = null, string? soDienThoai = null);
     Task<List<DonHangTongDto>> GetDonHangTongByNguoiDungAsync(string? nguoiDungId = null);
     Task<DonHangDto> CreateAsync(CreateDonHangDto input);
     Task<DonHangTongDto> TaoDonHangTongAsync(CreateDonHangDto input);

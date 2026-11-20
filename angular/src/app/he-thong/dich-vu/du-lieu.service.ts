@@ -1,6 +1,7 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, map, tap } from 'rxjs';
+import { XacThucService } from './xac-thuc.service';
 import {
   SanPham,
   DonHang,
@@ -27,7 +28,11 @@ import {
   ThongKeDanhGia,
   YeuCauTraHangDto,
   XuLyTraHangDto,
-  ThongBaoItem
+  ThongBaoItem,
+  TepTinUploadResult,
+  VoucherItem,
+  KetQuaKiemTraVoucher,
+  TaoCapNhatVoucherInput
 } from '../../shared/mo-hinh/du-lieu.model';
 import { environment } from '../../../environments/environment';
 
@@ -94,6 +99,7 @@ interface DonHangDtoResponse {
 })
 export class DuLieuService {
   private readonly http = inject(HttpClient);
+  private readonly xacThucService = inject(XacThucService);
   private readonly apiUrl = environment.apis.default.url || 'https://localhost:44351';
 
   private readonly sanPham$ = new BehaviorSubject<SanPham[]>([]);
@@ -102,6 +108,7 @@ export class DuLieuService {
   readonly sanPhamListSignal = signal<SanPham[]>([]);
   readonly cayDanhMucSignal = signal<DanhMucTree[]>([]);
   readonly gioHang = signal<MonGioHang[]>(this.khoiTaoGioHang());
+  readonly myStoreSignal = signal<CuaHang | null>(null);
 
   readonly tongSoLuongGioHang = computed(() =>
     this.gioHang().reduce((tong, item) => tong + item.soLuong, 0)
@@ -110,6 +117,25 @@ export class DuLieuService {
   readonly tongTienGioHang = computed(() =>
     this.gioHang().reduce((tong, item) => tong + item.sanPham.gia * item.soLuong, 0)
   );
+
+  // === CÁC SẢN PHẨM ĐƯỢC CHỌN ĐỂ THANH TOÁN (CHECKBOX SELECTION) ===
+  // Tự động loại trừ các sản phẩm thuộc gian hàng của chính mình (Self-purchase check)
+  readonly cacMonDaChon = computed(() =>
+    this.gioHang().filter(item => item.daChon !== false && !this.laSanPhamCuaShopToi(item.sanPham))
+  );
+
+  readonly tongSoLuongDaChon = computed(() =>
+    this.cacMonDaChon().reduce((tong, item) => tong + item.soLuong, 0)
+  );
+
+  readonly tongTienDaChon = computed(() =>
+    this.cacMonDaChon().reduce((tong, item) => tong + item.sanPham.gia * item.soLuong, 0)
+  );
+
+  readonly daChonTatCa = computed(() => {
+    const validItems = this.gioHang().filter(item => !this.laSanPhamCuaShopToi(item.sanPham));
+    return validItems.length > 0 && validItems.every(item => item.daChon !== false);
+  });
 
   /**
    * Gom nhóm các sản phẩm trong giỏ hàng theo từng Gian Hàng (Multi-vendor Cart)
@@ -131,16 +157,71 @@ export class DuLieuService {
       shopGroup.tong += item.sanPham.gia * item.soLuong;
     }
 
-    return Array.from(mapShops.entries()).map(([cuaHangId, data]) => ({
-      cuaHangId,
-      tenCuaHang: data.ten,
-      danhSachMon: data.items,
-      tongTien: data.tong
-    }));
+    return Array.from(mapShops.entries()).map(([cuaHangId, data]) => {
+      const myShop = this.myStoreSignal();
+      const laShopCuaToi = !!(myShop && myShop.id && myShop.id.toLowerCase() === cuaHangId.toLowerCase());
+      
+      const validItems = data.items.filter(x => !laShopCuaToi && x.daChon !== false);
+      const soLuongDaChon = validItems.reduce((sum, x) => sum + x.soLuong, 0);
+      const tongTienDaChon = validItems.reduce((sum, x) => sum + x.sanPham.gia * x.soLuong, 0);
+      const daChonTatCa = !laShopCuaToi && data.items.length > 0 && data.items.every(x => x.daChon !== false);
+
+      return {
+        cuaHangId,
+        tenCuaHang: data.ten,
+        danhSachMon: data.items,
+        tongTien: data.tong,
+        daChonTatCa,
+        soLuongDaChon,
+        tongTienDaChon,
+        laShopCuaToi
+      };
+    });
+  });
+
+  /**
+   * Gom nhóm CHỈ các sản phẩm đã chọn theo từng Gian Hàng (Dùng cho Trang Thanh Toán)
+   */
+  readonly nhomShopDaChon = computed<NhomGioHangShop[]>(() => {
+    return this.gioHangNhomTheoShop()
+      .filter(shop => !shop.laShopCuaToi)
+      .map(shop => ({
+        ...shop,
+        danhSachMon: shop.danhSachMon.filter(item => item.daChon !== false && !this.laSanPhamCuaShopToi(item.sanPham))
+      }))
+      .filter(shop => shop.danhSachMon.length > 0);
   });
 
   constructor() {
     this.taiDuLieuTuBackend();
+
+    // Tự động tải thông tin Shop của người dùng hiện tại để kiểm tra chủ quyền sản phẩm
+    effect(() => {
+      const user = this.xacThucService.currentUser();
+      if (user) {
+        this.taiThongTinShopCuaToi();
+      } else {
+        this.myStoreSignal.set(null);
+      }
+    });
+  }
+
+  taiThongTinShopCuaToi(): void {
+    if (this.xacThucService.daDangNhap()) {
+      this.getMyStore().subscribe({
+        next: (shop) => this.myStoreSignal.set(shop),
+        error: () => this.myStoreSignal.set(null)
+      });
+    } else {
+      this.myStoreSignal.set(null);
+    }
+  }
+
+  laSanPhamCuaShopToi(sanPham: SanPham | { cuaHangId?: string } | null | undefined): boolean {
+    if (!sanPham) return false;
+    const shop = this.myStoreSignal();
+    if (!shop || !shop.id || !sanPham.cuaHangId) return false;
+    return sanPham.cuaHangId.toLowerCase() === shop.id.toLowerCase();
   }
 
   taiDuLieuTuBackend(): void {
@@ -221,8 +302,12 @@ export class DuLieuService {
     return this.donHang$.asObservable();
   }
 
-  getDonHangCuaKhachHang(): Observable<DonHang[]> {
-    return this.http.get<DonHangDtoResponse[]>(`${this.apiUrl}/api/app/don-hang/by-nguoi-dung`).pipe(
+  getDonHangCuaKhachHang(nguoiDungId?: string, soDienThoai?: string): Observable<DonHang[]> {
+    const params: string[] = [];
+    if (nguoiDungId) params.push(`nguoiDungId=${encodeURIComponent(nguoiDungId)}`);
+    if (soDienThoai) params.push(`soDienThoai=${encodeURIComponent(soDienThoai)}`);
+    const query = params.length > 0 ? `?${params.join('&')}` : '';
+    return this.http.get<DonHangDtoResponse[]>(`${this.apiUrl}/api/app/don-hang/by-nguoi-dung${query}`).pipe(
       map(orders => (orders || []).map(item => this.mapDonHangDto(item)))
     );
   }
@@ -338,6 +423,11 @@ export class DuLieuService {
       return false;
     }
 
+    // Chặn người bán thêm sản phẩm của chính shop mình vào giỏ hàng
+    if (this.laSanPhamCuaShopToi(sanPham)) {
+      return false;
+    }
+
     const current = [...this.gioHang()];
     const index = current.findIndex(item => item.sanPham.id === sanPham.id);
 
@@ -348,13 +438,14 @@ export class DuLieuService {
       }
       current[index] = {
         ...current[index],
-        soLuong: soLuongMoi
+        soLuong: soLuongMoi,
+        daChon: current[index].daChon !== false
       };
     } else {
       if (soLuong > sanPham.soLuongTon) {
         return false;
       }
-      current.push({ sanPham, soLuong });
+      current.push({ sanPham, soLuong, daChon: true });
     }
 
     this.capNhatGioHang(current);
@@ -390,6 +481,46 @@ export class DuLieuService {
     this.capNhatGioHang([]);
   }
 
+  // Checkbox Selection Operations (Shopee Cart Flow)
+  toggleChonMon(sanPhamId: string): void {
+    const current = this.gioHang().map(item =>
+      item.sanPham.id === sanPhamId
+        ? { ...item, daChon: item.daChon === false ? true : false }
+        : item
+    );
+    this.capNhatGioHang(current);
+  }
+
+  datChonMon(sanPhamId: string, daChon: boolean): void {
+    const current = this.gioHang().map(item =>
+      item.sanPham.id === sanPhamId
+        ? { ...item, daChon }
+        : item
+    );
+    this.capNhatGioHang(current);
+  }
+
+  chonTatCaGioHang(daChon: boolean): void {
+    const current = this.gioHang().map(item => ({ ...item, daChon }));
+    this.capNhatGioHang(current);
+  }
+
+  chonNhomShop(cuaHangId: string, daChon: boolean): void {
+    const current = this.gioHang().map(item => {
+      const shopId = item.sanPham.cuaHangId || 'official-store';
+      if (shopId === cuaHangId) {
+        return { ...item, daChon };
+      }
+      return item;
+    });
+    this.capNhatGioHang(current);
+  }
+
+  xoaCacMonDaChon(): void {
+    const remaining = this.gioHang().filter(item => item.daChon === false);
+    this.capNhatGioHang(remaining);
+  }
+
   private capNhatGioHang(gioHangMoi: MonGioHang[]): void {
     this.gioHang.set(gioHangMoi);
     this.luuLocalStorage(STORAGE_GIO_HANG, gioHangMoi);
@@ -397,11 +528,19 @@ export class DuLieuService {
 
   /**
    * Đặt hàng Multi-vendor: Tự động gom nhóm theo shop và chia đơn hàng con
+   * CHỈ đặt các món đã được đánh dấu checkbox (daChon !== false)
    */
   datHang(thongTin: CreateDonHangInput): Observable<DonHangTong> {
-    const gioHang = this.gioHang();
-    if (gioHang.length === 0) {
-      throw new Error('Giỏ hàng trống!');
+    const itemsToOrder = this.cacMonDaChon();
+    if (itemsToOrder.length === 0) {
+      throw new Error('Vui lòng chọn ít nhất 1 sản phẩm để thanh toán!');
+    }
+
+    // Kiểm tra chặn tự mua hàng của chính mình
+    for (const item of itemsToOrder) {
+      if (this.laSanPhamCuaShopToi(item.sanPham)) {
+        throw new Error(`Sản phẩm "${item.sanPham.ten}" thuộc gian hàng của bạn! Người bán không được phép tự mua hàng của chính mình.`);
+      }
     }
 
     const createOrderPayload = {
@@ -409,7 +548,14 @@ export class DuLieuService {
       soDienThoai: thongTin.soDienThoai,
       diaChi: thongTin.diaChi,
       ghiChu: thongTin.ghiChu || null,
-      chiTiet: gioHang.map(item => ({
+      maVoucher: thongTin.maVoucher || null,
+      tienGiamVoucher: thongTin.tienGiamVoucher || 0,
+      maVoucherSan: thongTin.maVoucherSan || null,
+      tienGiamVoucherSan: thongTin.tienGiamVoucherSan || 0,
+      maVoucherShop: thongTin.maVoucherShop || null,
+      tienGiamVoucherShop: thongTin.tienGiamVoucherShop || 0,
+      phuongThucThanhToan: thongTin.phuongThucThanhToan || 'COD',
+      chiTiet: itemsToOrder.map(item => ({
         sanPhamId: item.sanPham.id,
         soLuong: item.soLuong
       }))
@@ -417,11 +563,72 @@ export class DuLieuService {
 
     return this.http.post<DonHangTong>(`${this.apiUrl}/api/app/don-hang/tao-don-hang-tong`, createOrderPayload).pipe(
       map(savedMasterOrder => {
-        this.xoaSachGioHang();
+        // Chỉ xóa các món đã đặt mua thành công khỏi giỏ hàng
+        const orderedIds = new Set(itemsToOrder.map(x => x.sanPham.id));
+        const remainingCart = this.gioHang().filter(item => !orderedIds.has(item.sanPham.id));
+        this.capNhatGioHang(remainingCart);
         this.taiDuLieuTuBackend();
         return savedMasterOrder;
       })
     );
+  }
+
+  // === TẢI LÊN HÌNH ẢNH (FILE UPLOAD TRỰC TIẾP TỪ CLIENT) ===
+  uploadHinhAnh(file: File): Observable<TepTinUploadResult> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<TepTinUploadResult>(`${this.apiUrl}/api/app/tep-tin/upload`, formData);
+  }
+
+  // === HỆ THỐNG MÃ GIẢM GIÁ (VOUCHER ENGINE) ===
+  kiemTraVoucher(maVoucher: string, tongTienHang: number, cuaHangId?: string): Observable<KetQuaKiemTraVoucher> {
+    const payload = {
+      maVoucher: maVoucher.trim().toUpperCase(),
+      tongTienHang,
+      cuaHangId: cuaHangId || null
+    };
+    return this.http.post<KetQuaKiemTraVoucher>(`${this.apiUrl}/api/app/voucher/kiem-tra-voucher`, payload);
+  }
+
+  getDanhSachVoucherKhaDung(tongTienHang?: number, cuaHangId?: string): Observable<VoucherItem[]> {
+    const params: string[] = [];
+    if (tongTienHang !== undefined && tongTienHang !== null) params.push(`tongTienHang=${tongTienHang}`);
+    if (cuaHangId) params.push(`cuaHangId=${cuaHangId}`);
+    const query = params.length > 0 ? `?${params.join('&')}` : '';
+    return this.http.get<VoucherItem[]>(`${this.apiUrl}/api/app/voucher/danh-sach-voucher-kha-dung${query}`);
+  }
+
+  getDanhSachVoucherSan(): Observable<VoucherItem[]> {
+    return this.http.get<VoucherItem[]>(`${this.apiUrl}/api/app/voucher/danh-sach-voucher-san`);
+  }
+
+  getDanhSachVoucherShop(cuaHangId: string): Observable<VoucherItem[]> {
+    return this.http.get<VoucherItem[]>(`${this.apiUrl}/api/app/voucher/danh-sach-voucher-shop?cuaHangId=${cuaHangId}`);
+  }
+
+  getMyStoreVouchers(): Observable<VoucherItem[]> {
+    return this.http.get<VoucherItem[]>(`${this.apiUrl}/api/app/voucher/my-store-vouchers`);
+  }
+
+  getDanhSachVouchers(cuaHangId?: string): Observable<VoucherItem[]> {
+    const query = cuaHangId ? `?cuaHangId=${cuaHangId}` : '';
+    return this.http.get<VoucherItem[]>(`${this.apiUrl}/api/app/voucher/danh-sach${query}`);
+  }
+
+  taoVoucher(input: TaoCapNhatVoucherInput): Observable<VoucherItem> {
+    return this.http.post<VoucherItem>(`${this.apiUrl}/api/app/voucher`, input);
+  }
+
+  capNhatVoucher(id: string, input: TaoCapNhatVoucherInput): Observable<VoucherItem> {
+    return this.http.put<VoucherItem>(`${this.apiUrl}/api/app/voucher/${id}`, input);
+  }
+
+  doiTrangThaiVoucher(id: string): Observable<VoucherItem> {
+    return this.http.post<VoucherItem>(`${this.apiUrl}/api/app/voucher/${id}/doi-trang-thai-kich-hoat`, {});
+  }
+
+  xoaVoucher(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/api/app/voucher/${id}`);
   }
 
   // === QUẢN LÝ SẢN PHẨM ===
@@ -627,7 +834,13 @@ export class DuLieuService {
 
   private khoiTaoGioHang(): MonGioHang[] {
     const daLuu = this.docLocalStorage(STORAGE_GIO_HANG);
-    return (daLuu && Array.isArray(daLuu)) ? (daLuu as MonGioHang[]) : [];
+    if (daLuu && Array.isArray(daLuu)) {
+      return (daLuu as MonGioHang[]).map(item => ({
+        ...item,
+        daChon: item.daChon !== false
+      }));
+    }
+    return [];
   }
 
   private luuLocalStorage(key: string, data: unknown): void {

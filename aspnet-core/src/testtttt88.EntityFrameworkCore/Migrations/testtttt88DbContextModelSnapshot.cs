@@ -2260,6 +2260,8 @@ namespace testtttt88.Migrations
 
                     b.HasIndex("DonHangId");
 
+                    b.HasIndex("SanPhamId");
+
                     b.ToTable("AppChiTietDonHangs", (string)null);
                 });
 
@@ -2376,6 +2378,10 @@ namespace testtttt88.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("TienGiamVoucher")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("TienHang")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -2469,6 +2475,10 @@ namespace testtttt88.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
+                    b.Property<string>("MaVoucher")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
                     b.Property<string>("NguoiDungId")
                         .HasColumnType("nvarchar(450)");
 
@@ -2486,6 +2496,10 @@ namespace testtttt88.Migrations
                         .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
+
+                    b.Property<decimal>("TienGiamVoucher")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("TongTien")
                         .HasPrecision(18, 2)
@@ -2925,6 +2939,115 @@ namespace testtttt88.Migrations
                     b.ToTable("AppYeuCauRutTiens", (string)null);
                 });
 
+            modelBuilder.Entity("testtttt88.Vouchers.Voucher", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("CuaHangId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<decimal>("GiaTriDonToiThieu")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("GiaTriGiam")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("GiamToiDa")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<bool>("KichHoat")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("LoaiGiamGia")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("MaVoucher")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("MoTa")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<DateTime>("NgayBatDau")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("NgayKetThuc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SoLuong")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SoLuongDaDung")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TieuDe")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CuaHangId");
+
+                    b.HasIndex("KichHoat");
+
+                    b.HasIndex("MaVoucher")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("AppVouchers", (string)null);
+                });
+
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLogAction", b =>
                 {
                     b.HasOne("Volo.Abp.AuditLogging.AuditLog", null)
@@ -3123,6 +3246,27 @@ namespace testtttt88.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("testtttt88.DanhGias.DanhGiaSanPham", b =>
+                {
+                    b.HasOne("testtttt88.CuaHangs.CuaHang", null)
+                        .WithMany()
+                        .HasForeignKey("CuaHangId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("testtttt88.DonHangs.DonHang", null)
+                        .WithMany()
+                        .HasForeignKey("DonHangId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("testtttt88.SanPhams.SanPham", null)
+                        .WithMany()
+                        .HasForeignKey("SanPhamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("testtttt88.DonHangs.ChiTietDonHang", b =>
                 {
                     b.HasOne("testtttt88.DonHangs.DonHang", null)
@@ -3130,13 +3274,89 @@ namespace testtttt88.Migrations
                         .HasForeignKey("DonHangId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("testtttt88.SanPhams.SanPham", null)
+                        .WithMany()
+                        .HasForeignKey("SanPhamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("testtttt88.DonHangs.DonHang", b =>
                 {
+                    b.HasOne("testtttt88.CuaHangs.CuaHang", null)
+                        .WithMany()
+                        .HasForeignKey("CuaHangId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("testtttt88.DonHangs.DonHangTong", null)
                         .WithMany("DonHangCons")
-                        .HasForeignKey("DonHangTongId");
+                        .HasForeignKey("DonHangTongId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("testtttt88.SanPhams.SanPham", b =>
+                {
+                    b.HasOne("testtttt88.CuaHangs.CuaHang", null)
+                        .WithMany()
+                        .HasForeignKey("CuaHangId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("testtttt88.DanhMucs.DanhMuc", null)
+                        .WithMany()
+                        .HasForeignKey("DanhMucId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("testtttt88.ThongBaos.ThongBao", b =>
+                {
+                    b.HasOne("testtttt88.CuaHangs.CuaHang", null)
+                        .WithMany()
+                        .HasForeignKey("CuaHangId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("testtttt88.ViCuaHangs.GiaoDichVi", b =>
+                {
+                    b.HasOne("testtttt88.CuaHangs.CuaHang", null)
+                        .WithMany()
+                        .HasForeignKey("CuaHangId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("testtttt88.ViCuaHangs.ViCuaHang", null)
+                        .WithMany()
+                        .HasForeignKey("ViCuaHangId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("testtttt88.ViCuaHangs.ViCuaHang", b =>
+                {
+                    b.HasOne("testtttt88.CuaHangs.CuaHang", null)
+                        .WithOne()
+                        .HasForeignKey("testtttt88.ViCuaHangs.ViCuaHang", "CuaHangId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("testtttt88.ViCuaHangs.YeuCauRutTien", b =>
+                {
+                    b.HasOne("testtttt88.CuaHangs.CuaHang", null)
+                        .WithMany()
+                        .HasForeignKey("CuaHangId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("testtttt88.Vouchers.Voucher", b =>
+                {
+                    b.HasOne("testtttt88.CuaHangs.CuaHang", null)
+                        .WithMany()
+                        .HasForeignKey("CuaHangId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLog", b =>

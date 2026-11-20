@@ -20,6 +20,7 @@ using testtttt88.DonHangs;
 using testtttt88.SanPhams;
 using testtttt88.ThongBaos;
 using testtttt88.ViCuaHangs;
+using testtttt88.Vouchers;
 
 namespace testtttt88.EntityFrameworkCore;
 
@@ -73,6 +74,7 @@ public class testtttt88DbContext :
     public DbSet<YeuCauRutTien> YeuCauRutTiens { get; set; }
     public DbSet<DanhGiaSanPham> DanhGiaSanPhams { get; set; }
     public DbSet<ThongBao> ThongBaos { get; set; }
+    public DbSet<Voucher> Vouchers { get; set; }
 
     public testtttt88DbContext(DbContextOptions<testtttt88DbContext> options)
         : base(options)
@@ -146,6 +148,10 @@ public class testtttt88DbContext :
             b.Property(x => x.HinhAnh).HasMaxLength(1024);
             b.Property(x => x.MoTa).HasMaxLength(2048);
 
+            // Ràng buộc Khóa Ngoại (Foreign Keys)
+            b.HasOne<CuaHang>().WithMany().HasForeignKey(x => x.CuaHangId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<DanhMuc>().WithMany().HasForeignKey(x => x.DanhMucId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+
             // BE #17: Unique index có lọc soft delete
             b.HasIndex(x => x.MaSp).IsUnique().HasFilter("[IsDeleted] = 0");
             b.HasIndex(x => x.CuaHangId);
@@ -162,8 +168,12 @@ public class testtttt88DbContext :
             b.Property(x => x.DiaChi).IsRequired().HasMaxLength(512);
             b.Property(x => x.GhiChu).HasMaxLength(1024);
             b.Property(x => x.TongTien).HasPrecision(18, 2);
+            b.Property(x => x.MaVoucher).HasMaxLength(32);
+            b.Property(x => x.TienGiamVoucher).HasPrecision(18, 2);
             b.Property(x => x.PhuongThucThanhToan).IsRequired().HasMaxLength(64);
             b.Property(x => x.TrangThai).IsRequired().HasMaxLength(64);
+
+            b.HasMany(x => x.DonHangCons).WithOne().HasForeignKey(x => x.DonHangTongId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
 
             b.HasIndex(x => x.MaDonTong).IsUnique().HasFilter("[IsDeleted] = 0");
             b.HasIndex(x => x.NguoiDungId);
@@ -184,12 +194,16 @@ public class testtttt88DbContext :
             b.Property(x => x.PhiVanChuyen).HasPrecision(18, 2);
             b.Property(x => x.TienHoaHongSan).HasPrecision(18, 2);
             b.Property(x => x.ThucNhanCuaShop).HasPrecision(18, 2);
+            b.Property(x => x.TienGiamVoucher).HasPrecision(18, 2);
             b.Property(x => x.TrangThai).IsRequired().HasMaxLength(64);
             b.Property(x => x.LyDoTraHang).HasMaxLength(256);
             b.Property(x => x.GhiChuTraHang).HasMaxLength(1024);
             b.Property(x => x.HinhAnhTraHang).HasMaxLength(1024);
             b.Property(x => x.PhanHoiTraHang).HasMaxLength(1024);
+
+            // Ràng buộc Khóa Ngoại (Foreign Keys)
             b.HasMany(x => x.ChiTiet).WithOne().HasForeignKey(x => x.DonHangId).IsRequired();
+            b.HasOne<CuaHang>().WithMany().HasForeignKey(x => x.CuaHangId).OnDelete(DeleteBehavior.Restrict);
 
             // BE #17: Unique index có lọc soft delete
             b.HasIndex(x => x.MaDon).IsUnique().HasFilter("[IsDeleted] = 0");
@@ -207,6 +221,9 @@ public class testtttt88DbContext :
             b.Property(x => x.DonGia).HasPrecision(18, 2);
             b.Property(x => x.ThanhTien).HasPrecision(18, 2);
             b.Property(x => x.HinhAnh).HasMaxLength(1024);
+
+            // Ràng buộc Khóa Ngoại với Sản phẩm
+            b.HasOne<SanPham>().WithMany().HasForeignKey(x => x.SanPhamId).OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<ViCuaHang>(b =>
@@ -216,6 +233,9 @@ public class testtttt88DbContext :
             b.Property(x => x.SoDuKhaDung).HasPrecision(18, 2);
             b.Property(x => x.SoDuTamGiu).HasPrecision(18, 2);
             b.Property(x => x.TongTienDaRut).HasPrecision(18, 2);
+
+            // Ràng buộc Khóa Ngoại 1-1 với Cửa Hàng
+            b.HasOne<CuaHang>().WithOne().HasForeignKey<ViCuaHang>(x => x.CuaHangId).OnDelete(DeleteBehavior.Restrict);
 
             b.HasIndex(x => x.CuaHangId).IsUnique().HasFilter("[IsDeleted] = 0");
         });
@@ -229,6 +249,10 @@ public class testtttt88DbContext :
             b.Property(x => x.SoDuSauGiaoDich).HasPrecision(18, 2);
             b.Property(x => x.MoTa).IsRequired().HasMaxLength(512);
             b.Property(x => x.MaDonHangLienQuan).HasMaxLength(64);
+
+            // Ràng buộc Khóa Ngoại
+            b.HasOne<ViCuaHang>().WithMany().HasForeignKey(x => x.ViCuaHangId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne<CuaHang>().WithMany().HasForeignKey(x => x.CuaHangId).OnDelete(DeleteBehavior.Restrict);
 
             b.HasIndex(x => x.ViCuaHangId);
             b.HasIndex(x => x.CuaHangId);
@@ -247,6 +271,9 @@ public class testtttt88DbContext :
             b.Property(x => x.GhiChu).HasMaxLength(512);
             b.Property(x => x.LyDoTuChoi).HasMaxLength(512);
 
+            // Ràng buộc Khóa Ngoại với Cửa Hàng
+            b.HasOne<CuaHang>().WithMany().HasForeignKey(x => x.CuaHangId).OnDelete(DeleteBehavior.Restrict);
+
             b.HasIndex(x => x.CuaHangId);
             b.HasIndex(x => x.TrangThai);
         });
@@ -260,6 +287,11 @@ public class testtttt88DbContext :
             b.Property(x => x.HinhAnh).HasMaxLength(1024);
             b.Property(x => x.AvatarNguoiDung).HasMaxLength(1024);
             b.Property(x => x.PhanHoiShop).HasMaxLength(2000);
+
+            // Ràng buộc Khóa Ngoại nối với Sản phẩm, Đơn hàng, Cửa hàng
+            b.HasOne<SanPham>().WithMany().HasForeignKey(x => x.SanPhamId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<DonHang>().WithMany().HasForeignKey(x => x.DonHangId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<CuaHang>().WithMany().HasForeignKey(x => x.CuaHangId).OnDelete(DeleteBehavior.Restrict);
 
             b.HasIndex(x => x.SanPhamId);
             b.HasIndex(x => x.DonHangId);
@@ -278,11 +310,34 @@ public class testtttt88DbContext :
             b.Property(x => x.LienKet).HasMaxLength(512);
             b.Property(x => x.DoiTuong).IsRequired().HasMaxLength(32).HasDefaultValue(ThongBao.DoiTuongBuyer);
 
+            // Ràng buộc Khóa Ngoại với Cửa Hàng (nếu là thông báo seller)
+            b.HasOne<CuaHang>().WithMany().HasForeignKey(x => x.CuaHangId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+
             b.HasIndex(x => x.NguoiDungId);
             b.HasIndex(x => x.CuaHangId);
             b.HasIndex(x => x.DoiTuong);
             b.HasIndex(x => new { x.NguoiDungId, x.DaDoc });
             b.HasIndex(x => x.CreationTime);
+        });
+
+        builder.Entity<Voucher>(b =>
+        {
+            b.ToTable(testtttt88Consts.DbTablePrefix + "Vouchers", testtttt88Consts.DbSchema);
+            b.ConfigureByConvention();
+            b.Property(x => x.MaVoucher).IsRequired().HasMaxLength(32);
+            b.Property(x => x.TieuDe).IsRequired().HasMaxLength(256);
+            b.Property(x => x.MoTa).HasMaxLength(1024);
+            b.Property(x => x.LoaiGiamGia).IsRequired().HasMaxLength(32);
+            b.Property(x => x.GiaTriGiam).HasPrecision(18, 2);
+            b.Property(x => x.GiaTriDonToiThieu).HasPrecision(18, 2);
+            b.Property(x => x.GiamToiDa).HasPrecision(18, 2);
+
+            // Ràng buộc Khóa Ngoại với Cửa Hàng (null nếu là voucher sàn)
+            b.HasOne<CuaHang>().WithMany().HasForeignKey(x => x.CuaHangId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+
+            b.HasIndex(x => x.MaVoucher).IsUnique().HasFilter("[IsDeleted] = 0");
+            b.HasIndex(x => x.CuaHangId);
+            b.HasIndex(x => x.KichHoat);
         });
     }
 }

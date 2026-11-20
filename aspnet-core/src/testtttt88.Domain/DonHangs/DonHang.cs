@@ -34,6 +34,7 @@ public class DonHang : FullAuditedAggregateRoot<Guid>
     public decimal PhiVanChuyen { get; set; }
     public decimal TienHoaHongSan { get; set; }
     public decimal ThucNhanCuaShop { get; set; }
+    public decimal TienGiamVoucher { get; set; }
 
     // Thông tin Yêu cầu Trả hàng & Hoàn tiền (Return & Refund)
     public string? LyDoTraHang { get; set; }
@@ -121,6 +122,17 @@ public class DonHang : FullAuditedAggregateRoot<Guid>
         TongTien = TienHang + PhiVanChuyen;
         TienHoaHongSan = Math.Round(TienHang * 0.05m, 0);
         ThucNhanCuaShop = TienHang - TienHoaHongSan;
+    }
+
+    /// <summary>
+    /// Áp dụng voucher giảm giá của riêng Shop cho đơn hàng con này
+    /// </summary>
+    public void ApDungVoucherShop(decimal tienGiam, decimal phanTramHoaHong = 5.0m)
+    {
+        TienGiamVoucher = Math.Min(tienGiam, TienHang);
+        TongTien = Math.Max(0, TienHang - TienGiamVoucher + PhiVanChuyen);
+        TienHoaHongSan = Math.Round((TienHang - TienGiamVoucher) * (phanTramHoaHong / 100m), 0);
+        ThucNhanCuaShop = Math.Max(0, (TienHang - TienGiamVoucher) - TienHoaHongSan);
     }
 
     /// <summary>

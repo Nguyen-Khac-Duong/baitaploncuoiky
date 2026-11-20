@@ -64,7 +64,7 @@
                       🏪 {{ dh.tenCuaHang }}
                     </span>
                   }
-                  <span class="order-date">• Ngày đặt: {{ dh.ngayTao }}</span>
+                  <span class="order-date">• Ngày đặt: {{ dh.ngayTao | date:'dd/MM/yyyy HH:mm' }}</span>
                 </div>
                 <div class="order-status-badge">
                   <span class="badge" [class]="'badge-' + dh.trangThai">
@@ -240,12 +240,26 @@
           </div>
 
           <div class="review-form-group">
-            <label>Hình ảnh thực tế (URL ảnh)</label>
-            <input
-              nz-input
-              [(ngModel)]="hinhAnh"
-              placeholder="https://..."
-            />
+            <label>Hình ảnh thực tế đính kèm</label>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <input
+                nz-input
+                [(ngModel)]="hinhAnh"
+                placeholder="Dán link ảnh hoặc tải trực tiếp bên phải..."
+                style="flex: 1;"
+              />
+              <input type="file" #fileReviewInput accept="image/*" (change)="onFileSelectedDanhGia($event)" style="display: none" />
+              <button nz-button type="button" [nzLoading]="dangUploadDanhGia" (click)="fileReviewInput.click()">
+                📷 Tải Ảnh Lên
+              </button>
+            </div>
+            @if (hinhAnh) {
+              <div style="display: flex; align-items: center; gap: 10px; margin-top: 6px; padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+                <img [src]="hinhAnh" alt="Preview" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1;" />
+                <span style="font-size: 12px; color: #10b981; font-weight: 500;">✓ Đã đính kèm ảnh</span>
+                <button nz-button nzType="text" nzDanger (click)="hinhAnh = ''" style="margin-left: auto;" title="Xóa ảnh">✕ Xóa</button>
+              </div>
+            }
           </div>
         </div>
       }
@@ -292,12 +306,26 @@
           </div>
 
           <div class="refund-form-group">
-            <label>Đường dẫn hình ảnh thực tế / bằng chứng (URL)</label>
-            <input
-              nz-input
-              [(ngModel)]="hinhAnhTraHang"
-              placeholder="https://... dán link ảnh tình trạng hàng thực tế"
-            />
+            <label>Hình ảnh bằng chứng thực tế</label>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <input
+                nz-input
+                [(ngModel)]="hinhAnhTraHang"
+                placeholder="Dán link ảnh hoặc chọn file tải trực tiếp..."
+                style="flex: 1;"
+              />
+              <input type="file" #fileRefundInput accept="image/*" (change)="onFileSelectedTraHang($event)" style="display: none" />
+              <button nz-button type="button" [nzLoading]="dangUploadTraHang" (click)="fileRefundInput.click()">
+                📷 Tải Ảnh Lên
+              </button>
+            </div>
+            @if (hinhAnhTraHang) {
+              <div style="display: flex; align-items: center; gap: 10px; margin-top: 6px; padding: 6px 10px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px;">
+                <img [src]="hinhAnhTraHang" alt="Bằng chứng" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #fca5a5;" />
+                <span style="font-size: 12px; color: #b91c1c; font-weight: 500;">✓ Đã đính kèm bằng chứng</span>
+                <button nz-button nzType="text" nzDanger (click)="hinhAnhTraHang = ''" style="margin-left: auto;" title="Xóa ảnh">✕ Xóa</button>
+              </div>
+            }
           </div>
         </div>
       }

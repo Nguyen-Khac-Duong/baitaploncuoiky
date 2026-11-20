@@ -1,0 +1,503 @@
+<div class="checkout-page">
+  <!-- BREADCRUMB & HEADER -->
+  <div class="checkout-header">
+    <div class="breadcrumb-nav">
+      <a routerLink="/gio-hang" class="crumb-link">🛒 Giỏ Hàng</a>
+      <span class="crumb-separator">›</span>
+      <span class="crumb-current">💳 Thanh Toán & Chốt Đơn Hàng</span>
+    </div>
+    <h1 class="page-title">💳 Xác Nhận Thanh Toán</h1>
+  </div>
+
+  @if (datHangThanhCongDonHang && !hienModalVietQR) {
+    <!-- THÀNH CÔNG CARD -->
+    <div class="success-card">
+      <div class="success-icon">🎉</div>
+      <h2>Đặt Hàng Thành Công!</h2>
+      <p>Mã đơn hàng tổng của bạn là <strong>#{{ datHangThanhCongDonHang }}</strong></p>
+      <p class="desc">Hệ thống Sàn & Các Gian Hàng đã tiếp nhận đơn hàng của bạn và tiến hành đóng gói vận chuyển.</p>
+      <div class="success-actions">
+        <a routerLink="/don-hang-cua-toi" class="btn btn-primary">
+          📦 Vào Xem Đơn Hàng Của Tôi
+        </a>
+        <a routerLink="/cua-hang" class="btn btn-secondary">Tiếp Tục Mua Sắm</a>
+      </div>
+    </div>
+  } @else {
+    @if (duLieuService.cacMonDaChon().length > 0) {
+      <div class="checkout-layout">
+        <!-- CỘT TRÁI: THÔNG TIN GIAO HÀNG, SẢN PHẨM & VOUCHER -->
+        <div class="main-column">
+
+          <!-- 1. ĐỊA CHỈ NHẬN HÀNG -->
+          <div class="card-section address-section">
+            <div class="section-title">
+              <div class="title-with-icon">
+                <span class="icon">📍</span>
+                <h3>Địa Chỉ Nhận Hàng</h3>
+              </div>
+            </div>
+
+            @if (!xacThucService.daDangNhap()) {
+              <div class="auth-gate-box">
+                <div class="gate-icon-circle">🔒</div>
+                <h4>Cần Đăng Nhập Để Đặt Hàng</h4>
+                <p>Vui lòng đăng nhập tài khoản Khách Hàng để lưu thông tin địa chỉ và theo dõi hành trình đơn hàng.</p>
+                <div class="gate-actions">
+                  <a routerLink="/dang-nhap" [queryParams]="{ tab: 'dang-nhap', returnUrl: '/thanh-toan' }" class="btn-gate-action btn-gate-login">
+                    🔐 Đăng Nhập Ngay
+                  </a>
+                  <a routerLink="/dang-nhap" [queryParams]="{ tab: 'dang-ky', returnUrl: '/thanh-toan' }" class="btn-gate-action btn-gate-register">
+                    📝 Đăng Ký Tài Khoản Mới
+                  </a>
+                </div>
+              </div>
+            } @else {
+              <form [formGroup]="formDatHang" class="address-form">
+                @if (danhSachDiaChi().length > 0) {
+                  <div class="address-book-quick-select">
+                    <div class="quick-header">
+                      <span class="quick-title">
+                        <i class="bi bi-journal-bookmark-fill"></i> Chọn nhanh từ sổ địa chỉ của bạn:
+                      </span>
+                      <a routerLink="/tai-khoan" [queryParams]="{ tab: 'diachi' }" class="link-manage-address" target="_blank">
+                        Quản lý sổ địa chỉ ↗
+                      </a>
+                    </div>
+                    <div class="quick-address-chips">
+                      @for (addr of danhSachDiaChi(); track addr.id) {
+                        <button
+                          type="button"
+                          class="chip-address-item"
+                          [class.active]="formDatHang.get('diaChi')?.value === addr.diaChiChiTiet"
+                          (click)="chonDiaChiTuSo(addr)"
+                          [title]="addr.diaChiChiTiet"
+                        >
+                          <span class="chip-name">{{ addr.hoTen }}</span>
+                          <span class="chip-phone">{{ addr.soDienThoai }}</span>
+                          <span class="chip-type">{{ addr.loaiDiaChi === 'VanPhong' ? '🏢 Văn Phòng' : '🏠 Nhà Riêng' }}</span>
+                          @if (addr.laMacDinh) {
+                            <span class="chip-default">Mặc định</span>
+                          }
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <div class="form-row">
+                  <div class="form-group col-md-6">
+                    <label>Họ và tên người nhận <span class="required">*</span></label>
+                    <input 
+                      type="text" 
+                      formControlName="tenKhachHang" 
+                      placeholder="VD: Nguyễn Văn A"
+                      [class.is-invalid]="formDatHang.get('tenKhachHang')?.touched && formDatHang.get('tenKhachHang')?.invalid"
+                    />
+                    @if (formDatHang.get('tenKhachHang')?.touched && formDatHang.get('tenKhachHang')?.errors?.['required']) {
+                      <small class="error-msg">Vui lòng nhập họ tên người nhận!</small>
+                    }
+                  </div>
+
+                  <div class="form-group col-md-6">
+                    <label>Số điện thoại nhận hàng <span class="required">*</span></label>
+                    <input 
+                      type="tel" 
+                      formControlName="soDienThoai" 
+                      placeholder="VD: 0988776655"
+                      [class.is-invalid]="formDatHang.get('soDienThoai')?.touched && formDatHang.get('soDienThoai')?.invalid"
+                    />
+                    @if (formDatHang.get('soDienThoai')?.touched && formDatHang.get('soDienThoai')?.errors?.['required']) {
+                      <small class="error-msg">Vui lòng nhập số điện thoại!</small>
+                    }
+                    @if (formDatHang.get('soDienThoai')?.touched && formDatHang.get('soDienThoai')?.errors?.['pattern']) {
+                      <small class="error-msg">Số điện thoại không hợp lệ (9-11 số)!</small>
+                    }
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Địa chỉ nhận hàng chi tiết <span class="required">*</span></label>
+                  <input 
+                    type="text" 
+                    formControlName="diaChi" 
+                    placeholder="VD: Số nhà, tên đường, Phường/Xã, Quận/Huyện, Tỉnh/Thành phố..."
+                    [class.is-invalid]="formDatHang.get('diaChi')?.touched && formDatHang.get('diaChi')?.invalid"
+                  />
+                  @if (formDatHang.get('diaChi')?.touched && formDatHang.get('diaChi')?.errors?.['required']) {
+                    <small class="error-msg">Vui lòng nhập địa chỉ nhận hàng!</small>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label>Ghi chú cho shipper / gian hàng (nếu có)</label>
+                  <textarea 
+                    formControlName="ghiChu" 
+                    rows="2" 
+                    placeholder="VD: Giao giờ hành chính, gọi điện trước khi đến..."
+                  ></textarea>
+                </div>
+              </form>
+            }
+          </div>
+
+          <!-- 2. DANH SÁCH SẢN PHẨM THANH TOÁN (GOM NHÓM THEO SHOP) -->
+          <div class="card-section products-section">
+            <div class="section-title">
+              <span class="icon">📦</span>
+              <h3>Sản Phẩm Đặt Mua ({{ duLieuService.tongSoLuongDaChon() }} món)</h3>
+              <a routerLink="/gio-hang" class="back-to-cart-link">
+                ✏️ Thay đổi sản phẩm trong giỏ
+              </a>
+            </div>
+
+            @for (shopGroup of duLieuService.nhomShopDaChon(); track shopGroup.cuaHangId) {
+              <div class="shop-group-box">
+                <div class="shop-group-header">
+                  <span class="shop-name">🏪 Gian hàng: <strong>{{ shopGroup.tenCuaHang }}</strong></span>
+                  <span class="shop-subtotal">Tạm tính shop: <strong>{{ formatTien(shopGroup.tongTienDaChon ?? shopGroup.tongTien) }}</strong></span>
+                </div>
+
+                <div class="items-list">
+                  @for (item of shopGroup.danhSachMon; track item.sanPham.id) {
+                    <div class="checkout-item-row">
+                      <div class="item-pic">
+                        <img [src]="item.sanPham.hinhAnh || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=100'" [alt]="item.sanPham.ten" />
+                      </div>
+                      <div class="item-details">
+                        <div class="item-title">{{ item.sanPham.ten }}</div>
+                        <div class="item-cat">{{ item.sanPham.danhMuc }}</div>
+                      </div>
+                      <div class="item-unit-price">
+                        {{ formatTien(item.sanPham.gia) }}
+                      </div>
+                      <div class="item-qty">
+                        x{{ item.soLuong }}
+                      </div>
+                      <div class="item-line-total">
+                        {{ formatTien(item.sanPham.gia * item.soLuong) }}
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- 3. MÃ GIẢM GIÁ & VOUCHER KHUYẾN MÃI -->
+          <div class="card-section voucher-section">
+            <div class="section-title">
+              <span class="icon">🎟️</span>
+              <h3>Mã Giảm Giá & Voucher Khuyến Mãi</h3>
+            </div>
+            <p class="voucher-guide">Hỗ trợ cộng dồn đồng thời <strong>Voucher Gian Hàng</strong> và <strong>Voucher Sàn</strong> để tối đa hóa ưu đãi.</p>
+
+            <div class="voucher-input-group">
+              <input 
+                type="text" 
+                [ngModel]="maVoucherNhap()" 
+                (ngModelChange)="maVoucherNhap.set($event)" 
+                placeholder="NHẬP MÃ VOUCHER (VD: KD_FREESHIP, GIAM50K...)"
+                [disabled]="dangKiemTraVoucher()"
+                (keyup.enter)="apDungVoucher()"
+              />
+              <button 
+                type="button" 
+                class="btn-apply-voucher" 
+                [disabled]="dangKiemTraVoucher() || !maVoucherNhap().trim()"
+                (click)="apDungVoucher()"
+              >
+                {{ dangKiemTraVoucher() ? 'Đang kiểm tra...' : 'Áp Dụng' }}
+              </button>
+            </div>
+
+            @if (thongBaoVoucher()) {
+              <div class="voucher-alert" [class.alert-success]="thongBaoVoucher()?.hopLe" [class.alert-error]="!thongBaoVoucher()?.hopLe">
+                {{ thongBaoVoucher()?.tinNhan }}
+              </div>
+            }
+
+            <!-- 2 SLOTS VOUCHER ĐÃ ÁP DỤNG -->
+            <div class="active-vouchers-slots">
+              <!-- Slot 1: Voucher Shop -->
+              <div class="voucher-slot-box" [class.is-applied]="!!voucherShopDaChon()">
+                <div class="slot-badge">🏪 Voucher Shop (Do Seller cấp)</div>
+                @if (voucherShopDaChon()) {
+                  <div class="applied-info">
+                    <span class="v-code">🎟️ {{ voucherShopDaChon()?.maVoucher }}</span>
+                    <span class="v-desc">{{ voucherShopDaChon()?.tieuDe }}</span>
+                    <span class="v-val">-{{ formatTien(tienGiamVoucherShop()) }}</span>
+                    <button type="button" class="btn-remove-v" (click)="boChonVoucherShop()" title="Hủy áp dụng">✕</button>
+                  </div>
+                } @else {
+                  <div class="empty-slot-text">Chưa áp dụng voucher của gian hàng nào</div>
+                }
+              </div>
+
+              <!-- Slot 2: Voucher Sàn -->
+              <div class="voucher-slot-box" [class.is-applied]="!!voucherSanDaChon()">
+                <div class="slot-badge platform-badge">🌐 Voucher Sàn (Sàn tài trợ)</div>
+                @if (voucherSanDaChon()) {
+                  <div class="applied-info">
+                    <span class="v-code">🎟️ {{ voucherSanDaChon()?.maVoucher }}</span>
+                    <span class="v-desc">{{ voucherSanDaChon()?.tieuDe }}</span>
+                    <span class="v-val">-{{ formatTien(tienGiamVoucherSan()) }}</span>
+                    <button type="button" class="btn-remove-v" (click)="boChonVoucherSan()" title="Hủy áp dụng">✕</button>
+                  </div>
+                } @else {
+                  <div class="empty-slot-text">Chưa áp dụng voucher toàn sàn</div>
+                }
+              </div>
+            </div>
+
+            <!-- DANH SÁCH VOUCHER KHẢ DỤNG GỢI Ý -->
+            @if (danhSachVoucherSan().length > 0 || danhSachVoucherShop().length > 0) {
+              <div class="suggested-vouchers-box">
+                <span class="suggest-title">💡 Voucher gợi ý cho đơn hàng của bạn:</span>
+                <div class="voucher-chips-wrap">
+                  @for (v of danhSachVoucherSan(); track v.id) {
+                    <button 
+                      type="button" 
+                      class="v-chip platform-chip" 
+                      [class.active]="voucherSanDaChon()?.maVoucher === v.maVoucher"
+                      (click)="apDungVoucher(v.maVoucher)"
+                    >
+                      🌐 {{ v.maVoucher }} ({{ v.loaiGiamGia === 'PhanTram' ? '-' + v.giaTriGiam + '%' : '-' + formatTien(v.giaTriGiam) }})
+                    </button>
+                  }
+                  @for (v of danhSachVoucherShop(); track v.id) {
+                    <button 
+                      type="button" 
+                      class="v-chip shop-chip" 
+                      [class.active]="voucherShopDaChon()?.maVoucher === v.maVoucher"
+                      (click)="apDungVoucher(v.maVoucher)"
+                    >
+                      🏪 {{ v.maVoucher }} ({{ v.loaiGiamGia === 'PhanTram' ? '-' + v.giaTriGiam + '%' : '-' + formatTien(v.giaTriGiam) }})
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- 4. PHƯƠNG THỨC THANH TOÁN -->
+          <div class="card-section payment-section">
+            <div class="section-title">
+              <span class="icon">💳</span>
+              <h3>Phương Thức Thanh Toán</h3>
+            </div>
+
+            <div class="payment-methods-grid">
+              <label class="payment-method-card" [class.selected]="phuongThucThanhToan === 'COD'">
+                <input 
+                  type="radio" 
+                  name="ptThanhToan" 
+                  value="COD" 
+                  [checked]="phuongThucThanhToan === 'COD'" 
+                  (change)="phuongThucThanhToan = 'COD'" 
+                />
+                <div class="method-body">
+                  <div class="method-title">
+                    <span class="m-icon">💵</span>
+                    <strong>Thanh toán khi nhận hàng (COD)</strong>
+                  </div>
+                  <p class="m-desc">Kiểm tra kiện hàng và thanh toán tiền mặt trực tiếp cho nhân viên giao hàng.</p>
+                </div>
+              </label>
+
+              <label class="payment-method-card" [class.selected]="phuongThucThanhToan === 'ChuyenKhoan'">
+                <input 
+                  type="radio" 
+                  name="ptThanhToan" 
+                  value="ChuyenKhoan" 
+                  [checked]="phuongThucThanhToan === 'ChuyenKhoan'" 
+                  (change)="phuongThucThanhToan = 'ChuyenKhoan'" 
+                />
+                <div class="method-body">
+                  <div class="method-title">
+                    <span class="m-icon">📱</span>
+                    <strong>Quét mã QR Ngân Hàng (VietQR 24/7)</strong>
+                    <span class="tag-recommend">Khuyên Dùng</span>
+                  </div>
+                  <p class="m-desc">Sinh mã QR động kèm số tiền và mã đơn. Mở app ngân hàng quét là chuyển tiền tức thì, miễn phí 100%.</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- CỘT PHẢI: BẢNG TỔNG KẾT & NÚT CHỐT ĐƠN HÀNG -->
+        <div class="sidebar-column">
+          <div class="order-summary-card">
+            <h3>Chi Tiết Thanh Toán</h3>
+
+            <div class="summary-line">
+              <span>Tạm tính ({{ duLieuService.tongSoLuongDaChon() }} sản phẩm):</span>
+              <strong>{{ formatTien(duLieuService.tongTienDaChon()) }}</strong>
+            </div>
+
+            @if (tienGiamVoucherShop() > 0) {
+              <div class="summary-line discount-line">
+                <span>Voucher Shop:</span>
+                <strong class="text-danger">-{{ formatTien(tienGiamVoucherShop()) }}</strong>
+              </div>
+            }
+
+            @if (tienGiamVoucherSan() > 0) {
+              <div class="summary-line discount-line">
+                <span>Voucher Sàn:</span>
+                <strong class="text-danger">-{{ formatTien(tienGiamVoucherSan()) }}</strong>
+              </div>
+            }
+
+            <div class="summary-line">
+              <span>Phí vận chuyển:</span>
+              <span class="text-freeship">Miễn phí giao hàng</span>
+            </div>
+
+            <div class="summary-divider"></div>
+
+            <div class="summary-total">
+              <span>Tổng thanh toán:</span>
+              <span class="total-amount">{{ formatTien(tongThanhToanSauGiam()) }}</span>
+            </div>
+
+            <button 
+              type="button" 
+              class="btn-place-order" 
+              [disabled]="dangDatHang || !xacThucService.daDangNhap()"
+              (click)="tienHanhDatHang()"
+            >
+              @if (dangDatHang) {
+                <span class="spinner"></span> Đang Tạo Đơn Hàng...
+              } @else {
+                🚀 Xác Nhận Đặt Hàng ({{ phuongThucThanhToan === 'COD' ? 'COD' : 'VietQR' }})
+              }
+            </button>
+
+            @if (!xacThucService.daDangNhap()) {
+              <small class="auth-hint">⚠️ Vui lòng đăng nhập phía trên để kích hoạt nút đặt hàng.</small>
+            }
+
+            <div class="policy-trust-box">
+              <div class="trust-item">
+                <span>🛡️</span>
+                <span>Bảo hiểm giao dịch & hoàn tiền 100% nếu có lỗi.</span>
+              </div>
+              <div class="trust-item">
+                <span>⚡</span>
+                <span>Đóng gói & chuyển sang đơn vị vận chuyển trong 24h.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <!-- CHƯA CHỌN MÓN NÀO -->
+      <div class="empty-selection-card">
+        <div class="empty-icon">🛒</div>
+        <h3>Bạn Chưa Chọn Sản Phẩm Nào Để Thanh Toán</h3>
+        <p>Vui lòng quay lại giỏ hàng và tick chọn các sản phẩm bạn muốn đặt mua trước.</p>
+        <a routerLink="/gio-hang" class="btn btn-primary">
+          ➔ Quay Lại Giỏ Hàng
+        </a>
+      </div>
+    }
+  }
+
+  <!-- MODAL VIETQR THANH TOÁN -->
+  @if (hienModalVietQR && donHangTongVuaTao) {
+    <div class="modal-overlay" (click)="hienModalVietQR = false">
+      <div class="vietqr-modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>📱 Quét Mã VietQR Chuyển Khoản Đơn Hàng</h3>
+          <button class="btn-close" (click)="hienModalVietQR = false">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="qr-code-wrapper">
+            <img 
+              [src]="getVietQrUrl(donHangTongVuaTao.maDonTong, tongThanhToanSauGiam())" 
+              alt="VietQR MBBank" 
+              class="qr-image"
+            />
+          </div>
+
+          <div class="bank-details-box">
+            <div class="bank-row">
+              <span class="label">Ngân hàng:</span>
+              <span class="value font-bold">{{ tenNganHangShop }}</span>
+            </div>
+            <div class="bank-row">
+              <span class="label">Số tài khoản:</span>
+              <span class="value font-bold copyable" (click)="saoChep(soTaiKhoanShop, 'Số tài khoản')">
+                {{ soTaiKhoanShop }} <span class="btn-copy">📋 Copy</span>
+              </span>
+            </div>
+            <div class="bank-row">
+              <span class="label">Chủ tài khoản:</span>
+              <span class="value font-bold">{{ chuTaiKhoanShop }}</span>
+            </div>
+            <div class="bank-row">
+              <span class="label">Số tiền:</span>
+              <span class="value total-price font-bold">{{ formatTien(tongThanhToanSauGiam()) }}</span>
+            </div>
+            <div class="bank-row">
+              <span class="label">Nội dung CK:</span>
+              <span class="value font-bold text-primary copyable" (click)="saoChep(donHangTongVuaTao.maDonTong, 'Nội dung chuyển khoản')">
+                {{ donHangTongVuaTao.maDonTong }} <span class="btn-copy">📋 Copy</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="vietqr-instructions">
+            ⚠️ <strong>Lưu ý quan trọng:</strong> Vui lòng giữ nguyên nội dung chuyển khoản để hệ thống tự động xác nhận đơn hàng trong vòng 1-3 phút.
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-confirm-transfer" (click)="xacNhanDaChuyenKhoan()">
+            ✓ Tôi Đã Chuyển Khoản Thành Công
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL CHỌN ĐỊA CHỈ TỪ SỔ ĐỊA CHỈ -->
+  @if (hienModalChonDiaChi) {
+    <div class="modal-overlay" (click)="hienModalChonDiaChi = false">
+      <div class="modal-card address-picker-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>📖 Chọn Địa Chỉ Nhận Hàng</h3>
+          <button class="btn-close" (click)="hienModalChonDiaChi = false">&times;</button>
+        </div>
+        <div class="modal-body address-picker-body">
+          @if (danhSachDiaChi().length === 0) {
+            <p class="empty-text">Bạn chưa lưu địa chỉ nào trong sổ địa chỉ.</p>
+          } @else {
+            <div class="address-picker-list">
+              @for (addr of danhSachDiaChi(); track addr.id) {
+                <div class="picker-address-item" (click)="chonDiaChiTuSo(addr)">
+                  <div class="picker-address-header">
+                    <strong>{{ addr.hoTen }}</strong>
+                    <span class="picker-phone">| {{ addr.soDienThoai }}</span>
+                    @if (addr.laMacDinh) {
+                      <span class="badge-default">Mặc định</span>
+                    }
+                  </div>
+                  <p class="picker-address-detail">{{ addr.diaChiChiTiet }}</p>
+                  <div class="picker-footer">
+                    <span class="picker-type">{{ addr.loaiDiaChi === 'VanPhong' ? '🏢 Văn Phòng' : '🏠 Nhà Riêng' }}</span>
+                    <button type="button" class="btn-select-addr">Áp dụng địa chỉ này →</button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

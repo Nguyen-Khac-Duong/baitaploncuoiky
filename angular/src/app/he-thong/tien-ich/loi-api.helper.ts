@@ -26,21 +26,11 @@ export function trichXuatThongBaoLoi(err: unknown, fallback: string = 'Có lỗi
     return 'Không thể kết nối đến máy chủ Backend (Port 44351). Vui lòng kiểm tra xem Backend ASP.NET Core đã được khởi chạy chưa!';
   }
 
-  // 2. Kiểm tra lỗi 401 Unauthorized (Chưa đăng nhập / Token hết hạn)
-  if (httpErr.status === 401) {
-    return 'Phiên đăng nhập đã hết hạn hoặc bạn chưa đăng nhập (401 Unauthorized). Vui lòng đăng nhập lại tài khoản Admin!';
-  }
-
-  // 3. Kiểm tra lỗi 403 Forbidden (Không đủ quyền)
-  if (httpErr.status === 403) {
-    return 'Tài khoản của bạn không có quyền thực hiện thao tác này (403 Forbidden - Thiếu quyền hạn)!';
-  }
-
-  // 4. Lỗi từ ABP Framework
+  // 2. Ưu tiên trích xuất thông báo lỗi nghiệp vụ chi tiết từ ABP Framework (UserFriendlyException / BusinessException / Validation)
   if (typeof httpErr.error === 'object' && httpErr.error !== null) {
     const abpError = httpErr.error.error;
 
-    // 4a. Chi tiết lỗi Validation (Từng trường bị lỗi do Form / Model DTO)
+    // 2a. Chi tiết lỗi Validation (Từng trường bị lỗi do Form / Model DTO)
     if (abpError?.validationErrors && Array.isArray(abpError.validationErrors) && abpError.validationErrors.length > 0) {
       const danhSachLoi = abpError.validationErrors
         .map(v => v.message)
@@ -51,7 +41,7 @@ export function trichXuatThongBaoLoi(err: unknown, fallback: string = 'Có lỗi
       }
     }
 
-    // 4b. Lỗi BusinessException / UserFriendlyException từ ABP
+    // 2b. Lỗi BusinessException / UserFriendlyException từ ABP
     if (abpError?.message) {
       if (abpError.details) {
         return `${abpError.message} (${abpError.details})`;
@@ -59,10 +49,20 @@ export function trichXuatThongBaoLoi(err: unknown, fallback: string = 'Có lỗi
       return abpError.message;
     }
 
-    // 4c. Lỗi cấp HTTP message
+    // 2c. Lỗi cấp HTTP message
     if (httpErr.error.message) {
       return httpErr.error.message;
     }
+  }
+
+  // 3. Kiểm tra lỗi 401 Unauthorized (Chưa đăng nhập / Token hết hạn)
+  if (httpErr.status === 401) {
+    return 'Phiên đăng nhập đã hết hạn hoặc bạn chưa đăng nhập (401 Unauthorized). Vui lòng đăng nhập lại tài khoản!';
+  }
+
+  // 4. Kiểm tra lỗi 403 Forbidden (Không đủ quyền)
+  if (httpErr.status === 403) {
+    return 'Tài khoản của bạn không có quyền thực hiện thao tác này (403 Forbidden - Thiếu quyền hạn)!';
   }
 
   // 5. Chuỗi lỗi nguyên bản

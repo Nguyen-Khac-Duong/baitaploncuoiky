@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { DuLieuService } from '../../he-thong/dich-vu/du-lieu.service';
 import { ThongBaoService } from '../../he-thong/dich-vu/thong-bao.service';
 import { XacThucService } from '../../he-thong/dich-vu/xac-thuc.service';
-import { SanPham, CuaHang, DanhGiaSanPham, ThongKeDanhGia } from '../../shared/mo-hinh/du-lieu.model';
+import { SanPham, CuaHang, DanhGiaSanPham, ThongKeDanhGia, VoucherItem } from '../../shared/mo-hinh/du-lieu.model';
 
 @Component({
   selector: 'app-chi-tiet-san-pham',
@@ -28,6 +28,9 @@ export class ChiTietSanPhamComponent implements OnInit {
   readonly soLuongMua = signal<number>(1);
   readonly tabHienTai = signal<'mota' | 'baohanh' | 'danhgia'>('mota');
 
+  // Voucher khuyến mãi
+  readonly danhSachVoucherHienThi = signal<VoucherItem[]>([]);
+
   // Đánh giá sản phẩm
   readonly danhSachDanhGia = signal<DanhGiaSanPham[]>([]);
   readonly thongKeDanhGia = signal<ThongKeDanhGia | null>(null);
@@ -39,6 +42,12 @@ export class ChiTietSanPhamComponent implements OnInit {
     if (loc === 'all') return list;
     if (loc === 'anh') return list.filter(x => !!x.hinhAnh);
     return list.filter(x => x.soSao === loc);
+  });
+
+  // Kiểm tra quyền sở hữu gian hàng: Chặn người bán tự mua sản phẩm của chính mình
+  readonly laSanPhamCuaToi = computed(() => {
+    const sp = this.sanPham();
+    return this.duLieuService.laSanPhamCuaShopToi(sp);
   });
 
   ngOnInit(): void {
@@ -68,6 +77,26 @@ export class ChiTietSanPhamComponent implements OnInit {
 
         // Tải đánh giá sản phẩm thực tế
         this.taiDanhGia(id);
+
+        // Tải voucher khả dụng của Shop và Sàn
+        if (sp.cuaHangId) {
+          this.duLieuService.getDanhSachVoucherShop(sp.cuaHangId).subscribe({
+            next: (shopVouchers) => {
+              this.duLieuService.getDanhSachVoucherSan().subscribe({
+                next: (sanVouchers) => {
+                  const combined = [...(shopVouchers || []), ...(sanVouchers || [])];
+                  this.danhSachVoucherHienThi.set(combined);
+                },
+                error: () => this.danhSachVoucherHienThi.set(shopVouchers || [])
+              });
+            },
+            error: () => {
+              this.duLieuService.getDanhSachVoucherSan().subscribe({
+                next: (sanVouchers) => this.danhSachVoucherHienThi.set(sanVouchers || [])
+              });
+            }
+          });
+        }
 
         // Tải danh sách sản phẩm liên quan (cùng danh mục)
         this.duLieuService.getDanhSachSanPham().subscribe({
@@ -129,6 +158,14 @@ export class ChiTietSanPhamComponent implements OnInit {
     const sp = this.sanPham();
     if (!sp) return;
 
+    if (this.laSanPhamCuaToi()) {
+      this.thongBaoService.canhBao(
+        'Bạn là chủ gian hàng này, không thể tự mua sản phẩm của chính mình!',
+        'Không thể mua hàng'
+      );
+      return;
+    }
+
     if (this.xacThucService.laAdmin()) {
       this.thongBaoService.canhBao(
         'Tài khoản Quản Trị Viên Sàn (Admin) không tham gia mua hàng! Vui lòng dùng tài khoản Người Mua.',
@@ -148,6 +185,14 @@ export class ChiTietSanPhamComponent implements OnInit {
   muaNgay(): void {
     const sp = this.sanPham();
     if (!sp) return;
+
+    if (this.laSanPhamCuaToi()) {
+      this.thongBaoService.canhBao(
+        'Bạn là chủ gian hàng này, không thể tự mua sản phẩm của chính mình!',
+        'Không thể mua hàng'
+      );
+      return;
+    }
 
     if (this.xacThucService.laAdmin()) {
       this.thongBaoService.canhBao(
@@ -180,6 +225,18 @@ export class ChiTietSanPhamComponent implements OnInit {
           }
         }
       });
+    }
+  }
+
+  saoChepMaVoucher(ma: string, tieuDe: string): void {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(ma).then(() => {
+        this.thongBaoService.thanhCong(`Đã sao chép mã '${ma}' (${tieuDe})! Áp dụng tại Giỏ hàng để nhận ưu đãi.`, 'Sao chép Voucher');
+      }).catch(() => {
+        this.thongBaoService.thongTin(`Mã voucher: ${ma}`, 'Voucher');
+      });
+    } else {
+      this.thongBaoService.thongTin(`Mã voucher: ${ma}`, 'Voucher');
     }
   }
 
